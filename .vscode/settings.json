@@ -1,0 +1,73 @@
+{
+    // G-suits や M365 スクリプト開発用の推奨設定をここに記述します
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true
+    },
+    "editor.formatOnSave": true,
+    // Copilot エディタ関連の設定
+    "github.copilot.enable": {
+        "javascript": true,
+        "typescript": true,
+        "python": true,
+        "powershell": true,
+        "shellscript": true
+    },
+    "github.copilot.editor.enableCodeActions": true,
+    "github.copilot.renameSuggestions.triggerAutomatically": true,
+    "github.copilot.advanced": {
+        "inlineSuggestCount": 3
+    },
+    "github.copilot.chat.agent.autoFix": true,
+    "github.copilot.chat.agent.runTasks": true,
+    "github.copilot.chat.agent.thinkingTool": true,
+    "github.copilot.chat.codesearch.enabled": true,
+    "github.copilot.chat.commitMessageGeneration.instructions": [
+        {
+            "file": ".github/instructions/copilot-commit-message.instructions.md"
+        },
+        {
+            "text": "Use conventional commit message format."
+        }
+    ],
+    "github.copilot.chat.edits.newNotebook.enabled": true,
+    "github.copilot.chat.followUps": "always",
+    "github.copilot.chat.editor.temporalContext.enabled": true,
+    "github.copilot.chat.edits.suggestRelatedFilesForTests": true,
+    "github.copilot.chat.edits.suggestRelatedFilesFromGitHistory": true,
+    "github.copilot.chat.edits.temporalContext.enabled": true,
+    "github.copilot.chat.generateTests.codeLens": true,
+    "github.copilot.chat.localeOverride": "ja",
+    "github.copilot.chat.pullRequestDescriptionGeneration.instructions": [
+        {
+            "file": ".github/instructions/pull-request-description-instructions.md"
+        },
+        {
+            "text": "応答は日本語で"
+        }
+    ],
+    "github.copilot.chat.reviewSelection.enabled": true,
+    "github.copilot.chat.reviewSelection.instructions": [
+        {
+            "file": ".github/instructions/copilot-review-instructions.md"
+        },
+        {
+            "text": "Resolve all TODO tasks."
+        }
+    ],
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    "github.copilot.chat.codeGeneration.instructions": [
+        {
+            "text": "応答は日本語で行うこと"
+        },
+        {
+            "file": ".github/instructions/general-coding.instructions.md"
+        },
+        {
+            "file": ".github/instructions/gsuite-javascript.instructions.md"
+        },
+        {
+            "file": ".github/instructions/m365-powershell.instructions.md"
+        }
+    ],
+}
