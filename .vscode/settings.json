@@ -55,6 +55,22 @@
             "text": "Resolve all TODO tasks."
         }
     ],
+    "github.copilot.chat.scopeSelection": true,
+    "github.copilot.chat.search.keywordSuggestions": true,
+    "github.copilot.chat.search.semanticTextResults": true,
+    "github.copilot.chat.setupTests.enabled": true,
+    "github.copilot.chat.summarizeAgentConversationHistory.enabled": true,
+    "github.copilot.chat.terminalChatLocation": "chatView",
+    "github.copilot.chat.testGeneration.instructions": [
+        {
+            "file": ".github/instructions/test-instructions.md"
+        },
+        {
+            "text": "Always try uniting related tests in a suite."
+        }
+    ],
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "github.copilot.nextEditSuggestions.fixes": true,
     "github.copilot.chat.codeGeneration.useInstructionFiles": true,
     "github.copilot.chat.codeGeneration.instructions": [
         {
