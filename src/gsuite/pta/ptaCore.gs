@@ -14,13 +14,13 @@
 // システム設定
 const PTA_CONFIG = {
   // メンバー管理用シート名
-  MEMBER_SHEET_NAME: 'PTA Members',
+  MEMBER_SHEET_NAME: 'PTAメンバー',
   // 配信履歴用シート名
-  DISTRIBUTION_HISTORY_SHEET_NAME: 'Distribution History',
+  DISTRIBUTION_HISTORY_SHEET_NAME: '配信履歴',
   // アンケート管理用シート名
-  SURVEY_SHEET_NAME: 'Survey Management',
+  SURVEY_SHEET_NAME: 'アンケート管理',
   // ログ用シート名
-  LOG_SHEET_NAME: 'System Logs',
+  LOG_SHEET_NAME: 'システムログ',
   // 最大一度に送信するメール数
   MAX_EMAIL_BATCH_SIZE: 50,
   // ログ有効フラグ
