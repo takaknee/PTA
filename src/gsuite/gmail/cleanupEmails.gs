@@ -23,6 +23,8 @@ function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Gmail整理')
     .addItem('プロモーションメールを削除', 'deletePromotionEmails')
+    .addItem('一年以上前のメールを削除', 'deleteOldEmails')
+    .addItem('送信元別メール分析', 'analyzeSenders')
     .addItem('ラベル一覧を表示', 'listAllLabels')
     .addItem('特定ラベルのメールを削除', 'deleteEmailsByLabelPrompt')
     .addToUi();
@@ -38,6 +40,51 @@ function deletePromotionEmails() {
     return batchDeleteEmails(query, 'プロモーション');
   } catch (error) {
     logError('プロモーションメール削除中にエラーが発生しました', error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+/**
+ * 一年以上前のメールを削除する
+ * @returns {Object} 処理結果の情報
+ */
+function deleteOldEmails() {
+  try {
+    // 一年前の日付を計算
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    
+    // Gmail検索クエリ用の日付フォーマット（YYYY/MM/DD）
+    const dateString = `${oneYearAgo.getFullYear()}/${(oneYearAgo.getMonth() + 1).toString().padStart(2, '0')}/${oneYearAgo.getDate().toString().padStart(2, '0')}`;
+    
+    // 確認ダイアログを表示
+    const ui = SpreadsheetApp.getUi();
+    const response = ui.alert(
+      '確認',
+      `${dateString} より前のメールをすべて削除します。この操作は元に戻せません。続行しますか？`,
+      ui.ButtonSet.YES_NO
+    );
+    
+    if (response !== ui.Button.YES) {
+      logInfo('一年以上前のメール削除をキャンセルしました');
+      return { success: false, message: 'キャンセルされました' };
+    }
+    
+    const query = `before:${dateString}`;
+    const result = batchDeleteEmails(query, '一年以上前の');
+    
+    if (result.success) {
+      ui.alert('完了', `${result.count}件の一年以上前のメールを削除しました。`, ui.ButtonSet.OK);
+    }
+    
+    return result;
+  } catch (error) {
+    logError('一年以上前のメール削除中にエラーが発生しました', error);
+    SpreadsheetApp.getUi().alert(
+      'エラー',
+      `削除中にエラーが発生しました: ${error.toString()}`,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
     return { success: false, error: error.toString() };
   }
 }
@@ -201,6 +248,117 @@ function listAllLabels() {
     );
     return [];
   }
+}
+
+/**
+ * 送信元別にメールを分析する
+ * @returns {Array} 送信元別の統計情報
+ */
+function analyzeSenders() {
+  try {
+    logInfo('送信元別メール分析を開始します...');
+    
+    // 受信トレイのメールを取得（最大500件から分析）
+    const threads = GmailApp.search('in:inbox', 0, 500);
+    const senderStats = {};
+    let processedCount = 0;
+    
+    logInfo(`${threads.length}件のスレッドを分析します`);
+    
+    threads.forEach(thread => {
+      const messages = thread.getMessages();
+      messages.forEach(message => {
+        const sender = message.getFrom();
+        // メールアドレスを抽出（表示名を除去）
+        const email = extractEmailAddress(sender);
+        
+        if (senderStats[email]) {
+          senderStats[email].count++;
+        } else {
+          senderStats[email] = {
+            email: email,
+            displayName: sender,
+            count: 1
+          };
+        }
+        processedCount++;
+      });
+    });
+    
+    // 送信元を数の多い順にソート
+    const sortedSenders = Object.values(senderStats)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 100); // 上位100件のみ
+    
+    // スプレッドシートに出力
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName('送信元分析');
+    
+    // シートがなければ作成
+    if (!sheet) {
+      sheet = ss.insertSheet('送信元分析');
+    } else {
+      sheet.clear();
+    }
+    
+    // ヘッダー行
+    sheet.appendRow(['送信元メールアドレス', '表示名', 'メール数']);
+    
+    // 送信元データ
+    sortedSenders.forEach(sender => {
+      sheet.appendRow([sender.email, sender.displayName, sender.count]);
+    });
+    
+    // 書式設定
+    sheet.getRange(1, 1, 1, 3).setFontWeight('bold');
+    sheet.autoResizeColumns(1, 3);
+    
+    // 統計情報を表示
+    const totalSenders = sortedSenders.length;
+    const totalEmails = processedCount;
+    const topSender = sortedSenders[0];
+    
+    SpreadsheetApp.getUi().alert(
+      '送信元分析完了',
+      `分析結果を「送信元分析」シートに表示しました。\n\n` +
+      `・総メール数: ${totalEmails}件\n` +
+      `・送信元数: ${totalSenders}件\n` +
+      `・最多送信元: ${topSender ? topSender.email : 'なし'} (${topSender ? topSender.count : 0}件)`,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+    
+    logInfo(`送信元分析が完了しました。${totalSenders}件の送信元、${totalEmails}件のメールを分析`);
+    
+    return sortedSenders;
+  } catch (error) {
+    logError('送信元分析中にエラーが発生しました', error);
+    SpreadsheetApp.getUi().alert(
+      'エラー',
+      `送信元分析中にエラーが発生しました: ${error.toString()}`,
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+    return [];
+  }
+}
+
+/**
+ * メールアドレスを抽出する（表示名を除去）
+ * @param {string} fromField - Fromフィールドの値
+ * @returns {string} メールアドレス
+ */
+function extractEmailAddress(fromField) {
+  // 角括弧内のメールアドレスを抽出
+  const match = fromField.match(/<(.+?)>/);
+  if (match) {
+    return match[1];
+  }
+  
+  // 角括弧がない場合は、そのまま返す（既にメールアドレスのみの場合）
+  if (fromField.includes('@')) {
+    return fromField.trim();
+  }
+  
+  return fromField;
 }
 
 /**
