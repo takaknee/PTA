@@ -1,0 +1,122 @@
+name: ワークフロー設定検証
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+
+jobs:
+  validate-workflows:
+    name: GitHub Actions設定検証
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: コードをチェックアウト
+      uses: actions/checkout@v4
+
+    - name: ワークフロー構文チェック
+      run: |
+        echo "=== GitHub Actions ワークフロー検証 ==="
+        
+        # YAML構文の基本チェック
+        for workflow in .github/workflows/*.yml; do
+          if [ -f "$workflow" ]; then
+            echo "🔍 $workflow を検証中..."
+            # ベーシックなYAML構文チェック
+            if python3 -c "import yaml; yaml.safe_load(open('$workflow'))" 2>/dev/null; then
+              echo "✅ $workflow - YAML構文OK"
+            else
+              echo "❌ $workflow - YAML構文エラー"
+              exit 1
+            fi
+          fi
+        done
+        
+        echo "✅ 全ワークフローの構文チェック完了"
+
+    - name: 必須ワークフローの存在確認
+      run: |
+        echo "=== 必須ワークフローの確認 ==="
+        
+        # CIワークフローの存在確認
+        if [ -f ".github/workflows/ci.yml" ]; then
+          echo "✅ CI ワークフロー: 存在"
+        else
+          echo "❌ CI ワークフロー: 見つかりません"
+          exit 1
+        fi
+        
+        # セキュリティワークフローの存在確認
+        if [ -f ".github/workflows/security.yml" ]; then
+          echo "✅ セキュリティ ワークフロー: 存在"
+        else
+          echo "❌ セキュリティ ワークフロー: 見つかりません"
+          exit 1
+        fi
+        
+        echo "✅ 必須ワークフロー確認完了"
+
+    - name: ワークフロー設定詳細チェック
+      run: |
+        echo "=== ワークフロー設定詳細チェック ==="
+        
+        # 必要なトリガーの確認
+        echo "🔍 トリガー設定確認..."
+        if grep -q "pull_request" .github/workflows/ci.yml; then
+          echo "✅ CI: pull_request トリガー設定済み"
+        else
+          echo "⚠️  CI: pull_request トリガーが見つかりません"
+        fi
+        
+        if grep -q "schedule" .github/workflows/security.yml; then
+          echo "✅ セキュリティ: schedule トリガー設定済み"
+        else
+          echo "⚠️  セキュリティ: schedule トリガーが見つかりません"
+        fi
+        
+        # セキュリティ権限の確認
+        echo "🔍 セキュリティ権限確認..."
+        if grep -q "security-events: write" .github/workflows/ci.yml; then
+          echo "✅ CI: セキュリティイベント書き込み権限設定済み"
+        else
+          echo "⚠️  CI: セキュリティイベント権限が見つかりません"
+        fi
+        
+        echo "✅ ワークフロー設定詳細チェック完了"
+        
+    - name: 設定ファイル整合性チェック
+      run: |
+        echo "=== 設定ファイル整合性チェック ==="
+        
+        # ESLint設定の存在確認
+        if [ -f ".eslintrc.json" ]; then
+          echo "✅ ESLint設定ファイル: 存在"
+          if python3 -c "import json; json.load(open('.eslintrc.json'))" 2>/dev/null; then
+            echo "✅ ESLint設定ファイル: JSON構文OK"
+          else
+            echo "❌ ESLint設定ファイル: JSON構文エラー"
+            exit 1
+          fi
+        else
+          echo "❌ ESLint設定ファイル: 見つかりません"
+          exit 1
+        fi
+        
+        # package.json の存在確認
+        if [ -f "package.json" ]; then
+          echo "✅ package.json: 存在"
+          if python3 -c "import json; json.load(open('package.json'))" 2>/dev/null; then
+            echo "✅ package.json: JSON構文OK"
+          else
+            echo "❌ package.json: JSON構文エラー"
+            exit 1
+          fi
+        else
+          echo "❌ package.json: 見つかりません"
+          exit 1
+        fi
+        
+        echo "✅ 設定ファイル整合性チェック完了"

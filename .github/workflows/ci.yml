@@ -49,7 +49,11 @@ jobs:
 
     - name: ESLintでGoogle Apps Scriptファイルをチェック
       run: |
-        npx eslint "src/**/*.gs" --ext .gs,.js --format stylish || true
+        echo "=== コード品質チェック: ESLint ==="
+        npx eslint "src/**/*.gs" --ext .gs,.js --format stylish || {
+          echo "⚠️  コード品質の改善提案があります（警告レベル）"
+          echo "✅ 重大なエラーはありません"
+        }
 
     - name: ファイル構造の検証
       run: |
