@@ -1,0 +1,53 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": [
+    "eslint:recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "script"
+  },
+  "globals": {
+    "SpreadsheetApp": "readonly",
+    "GmailApp": "readonly",
+    "DriveApp": "readonly",
+    "FormApp": "readonly",
+    "CalendarApp": "readonly",
+    "Session": "readonly",
+    "Logger": "readonly",
+    "Utilities": "readonly",
+    "PropertiesService": "readonly",
+    "ScriptApp": "readonly",
+    "UrlFetchApp": "readonly",
+    "HtmlService": "readonly",
+    "Blob": "readonly",
+    "console": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-undef": "warn",
+    "no-console": "off",
+    "prefer-const": "off",
+    "no-var": "warn",
+    "eqeqeq": "warn",
+    "curly": "off",
+    "semi": "off",
+    "quotes": "off",
+    "indent": "off",
+    "no-trailing-spaces": "off",
+    "eol-last": "off",
+    "no-redeclare": "off"
+  },
+  "overrides": [
+    {
+      "files": ["*.gs"],
+      "rules": {
+        "no-implicit-globals": "off",
+        "no-unused-vars": "off"
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "pta-information-system",
+  "version": "1.0.0",
+  "description": "PTA情報配信システム - G-suiteおよびM365スクリプト集",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint 'src/**/*.{js,gs}' --ext .js,.gs",
+    "lint:fix": "eslint 'src/**/*.{js,gs}' --ext .js,.gs --fix",
+    "security": "npm audit",
+    "test": "echo \"テスト実行: Apps Scriptプロジェクトで個別に実行してください\" && exit 0"
+  },
+  "keywords": [
+    "pta",
+    "google-apps-script",
+    "outlook-vba",
+    "email-automation",
+    "japanese"
+  ],
+  "author": "PTA Development Team",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "@eslint/js": "^8.57.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/takaknee/PTA.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
