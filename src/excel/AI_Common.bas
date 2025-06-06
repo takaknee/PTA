@@ -168,14 +168,32 @@ End Function
 
 ' APIエンドポイント取得
 Public Function GetAPIEndpoint() As String
-    ' 将来的には設定ファイルから読み込み
-    GetAPIEndpoint = OPENAI_API_ENDPOINT
+    ' AI_ConfigManager.basの GetAPISetting を使用
+    GetAPIEndpoint = GetAPISetting("Endpoint", OPENAI_API_ENDPOINT)
 End Function
 
 ' APIキー取得
 Public Function GetAPIKey() As String
-    ' 将来的には暗号化された設定から読み込み
-    GetAPIKey = OPENAI_API_KEY
+    ' AI_ConfigManager.basの GetAPISetting を使用
+    GetAPIKey = GetAPISetting("APIKey", OPENAI_API_KEY)
+End Function
+
+' レジストリアクセス用の設定取得関数（AI_ConfigManager.basからコピー）
+Private Function GetAPISetting(ByVal key As String, ByVal defaultValue As String) As String
+    On Error GoTo ErrorHandler
+    
+    Dim registryPath As String
+    registryPath = "HKEY_CURRENT_USER\Software\ExcelAIHelper\"
+    
+    Dim shell As Object
+    Set shell = CreateObject("WScript.Shell")
+    GetAPISetting = shell.RegRead(registryPath & key)
+    
+    Exit Function
+    
+ErrorHandler:
+    ' エラーの場合はデフォルト値を返す
+    GetAPISetting = defaultValue
 End Function
 
 ' 設定値の検証

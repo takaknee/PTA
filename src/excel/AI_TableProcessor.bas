@@ -309,15 +309,12 @@ Private Function AnalyzeRowData(ByVal rowData As String, ByVal customPrompt As S
         Exit Function
     End If
     
-    ' AI分析実行
+    ' 他の関数からも呼び出せるように変更
     Dim result As String
     result = SendOpenAIRequest(systemPrompt, userPrompt)
     
-    ' 結果の後処理
     If result <> "" Then
-        result = Trim(result)
-        ' 分析タイプに応じた結果の検証・整形
-        result = ValidateAndFormatResult(result, analysisType)
+        result = AI_TableProcessor.ValidateAndFormatResult(result, analysisType)
     End If
     
     AnalyzeRowData = result
