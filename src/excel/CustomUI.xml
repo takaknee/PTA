@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="Ribbon_Load">
+  <ribbon>
+    <tabs>
+      <!-- Excel AI Helper専用タブ -->
+      <tab id="tabAIHelper" label="AI Helper" insertAfterMso="TabHome">
+        
+        <!-- 表処理グループ -->
+        <group id="grpTableProcessing" label="表処理">
+          
+          <!-- メイン表分析ボタン -->
+          <button id="btnTableAnalysis" 
+                  label="表の行分析" 
+                  size="large"
+                  imageMso="TableStyleMedium9"
+                  onAction="AI_RibbonCallbacks.OnTableAnalysisClick"
+                  screentip="表の行分析"
+                  supertip="選択した表の各行をAIで分析し、指定した観点で評価します。学習意欲判定、感情分析、カテゴリ分類などが可能です。"/>
+          
+          <!-- プリセット分析メニュー -->
+          <menu id="mnuPresetAnalysis" label="プリセット分析" size="large" imageMso="PivotTableWizard">
+            <button id="btnLearningMotivation"
+                    label="学習意欲判定 (0-10)"
+                    imageMso="SmartArtChangeColorsGallery"
+                    onAction="AI_RibbonCallbacks.OnLearningMotivationClick"
+                    screentip="学習意欲判定"
+                    supertip="各行のデータから学習意欲を0-10のスコアで評価します。"/>
+            
+            <button id="btnSentimentAnalysis"
+                    label="感情分析"
+                    imageMso="ReviewRejectChange"
+                    onAction="AI_RibbonCallbacks.OnSentimentAnalysisClick"
+                    screentip="感情分析"
+                    supertip="各行のテキストデータから感情（ポジティブ/ネガティブ/中性）を判定します。"/>
+            
+            <menuSeparator id="sepPreset1"/>
+            
+            <button id="btnQuickLearning"
+                    label="クイック学習意欲判定"
+                    imageMso="AutoSum"
+                    onAction="AI_RibbonCallbacks.QuickLearningMotivation"
+                    screentip="クイック学習意欲判定"
+                    supertip="確認なしで即座に学習意欲判定を実行します。"/>
+            
+            <button id="btnQuickSentiment"
+                    label="クイック感情分析"
+                    imageMso="SparklineLineMarkers"
+                    onAction="AI_RibbonCallbacks.QuickSentimentAnalysis"
+                    screentip="クイック感情分析"
+                    supertip="確認なしで即座に感情分析を実行します。"/>
+          </menu>
+          
+        </group>
+        
+        <!-- セル処理グループ -->
+        <group id="grpCellProcessing" label="セル処理">
+          
+          <!-- メインセル関数生成ボタン -->
+          <button id="btnCellFunction" 
+                  label="AI関数生成" 
+                  size="large"
+                  imageMso="FormulaEvaluateFormula"
+                  onAction="AI_RibbonCallbacks.OnCellFunctionClick"
+                  screentip="AI関数生成"
+                  supertip="選択したセルの内容を基に、Excel関数やデータ変換をAIで生成します。"/>
+          
+          <!-- プリセット生成メニュー -->
+          <menu id="mnuPresetGeneration" label="プリセット生成" size="large" imageMso="FunctionWizard">
+            <button id="btnExcelFunction"
+                    label="Excel関数生成"
+                    imageMso="FunctionsLogicalInsertGallery"
+                    onAction="AI_RibbonCallbacks.OnExcelFunctionClick"
+                    screentip="Excel関数生成"
+                    supertip="選択データから適切なExcel関数を生成します。"/>
+            
+            <button id="btnDataTransform"
+                    label="データ変換"
+                    imageMso="ConvertToRange"
+                    onAction="AI_RibbonCallbacks.OnDataTransformClick"
+                    screentip="データ変換"
+                    supertip="選択データを指定形式に変換します。"/>
+            
+            <menuSeparator id="sepGeneration1"/>
+            
+            <button id="btnCellAnalysis"
+                    label="セル内容分析"
+                    imageMso="ReviewInsightIntelligentServices"
+                    onAction="AI_RibbonCallbacks.OnCellAnalysisClick"
+                    screentip="セル内容分析"
+                    supertip="選択したセルの内容を詳細分析し、改善提案を表示します。"/>
+          </menu>
+          
+        </group>
+        
+        <!-- プロンプト管理グループ -->
+        <group id="grpPromptManagement" label="プロンプト管理">
+          
+          <button id="btnPromptManager"
+                  label="プロンプト管理"
+                  size="normal"
+                  imageMso="FileSaveAs"
+                  onAction="AI_RibbonCallbacks.OnPromptManagerClick"
+                  screentip="プロンプト管理"
+                  supertip="カスタムプロンプトの作成、編集、管理を行います。"/>
+          
+          <button id="btnPromptTemplates"
+                  label="テンプレート"
+                  size="normal"
+                  imageMso="TemplatesOnline"
+                  onAction="AI_PromptManager.ShowPresetPrompts"
+                  screentip="プロンプトテンプレート"
+                  supertip="プリセットのプロンプトテンプレートを確認・編集します。"/>
+          
+        </group>
+        
+        <!-- 設定・ヘルプグループ -->
+        <group id="grpSettings" label="設定・ヘルプ">
+          
+          <button id="btnAPIConfig"
+                  label="API設定"
+                  size="normal"
+                  imageMso="DatabaseProperties"
+                  onAction="AI_RibbonCallbacks.OnAPIConfigClick"
+                  screentip="API設定"
+                  supertip="Azure OpenAI APIの設定を行います。"/>
+          
+          <button id="btnMainMenu"
+                  label="メインメニュー"
+                  size="normal"
+                  imageMso="ApplicationOptionsDialog"
+                  onAction="AI_RibbonCallbacks.ShowMainMenu"
+                  screentip="メインメニュー"
+                  supertip="Excel AI Helperのメインメニューを表示します。"/>
+          
+          <button id="btnHelp"
+                  label="ヘルプ"
+                  size="normal"
+                  imageMso="Help"
+                  onAction="AI_RibbonCallbacks.OnHelpClick"
+                  screentip="ヘルプ"
+                  supertip="使用方法とサポート情報を表示します。"/>
+          
+        </group>
+        
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
