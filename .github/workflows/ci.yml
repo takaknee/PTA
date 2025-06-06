@@ -1,0 +1,173 @@
+name: CI - コード品質・セキュリティチェック
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  security-scan:
+    name: セキュリティスキャン
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: コードをチェックアウト
+      uses: actions/checkout@v4
+
+    - name: CodeQL 初期化
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript
+        queries: security-and-quality
+
+    - name: CodeQL 分析実行
+      uses: github/codeql-action/analyze@v3
+
+  code-quality:
+    name: コード品質チェック
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: コードをチェックアウト
+      uses: actions/checkout@v4
+
+    - name: Node.js セットアップ
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: 依存関係のインストール
+      run: |
+        npm init -y
+        npm install --save-dev eslint @eslint/js
+
+    - name: ESLintでGoogle Apps Scriptファイルをチェック
+      run: |
+        npx eslint "src/**/*.gs" --ext .gs,.js --format stylish || true
+
+    - name: ファイル構造の検証
+      run: |
+        echo "=== ファイル構造チェック ==="
+        # 必須ディレクトリの存在確認
+        test -d "src/gsuite" || (echo "❌ src/gsuite ディレクトリが見つかりません" && exit 1)
+        test -d "src/outlook" || (echo "❌ src/outlook ディレクトリが見つかりません" && exit 1)
+        test -d "docs" || (echo "❌ docs ディレクトリが見つかりません" && exit 1)
+        echo "✅ 基本ディレクトリ構造は正常です"
+
+    - name: ドキュメント品質チェック
+      run: |
+        echo "=== ドキュメントチェック ==="
+        # README.md の存在確認
+        test -f "README.md" || (echo "❌ README.md が見つかりません" && exit 1)
+        # 各主要ディレクトリにREADME.mdがあるかチェック
+        find src -type d -mindepth 1 -maxdepth 2 | while read dir; do
+          if [ ! -f "$dir/README.md" ]; then
+            echo "⚠️  $dir にREADME.mdがありません"
+          fi
+        done
+        echo "✅ ドキュメント構造チェック完了"
+
+  security-secrets:
+    name: シークレットスキャン
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: コードをチェックアウト
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: API キー・シークレットの検出
+      run: |
+        echo "=== セキュリティチェック: ハードコードされたシークレット ==="
+        
+        # API キーパターンの検索
+        echo "🔍 API キーの検索中..."
+        if grep -r -E "api[_-]?key|API[_-]?KEY" --include="*.gs" --include="*.bas" --include="*.js" src/ | grep -v "YOUR_API_KEY_HERE" | grep -v "設定ファイル"; then
+          echo "⚠️  潜在的なAPI キーが見つかりました"
+        else
+          echo "✅ 問題のあるAPI キーは見つかりませんでした"
+        fi
+        
+        # パスワードパターンの検索
+        echo "🔍 パスワードの検索中..."
+        if grep -r -E "password|Password|PASSWORD" --include="*.gs" --include="*.bas" --include="*.js" src/ | grep -v "パスワード" | grep -v "コメント"; then
+          echo "⚠️  潜在的なパスワードが見つかりました"
+        else
+          echo "✅ 問題のあるパスワードは見つかりませんでした"
+        fi
+        
+        # トークンパターンの検索
+        echo "🔍 アクセストークンの検索中..."
+        if grep -r -E "token|Token|TOKEN" --include="*.gs" --include="*.bas" --include="*.js" src/ | grep -v "Bearer Token" | grep -v "トークン" | grep -v "コメント"; then
+          echo "⚠️  潜在的なトークンが見つかりました"
+        else
+          echo "✅ 問題のあるトークンは見つかりませんでした"
+        fi
+        
+        echo "✅ シークレットスキャン完了"
+
+  vba-analysis:
+    name: VBA ファイル分析
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: コードをチェックアウト
+      uses: actions/checkout@v4
+
+    - name: VBA セキュリティチェック
+      run: |
+        echo "=== VBA ファイルセキュリティ分析 ==="
+        
+        # VBAファイルの存在確認
+        if [ ! -d "src/outlook" ] || [ -z "$(find src/outlook -name '*.bas' -type f)" ]; then
+          echo "ℹ️  VBA ファイルが見つかりません。スキップします。"
+          exit 0
+        fi
+        
+        echo "🔍 VBA ファイルの分析中..."
+        
+        # ハードコードされた認証情報のチェック
+        if grep -r -E "Const.*API.*=.*\".*\"" src/outlook/*.bas | grep -v "YOUR_API_KEY_HERE"; then
+          echo "⚠️  ハードコードされたAPI設定が見つかりました"
+        else
+          echo "✅ ハードコードされた認証情報は見つかりませんでした"
+        fi
+        
+        # 危険な関数の使用チェック
+        echo "🔍 危険な関数の使用をチェック中..."
+        if grep -r -E "Shell|CreateObject.*WScript|CreateObject.*Shell" src/outlook/*.bas; then
+          echo "⚠️  潜在的に危険な関数の使用が見つかりました"
+        else
+          echo "✅ 危険な関数の使用は見つかりませんでした"
+        fi
+        
+        echo "✅ VBA 分析完了"
+
+  summary:
+    name: 結果サマリー
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, security-secrets, vba-analysis]
+    if: always()
+
+    steps:
+    - name: 結果サマリー表示
+      run: |
+        echo "=== CI 実行結果サマリー ==="
+        echo "🔒 セキュリティスキャン: ${{ needs.security-scan.result }}"
+        echo "📝 コード品質チェック: ${{ needs.code-quality.result }}"
+        echo "🔍 シークレットスキャン: ${{ needs.security-secrets.result }}"
+        echo "📋 VBA 分析: ${{ needs.vba-analysis.result }}"
+        echo "========================="
+        
+        if [[ "${{ needs.security-scan.result }}" == "success" && "${{ needs.code-quality.result }}" == "success" && "${{ needs.security-secrets.result }}" == "success" && "${{ needs.vba-analysis.result }}" == "success" ]]; then
+          echo "✅ すべてのチェックが完了しました"
+        else
+          echo "⚠️  一部のチェックで問題が発見されました。詳細を確認してください。"
+        fi
