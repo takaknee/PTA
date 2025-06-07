@@ -1,42 +1,107 @@
 ' AI_ApiConnector.bas
-' Outlook OpenAI マクロ - OpenAI API接続モジュール
-' 作成日: 2024
-' 説明: Azure OpenAI API との通信を管理
+' Outlook OpenAI Macro - OpenAI API Connection Module
+' Created: 2024
+' Description: Manages communication with Azure OpenAI API
 
 Option Explicit
 
 ' =============================================================================
-' OpenAI API 接続関数
+' Constants Definition (Copied from AI_Common.bas for independence)
 ' =============================================================================
 
-' OpenAI API にリクエストを送信
+' OpenAI API Settings
+Public Const OPENAI_API_ENDPOINT As String = "https://your-azure-openai-endpoint.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview"
+Public Const OPENAI_API_KEY As String = "YOUR_API_KEY_HERE" ' Production environment should read from configuration file
+Public Const OPENAI_MODEL As String = "gpt-4"
+
+' Application Settings
+Public Const APP_NAME As String = "Outlook AI Helper"
+Public Const REQUEST_TIMEOUT As Integer = 30 ' API request timeout (seconds)
+
+' =============================================================================
+' Common Functions (Required for this module)
+' =============================================================================
+
+' Display error message
+Public Sub ShowError(ByVal errorMessage As String, Optional ByVal details As String = "")
+    Dim fullMessage As String
+    fullMessage = "An error occurred: " & errorMessage
+    If details <> "" Then
+        fullMessage = fullMessage & vbCrLf & vbCrLf & "Details: " & details
+    End If
+    MsgBox fullMessage, vbCritical, APP_NAME & " - Error"
+End Sub
+
+' Display message box (common format)
+Public Sub ShowMessage(ByVal message As String, ByVal title As String, Optional ByVal messageType As VbMsgBoxStyle = vbInformation)
+    MsgBox message, messageType, APP_NAME & " - " & title
+End Sub
+
+' Progress display (simplified)
+Public Sub ShowProgress(ByVal message As String)
+    ' For debugging purposes
+    Debug.Print Format(Now, "yyyy-mm-dd hh:nn:ss") & " [PROGRESS] " & message
+    DoEvents ' Maintain UI responsiveness
+End Sub
+
+' Configuration validation
+Public Function ValidateConfiguration() As Boolean
+    ' Check API Key
+    If OPENAI_API_KEY = "YOUR_API_KEY_HERE" Or OPENAI_API_KEY = "" Then
+        ShowError "OpenAI API key is not configured.", _
+                 "Please set OPENAI_API_KEY constant."
+        ValidateConfiguration = False
+        Exit Function
+    End If
+    
+    ' Check endpoint
+    If InStr(OPENAI_API_ENDPOINT, "your-azure-openai-endpoint") > 0 Then
+        ShowError "OpenAI API endpoint is not configured.", _
+                 "Please set OPENAI_API_ENDPOINT constant."
+        ValidateConfiguration = False
+        Exit Function
+    End If
+    
+    ValidateConfiguration = True
+End Function
+
+' Log output (for debugging)
+Public Sub WriteLog(ByVal message As String, Optional ByVal logLevel As String = "INFO")
+    Debug.Print Format(Now, "yyyy-mm-dd hh:nn:ss") & " [" & logLevel & "] " & message
+End Sub
+
+' =============================================================================
+' OpenAI API Connection Functions
+' =============================================================================
+
+' Send request to OpenAI API
 Public Function SendOpenAIRequest(ByVal systemPrompt As String, ByVal userMessage As String, Optional ByVal maxTokens As Integer = 1000) As String
     On Error GoTo ErrorHandler
     
-    ' 設定の検証
+    ' Configuration validation
     If Not ValidateConfiguration() Then
         SendOpenAIRequest = ""
         Exit Function
     End If
     
-    ShowProgress "AI分析を開始しています..."
+    ShowProgress "Starting AI analysis..."
     
     Dim http As Object
     Set http = CreateObject("MSXML2.XMLHTTP")
     
-    ' リクエストボディの作成
+    ' Create request body
     Dim requestBody As String
     requestBody = CreateRequestBody(systemPrompt, userMessage, maxTokens)
     
-    WriteLog "API リクエスト送信: " & Left(userMessage, 100) & "..."
+    WriteLog "Sending API request: " & Left(userMessage, 100) & "..."
     
-    ' HTTPリクエストの設定
+    ' Configure HTTP request
     http.Open "POST", OPENAI_API_ENDPOINT, False
     http.setRequestHeader "Content-Type", "application/json"
     http.setRequestHeader "Authorization", "Bearer " & OPENAI_API_KEY
-    http.setRequestHeader "User-Agent", APP_NAME & "/" & APP_VERSION
+    http.setRequestHeader "User-Agent", APP_NAME
     
-    ShowProgress "APIに接続中..."
+    ShowProgress "Connecting to API..."
     
     ' リクエスト送信
     http.send requestBody
