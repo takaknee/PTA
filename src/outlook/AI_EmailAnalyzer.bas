@@ -1,15 +1,78 @@
 ' AI_EmailAnalyzer.bas
-' Outlook OpenAI マクロ - メール解析モジュール
-' 作成日: 2024
-' 説明: メール内容の解析、要約、重要情報抽出機能
+' Outlook OpenAI Macro - Email Analysis Module
+' Created: 2024
+' Description: Email content analysis, summarization, and important information extraction functions
 
 Option Explicit
 
 ' =============================================================================
-' メール解析メイン関数
+' Constants Definition (Required for this module)
 ' =============================================================================
 
-' 選択されたメールを解析する（メニューから呼び出される）
+' Application Settings
+Public Const APP_NAME As String = "Outlook AI Helper"
+
+' =============================================================================
+' Common Functions (Required for this module)
+' =============================================================================
+
+' Display error message
+Public Sub ShowError(ByVal errorMessage As String, Optional ByVal details As String = "")
+    Dim fullMessage As String
+    fullMessage = "An error occurred: " & errorMessage
+    If details <> "" Then
+        fullMessage = fullMessage & vbCrLf & vbCrLf & "Details: " & details
+    End If
+    MsgBox fullMessage, vbCritical, APP_NAME & " - Error"
+End Sub
+
+' Display message box (common format)
+Public Sub ShowMessage(ByVal message As String, ByVal title As String, Optional ByVal messageType As VbMsgBoxStyle = vbInformation)
+    MsgBox message, messageType, APP_NAME & " - " & title
+End Sub
+
+' Get selected mail item
+Public Function GetSelectedMailItem() As Object
+    On Error GoTo ErrorHandler
+    
+    Dim olApp As Object
+    Dim olSelection As Object
+    
+    Set olApp = Application
+    Set olSelection = olApp.ActiveExplorer.Selection
+    
+    If olSelection.Count = 0 Then
+        ShowMessage "Please select an email.", "Selection Error", vbExclamation
+        Set GetSelectedMailItem = Nothing
+        Exit Function
+    End If
+    
+    If olSelection.Count > 1 Then
+        ShowMessage "Multiple emails are selected. Please select one email.", "Selection Error", vbExclamation
+        Set GetSelectedMailItem = Nothing
+        Exit Function
+    End If
+    
+    ' Check if the item is an email
+    If olSelection.Item(1).Class = 43 Then ' olMail = 43
+        Set GetSelectedMailItem = olSelection.Item(1)
+    Else
+        ShowMessage "The selected item is not an email.", "Selection Error", vbExclamation
+        Set GetSelectedMailItem = Nothing
+    End If
+    
+    Exit Function
+    
+ErrorHandler:
+    ShowError "An error occurred while getting the email item.", Err.Description
+    Set GetSelectedMailItem = Nothing
+End Function
+
+' =============================================================================
+' Email Analysis Main Functions
+' =============================================================================
+
+' Analyze selected email (called from menu)
 Public Sub AnalyzeSelectedEmail()
     On Error GoTo ErrorHandler
     
@@ -20,14 +83,14 @@ Public Sub AnalyzeSelectedEmail()
         Exit Sub
     End If
     
-    ' 解析メニューの表示
+    ' Display analysis menu
     Dim choice As String
-    choice = InputBox("実行する解析を選択してください:" & vbCrLf & vbCrLf & _
-                     "1. 転送メールの元内容抽出" & vbCrLf & _
-                     "2. メール内容の明確化・要約" & vbCrLf & _
-                     "3. 重要情報抽出（期限・対象者・アクション）" & vbCrLf & _
-                     "4. 全ての解析を実行" & vbCrLf & vbCrLf & _
-                     "番号を入力してください:", _
+    choice = InputBox("Select analysis to perform:" & vbCrLf & vbCrLf & _
+                     "1. Extract original content from forwarded email" & vbCrLf & _
+                     "2. Clarify and summarize email content" & vbCrLf & _
+                     "3. Extract important information (deadline, target, action)" & vbCrLf & _
+                     "4. Perform all analyses" & vbCrLf & vbCrLf & _
+                     "Enter number:", _
                      APP_NAME & " - メール解析")
     
     Select Case choice
