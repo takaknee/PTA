@@ -2,6 +2,32 @@
 
 Microsoft Outlook で Azure OpenAI API を活用してメール処理を効率化するVBAマクロ集です。
 
+## 📌 利用方法（簡単！）
+
+### 🚀 **簡単インストール - 統合版推奨**
+
+**最も簡単な方法**: `OutlookAI_Unified.bas` を使用
+
+1. **このファイル1つだけをダウンロード**: `OutlookAI_Unified.bas`
+2. **Outlookを開く** → Alt+F11（VBAエディタ起動）
+3. **ファイル** → **ファイルのインポート** → `OutlookAI_Unified.bas` を選択
+4. **API設定**：ファイル内の以下の定数を編集
+   ```vb
+   Public Const OPENAI_API_ENDPOINT As String = "あなたのAzure OpenAIエンドポイント"
+   Public Const OPENAI_API_KEY As String = "あなたのAPIキー"
+   ```
+5. **完了！** `ShowMainMenu` マクロを実行して全機能を利用
+
+### 📋 **従来方式（モジュール分割版）**
+
+複数ファイルを個別にインポートする場合：
+- `AI_Common.bas` （必須：共通関数）
+- `AI_ApiConnector.bas` （必須：API接続）
+- `AI_EmailAnalyzer.bas` （メール解析）
+- `AI_EmailComposer.bas` （メール作成支援）
+- `AI_SearchAnalyzer.bas` （検索フォルダ分析）
+- `AI_ConfigManager.bas` （設定管理）
+
 ## 概要
 
 このマクロは以下の課題を解決します：
@@ -59,7 +85,24 @@ Microsoft Outlook で Azure OpenAI API を活用してメール処理を効率�
 
 ## インストール方法
 
-### 1. ファイルのダウンロード
+### 🚀 **推奨: 統合版を使用（最も簡単）**
+
+1. **`OutlookAI_Unified.bas` をダウンロード** 
+2. **Outlookを起動** → `Alt + F11` でVBAエディタを開く
+3. **ファイル** → **ファイルのインポート** → `OutlookAI_Unified.bas` を選択
+4. **API設定**：
+   - ファイル内の定数を編集：
+   ```vba
+   Public Const OPENAI_API_ENDPOINT As String = "https://your-resource.openai.azure.com/..."
+   Public Const OPENAI_API_KEY As String = "your-api-key"
+   ```
+5. **完了！** `Alt + F8` → `ShowMainMenu` で全機能利用可能
+
+### 📁 **従来方式: モジュール分割版**
+
+複数ファイルを個別管理したい場合：
+
+#### 1. ファイルのダウンロード
 必要なVBAファイルをダウンロードします：
 - `AI_Common.bas` - 共通関数・設定
 - `AI_ApiConnector.bas` - OpenAI API接続
@@ -69,17 +112,17 @@ Microsoft Outlook で Azure OpenAI API を活用してメール処理を効率�
 - `AI_ConfigManager.bas` - 設定管理
 - `OutlookAI_Installer.bas` - インストール支援
 
-### 2. VBAモジュールのインポート
+#### 2. VBAモジュールのインポート
 1. Outlook を起動
 2. `Alt + F11` でVBAエディタを開く
 3. `ファイル` → `ファイルのインポート` で各.basファイルをインポート
 
-### 3. Azure OpenAI の設定
+#### 3. Azure OpenAI の設定
 1. Azure ポータルでOpenAI リソースを作成
 2. GPT-4 モデルをデプロイ
 3. API キーとエンドポイントを取得
 
-### 4. マクロの設定
+#### 4. マクロの設定
 1. `AI_Common.bas` を開く
 2. 以下の定数を編集：
 ```vba
@@ -87,7 +130,7 @@ Public Const OPENAI_API_ENDPOINT As String = "https://your-resource.openai.azure
 Public Const OPENAI_API_KEY As String = "your-api-key"
 ```
 
-### 5. セットアップガイドの実行
+#### 5. セットアップガイドの実行
 1. `Alt + F8` でマクロダイアログを開く
 2. `OutlookAI_Installer.RunInitialSetup` を実行
 3. ガイドに従って設定を完了
