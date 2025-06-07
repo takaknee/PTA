@@ -1,34 +1,95 @@
 ' OutlookAI_Installer.bas
-' Outlook OpenAI マクロ - インストール・設定支援モジュール
-' 作成日: 2024
-' 説明: 初回インストール時の設定支援とセットアップガイダンス
+' Outlook OpenAI Macro - Installation and Setup Support Module
+' Created: 2024
+' Description: Setup support and guidance for initial installation
 
 Option Explicit
 
 ' =============================================================================
-' インストール・設定支援メイン関数
+' Constants Definition
 ' =============================================================================
 
-' 初回セットアップガイド
+' OpenAI API Settings
+Public Const OPENAI_API_ENDPOINT As String = "https://your-azure-openai-endpoint.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview"
+Public Const OPENAI_API_KEY As String = "YOUR_API_KEY_HERE" ' Production environment should read from configuration file
+Public Const OPENAI_MODEL As String = "gpt-4"
+
+' Application Settings
+Public Const APP_NAME As String = "Outlook AI Helper"
+Public Const APP_VERSION As String = "1.0.0"
+Public Const REQUEST_TIMEOUT As Integer = 30 ' API request timeout (seconds)
+
+' Version Requirements
+Private Const MIN_OUTLOOK_VERSION As Integer = 16 ' Minimum supported Outlook version (2016)
+
+' Message Display Settings
+Private Const MAX_MESSAGE_LENGTH As Integer = 1000 ' Maximum length for single message box
+Private Const MESSAGE_SPLIT_POSITION As Integer = 1001 ' Position to start second part of split message
+
+' =============================================================================
+' Common Functions
+' =============================================================================
+
+' Display message box (common format)
+Public Sub ShowMessage(ByVal message As String, ByVal title As String, Optional ByVal messageType As VbMsgBoxStyle = vbInformation)
+    MsgBox message, messageType, APP_NAME & " - " & title
+End Sub
+
+' Display error message
+Public Sub ShowError(ByVal errorMessage As String, Optional ByVal details As String = "")
+    Dim fullMessage As String
+    fullMessage = "An error occurred: " & errorMessage
+    If details <> "" Then
+        fullMessage = fullMessage & vbCrLf & vbCrLf & "Details: " & details
+    End If
+    MsgBox fullMessage, vbCritical, APP_NAME & " - Error"
+End Sub
+
+' Configuration validation
+Public Function ValidateConfiguration() As Boolean
+    ' Check API Key
+    If OPENAI_API_KEY = "YOUR_API_KEY_HERE" Or OPENAI_API_KEY = "" Then
+        ShowError "OpenAI API key is not configured.", _
+                 "Please set OPENAI_API_KEY in AI_Common.bas."
+        ValidateConfiguration = False
+        Exit Function
+    End If
+    
+    ' Check endpoint
+    If InStr(OPENAI_API_ENDPOINT, "your-azure-openai-endpoint") > 0 Then
+        ShowError "OpenAI API endpoint is not configured.", _
+                 "Please set OPENAI_API_ENDPOINT in AI_Common.bas."
+        ValidateConfiguration = False
+        Exit Function
+    End If
+    
+    ValidateConfiguration = True
+End Function
+
+' =============================================================================
+' Installation and Setup Support Main Functions
+' =============================================================================
+
+' Initial Setup Guide
 Public Sub RunInitialSetup()
     On Error GoTo ErrorHandler
     
-    ' ウェルカムメッセージ
+    ' Welcome message
     Dim welcomeMessage As String
-    welcomeMessage = "Outlook AI Helper セットアップガイドへようこそ！" & vbCrLf & vbCrLf & _
-                    "このガイドでは、以下の設定を行います：" & vbCrLf & _
-                    "1. システム要件の確認" & vbCrLf & _
-                    "2. Azure OpenAI API の設定" & vbCrLf & _
-                    "3. マクロセキュリティの確認" & vbCrLf & _
-                    "4. 動作テストの実行" & vbCrLf & _
-                    "5. クイックアクセスボタンの設定" & vbCrLf & vbCrLf & _
-                    "セットアップを開始しますか？"
+    welcomeMessage = "Welcome to Outlook AI Helper Setup Guide!" & vbCrLf & vbCrLf & _
+                    "This guide will perform the following configuration:" & vbCrLf & _
+                    "1. System requirements check" & vbCrLf & _
+                    "2. Azure OpenAI API configuration" & vbCrLf & _
+                    "3. Macro security verification" & vbCrLf & _
+                    "4. Operation test execution" & vbCrLf & _
+                    "5. Quick access button setup" & vbCrLf & vbCrLf & _
+                    "Do you want to start the setup?"
     
-    If MsgBox(welcomeMessage, vbYesNo + vbQuestion, "Outlook AI Helper セットアップ") = vbNo Then
+    If MsgBox(welcomeMessage, vbYesNo + vbQuestion, "Outlook AI Helper Setup") = vbNo Then
         Exit Sub
     End If
     
-    ' セットアップ手順を順番に実行
+    ' Execute setup steps in order
     If CheckSystemRequirements() Then
         If SetupAPIConfiguration() Then
             If CheckMacroSecurity() Then
@@ -43,74 +104,74 @@ Public Sub RunInitialSetup()
     Exit Sub
     
 ErrorHandler:
-    ShowError "セットアップ中にエラーが発生しました。", Err.Description
+    ShowError "An error occurred during setup.", Err.Description
 End Sub
 
 ' =============================================================================
-' システム要件確認
+' System Requirements Check
 ' =============================================================================
 
-' システム要件の確認
+' System requirements verification
 Private Function CheckSystemRequirements() As Boolean
     On Error GoTo ErrorHandler
     
-    ShowMessage "システム要件を確認しています...", "確認中", vbInformation
+    ShowMessage "Checking system requirements...", "Checking", vbInformation
     
     Dim requirements As String
     Dim version As String
     
-    ' Outlookバージョンの確認
+    ' Check Outlook version
     version = Application.Version
     
-    requirements = "システム要件チェック結果:" & vbCrLf & vbCrLf & _
-                  "Microsoft Outlook バージョン: " & version & vbCrLf
+    requirements = "System Requirements Check Results:" & vbCrLf & vbCrLf & _
+                  "Microsoft Outlook Version: " & version & vbCrLf
     
-    ' バージョンチェック（2016以降を推奨）
-    If Val(version) >= 16 Then
-        requirements = requirements & "✓ サポートされているバージョンです" & vbCrLf
+    ' Version check (2016 or later recommended)
+    If Val(version) >= MIN_OUTLOOK_VERSION Then
+        requirements = requirements & "✓ Supported version" & vbCrLf
     Else
-        requirements = requirements & "⚠ 古いバージョンです（2016以降を推奨）" & vbCrLf
+        requirements = requirements & "⚠ Old version (2016 or later recommended)" & vbCrLf
     End If
     
-    ' VBA有効性の確認
-    requirements = requirements & vbCrLf & "VBA機能: 利用可能" & vbCrLf
-    requirements = requirements & "マクロ実行: 可能" & vbCrLf
+    ' VBA availability check
+    requirements = requirements & vbCrLf & "VBA Feature: Available" & vbCrLf
+    requirements = requirements & "Macro Execution: Enabled" & vbCrLf
     
-    ' インターネット接続の確認（簡易版）
-    requirements = requirements & vbCrLf & "⚠ インターネット接続を手動で確認してください" & vbCrLf
-    requirements = requirements & "⚠ Azure OpenAI サービスへのアクセス権限を確認してください" & vbCrLf & vbCrLf
+    ' Internet connection check (simplified)
+    requirements = requirements & vbCrLf & "⚠ Please manually check internet connection" & vbCrLf
+    requirements = requirements & "⚠ Please verify access to Azure OpenAI service" & vbCrLf & vbCrLf
     
-    requirements = requirements & "システム要件を満たしていますか？"
+    requirements = requirements & "Do you meet the system requirements?"
     
-    If MsgBox(requirements, vbYesNo + vbQuestion, "システム要件確認") = vbYes Then
+    If MsgBox(requirements, vbYesNo + vbQuestion, "System Requirements Check") = vbYes Then
         CheckSystemRequirements = True
     Else
-        ShowMessage "システム要件を満たしてから再度セットアップを実行してください。", "セットアップ中断", vbExclamation
+        ShowMessage "Please meet the system requirements before running setup again.", "Setup Interrupted", vbExclamation
         CheckSystemRequirements = False
     End If
     
     Exit Function
     
 ErrorHandler:
-    ShowError "システム要件確認中にエラーが発生しました。", Err.Description
+    ShowError "An error occurred during system requirements check.", Err.Description
     CheckSystemRequirements = False
 End Function
 
 ' =============================================================================
-' API設定ガイド
+' API Configuration Guide
 ' =============================================================================
 
-' API設定のガイド
+' API configuration guide
 Private Function SetupAPIConfiguration() As Boolean
     On Error GoTo ErrorHandler
     
     Dim setupChoice As String
-    setupChoice = InputBox("Azure OpenAI API の設定方法を選択してください:" & vbCrLf & vbCrLf & _
-                          "1. ガイド付きで設定（推奨）" & vbCrLf & _
-                          "2. 手動設定の説明を表示" & vbCrLf & _
-                          "3. 既に設定済み（スキップ）" & vbCrLf & vbCrLf & _
-                          "番号を入力してください:", _
-                          "API設定")
+    setupChoice = InputBox("Select Azure OpenAI API configuration method:" & vbCrLf & vbCrLf & _
+                          "1. Guided setup (recommended)" & vbCrLf & _
+                          "2. Show manual setup instructions" & vbCrLf & _
+                          "3. Already configured (skip)" & vbCrLf & vbCrLf & _
+                          "Enter number:", _
+                          "API Configuration")
     
     Select Case setupChoice
         Case "1"
@@ -123,14 +184,14 @@ Private Function SetupAPIConfiguration() As Boolean
         Case ""
             SetupAPIConfiguration = False
         Case Else
-            ShowMessage "無効な選択です。", "入力エラー", vbExclamation
+            ShowMessage "Invalid selection.", "Input Error", vbExclamation
             SetupAPIConfiguration = False
     End Select
     
     Exit Function
     
 ErrorHandler:
-    ShowError "API設定中にエラーが発生しました。", Err.Description
+    ShowError "An error occurred during API configuration.", Err.Description
     SetupAPIConfiguration = False
 End Function
 
@@ -456,17 +517,17 @@ Private Sub ShowCompletionMessage()
 End Sub
 
 ' =============================================================================
-' ヘルパー関数
+' Helper Functions
 ' =============================================================================
 
-' 長いメッセージの表示
+' Display long message
 Private Sub ShowLongMessage(ByVal message As String, ByVal title As String)
-    ' 1000文字以上の場合は分割表示
-    If Len(message) > 1000 Then
+    ' Split display if 1000 characters or more
+    If Len(message) > MAX_MESSAGE_LENGTH Then
         Dim part1 As String
         Dim part2 As String
-        part1 = Left(message, 1000)
-        part2 = Mid(message, 1001)
+        part1 = Left(message, MAX_MESSAGE_LENGTH)
+        part2 = Mid(message, MESSAGE_SPLIT_POSITION)
         
         MsgBox part1, vbInformation, title & " (1/2)"
         MsgBox part2, vbInformation, title & " (2/2)"
@@ -475,26 +536,26 @@ Private Sub ShowLongMessage(ByVal message As String, ByVal title As String)
     End If
 End Sub
 
-' デバッグ・診断機能
+' Debug and diagnostic function
 Public Sub RunDiagnostics()
     On Error GoTo ErrorHandler
     
     Dim diagnostics As String
-    diagnostics = "=== Outlook AI Helper 診断情報 ===" & vbCrLf & vbCrLf & _
-                 "Outlook バージョン: " & Application.Version & vbCrLf & _
-                 "VBA バージョン: " & Application.Version & vbCrLf & _
-                 "現在時刻: " & Now & vbCrLf & vbCrLf & _
-                 "設定状況:" & vbCrLf & _
-                 "API エンドポイント: " & Left(OPENAI_API_ENDPOINT, 50) & "..." & vbCrLf & _
-                 "API キー設定: " & IIf(OPENAI_API_KEY = "YOUR_API_KEY_HERE", "未設定", "設定済み") & vbCrLf & _
-                 "モデル: " & OPENAI_MODEL & vbCrLf & _
-                 "タイムアウト: " & REQUEST_TIMEOUT & "秒" & vbCrLf & vbCrLf & _
-                 "この情報はサポート時に役立ちます。"
+    diagnostics = "=== Outlook AI Helper Diagnostic Information ===" & vbCrLf & vbCrLf & _
+                 "Outlook Version: " & Application.Version & vbCrLf & _
+                 "VBA Version: " & Application.Version & vbCrLf & _
+                 "Current Time: " & Now & vbCrLf & vbCrLf & _
+                 "Configuration Status:" & vbCrLf & _
+                 "API Endpoint: " & Left(OPENAI_API_ENDPOINT, 50) & "..." & vbCrLf & _
+                 "API Key Status: " & IIf(OPENAI_API_KEY = "YOUR_API_KEY_HERE", "Not configured", "Configured") & vbCrLf & _
+                 "Model: " & OPENAI_MODEL & vbCrLf & _
+                 "Timeout: " & REQUEST_TIMEOUT & " seconds" & vbCrLf & vbCrLf & _
+                 "This information is helpful for support."
     
-    ShowMessage diagnostics, "診断情報", vbInformation
+    ShowMessage diagnostics, "Diagnostic Information", vbInformation
     
     Exit Sub
     
 ErrorHandler:
-    ShowError "診断実行中にエラーが発生しました。", Err.Description
+    ShowError "An error occurred during diagnostic execution.", Err.Description
 End Sub
