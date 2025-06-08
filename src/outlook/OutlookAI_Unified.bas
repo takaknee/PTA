@@ -5,6 +5,12 @@
 ' 
 ' 利用方法: このファイルをOutlookのVBAプロジェクトにインポートするだけで全機能が利用可能
 ' 
+' 注意点:
+' - InputBoxの表示文字数は254文字までのため、表示テキストは簡潔にする
+' - VBAでは比較演算子は = を使用（== ではなく）
+' - 文字列結合の行継続には _ を使用する
+' - APIレスポンスのJSON解析は簡易処理のため、形式が変わると修正が必要
+'
 ' 主要機能:
 ' - メール内容解析
 ' - 営業断りメール作成
@@ -46,8 +52,9 @@ Public Const OPENAI_MODEL As String = "gpt-4"
 ' アプリケーション設定
 Public Const APP_NAME As String = "Outlook AI Helper"
 Public Const APP_VERSION As String = "1.0.0 Unified"
-Public Const MAX_CONTENT_LENGTH As Integer = 50000 ' 最大処理文字数
+Public Const MAX_CONTENT_LENGTH As Long = 50000 ' 最大処理文字数
 Public Const REQUEST_TIMEOUT As Integer = 30 ' APIリクエストタイムアウト（秒）
+Public Const MAX_TOKEN As Integer = 15000 ' 最大トークン数
 
 ' プロンプトテンプレート
 Public Const SYSTEM_PROMPT_ANALYZER As String = "あなたは日本語のビジネスメール分析の専門家です。メール内容を分析し、重要な情報を抽出してください。"
@@ -506,7 +513,7 @@ Private Sub AnalyzeBasicInfo(ByVal mailItem As Object)
                   "【本文】" & vbCrLf & emailBody
     
     Dim result As String
-    result = SendOpenAIRequest(systemPrompt, userMessage, 1500)
+    result = SendOpenAIRequest(systemPrompt, userMessage, MAX_TOKEN)
     
     If result <> "" Then
         ShowAnalysisResult "基本情報分析結果", result
@@ -520,7 +527,7 @@ End Sub
 
 ' 分析結果表示（長いテキスト用）
 Private Sub ShowAnalysisResult(ByVal title As String, ByVal content As String)
-    Const maxLength As Integer = 1500
+    Const maxLength As Integer = MAX_TOKEN
     
     If Len(content) <= maxLength Then
         ShowMessage content, title
@@ -789,7 +796,7 @@ Private Sub GenerateRejectionEmail(ByVal originalMail As Object, Optional ByVal 
     userMessage = userMessage & "適切で丁寧な断りメールを作成してください。"
     
     Dim result As String
-    result = SendOpenAIRequest(systemPrompt, userMessage, 1500)
+    result = SendOpenAIRequest(systemPrompt, userMessage, MAX_TOKEN)
     
     If result <> "" Then
         ' 結果から件名と本文を分離
@@ -848,7 +855,7 @@ Private Sub GenerateAcceptanceEmail(ByVal originalMail As Object, Optional ByVal
     userMessage = userMessage & "適切で前向きな承諾メールを作成してください。"
     
     Dim result As String
-    result = SendOpenAIRequest(systemPrompt, userMessage, 1500)
+    result = SendOpenAIRequest(systemPrompt, userMessage, MAX_TOKEN)
     
     If result <> "" Then
         ' 結果から件名と本文を分離
@@ -900,7 +907,7 @@ Private Sub GenerateCustomEmail(ByVal emailType As String, ByVal details As Stri
                   details
     
     Dim result As String
-    result = SendOpenAIRequest(systemPrompt, userMessage, 1500)
+    result = SendOpenAIRequest(systemPrompt, userMessage, MAX_TOKEN)
     
     If result <> "" Then
         ' 結果から件名と本文を分離
