@@ -399,9 +399,10 @@ Private Function ParseOpenAIResponse(ByVal jsonResponse As String) As String
     Dim contentEnd As Integer
     Dim content As String
     
-    ' "content": "..." の部分を抽出
+    ' "content": "..." の部分を抽出（新しいAPIレスポンス形式に対応）
     contentStart = InStr(jsonResponse, """content"": """)
     If contentStart > 0 Then
+        ' 従来の形式
         contentStart = contentStart + 12 ' "content": " の長さ
         contentEnd = InStr(contentStart, jsonResponse, """, """)
         If contentEnd = 0 Then
@@ -410,18 +411,29 @@ Private Function ParseOpenAIResponse(ByVal jsonResponse As String) As String
         If contentEnd = 0 Then
             contentEnd = InStr(contentStart, jsonResponse, """}]")
         End If
-        
-        If contentEnd > contentStart Then
-            content = Mid(jsonResponse, contentStart, contentEnd - contentStart)
-            ' エスケープ文字の復元
-            content = Replace(content, "\""", """")
-            content = Replace(content, "\\", "\")
-            content = Replace(content, "\n", vbCrLf)
-            content = Replace(content, "\t", vbTab)
-            ParseOpenAIResponse = content
-        Else
-            ParseOpenAIResponse = "レスポンス解析エラー"
+    Else
+        ' 新しい形式：message.content を検索
+        contentStart = InStr(jsonResponse, """message"":{")
+        If contentStart > 0 Then
+            contentStart = InStr(contentStart, jsonResponse, """content"":""")
+            If contentStart > 0 Then
+                contentStart = contentStart + 11 ' "content":"" の長さ
+                contentEnd = InStr(contentStart, jsonResponse, """,""")
+                If contentEnd = 0 Then
+                    contentEnd = InStr(contentStart, jsonResponse, """}")
+                End If
+            End If
         End If
+    End If
+    
+    If contentStart > 0 And contentEnd > contentStart Then
+        content = Mid(jsonResponse, contentStart, contentEnd - contentStart)
+        ' エスケープ文字の復元
+        content = Replace(content, "\""", """")
+        content = Replace(content, "\\", "\")
+        content = Replace(content, "\n", vbCrLf)
+        content = Replace(content, "\t", vbTab)
+        ParseOpenAIResponse = content
     Else
         ParseOpenAIResponse = "コンテンツが見つかりません"
     End If
