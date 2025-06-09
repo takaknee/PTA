@@ -537,6 +537,177 @@ ErrorHandler:
     ShowError "基本情報分析中にエラーが発生しました。", Err.Description
 End Sub
 
+' 重要度・緊急度分析
+Private Sub AnalyzePriorityUrgency(ByVal mailItem As Object)
+    On Error GoTo ErrorHandler
+    
+    ShowProgress "重要度・緊急度を分析中..."
+    
+    Dim emailBody As String
+    emailBody = GetEmailBodyText(mailItem)
+    
+    If Not CheckContentLength(emailBody) Then
+        Exit Sub
+    End If
+    
+    Dim systemPrompt As String
+    systemPrompt = SYSTEM_PROMPT_ANALYZER & vbCrLf & _
+                   "以下のメールの重要度と緊急度を分析し、以下の形式で出力してください：" & vbCrLf & _
+                   "1. 重要度評価（5段階：非常に重要、重要、中程度、低い、非常に低い）" & vbCrLf & _
+                   "2. 緊急度評価（5段階：緊急、早急に対応、通常対応、余裕あり、緊急性なし）" & vbCrLf & _
+                   "3. 重要度・緊急度の根拠" & vbCrLf & _
+                   "4. 推奨される対応時間（即時、当日中、数日以内、1週間以内、特になし）" & vbCrLf & _
+                   "5. 注意すべき点や優先事項"
+    
+    Dim userMessage As String
+    userMessage = "以下のメールを重要度・緊急度の観点で分析してください：" & vbCrLf & vbCrLf & _
+                  "【メール情報】" & vbCrLf & _
+                  "件名: " & mailItem.Subject & vbCrLf & _
+                  "送信者: " & mailItem.SenderName & " <" & mailItem.SenderEmailAddress & ">" & vbCrLf & _
+                  "受信日時: " & mailItem.ReceivedTime & vbCrLf & vbCrLf & _
+                  "【本文】" & vbCrLf & emailBody
+    
+    Dim result As String
+    result = SendOpenAIRequest(systemPrompt, userMessage, MAX_TOKEN)
+    
+    If result <> "" Then
+        ShowAnalysisResult "重要度・緊急度分析結果", result
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    ShowError "重要度・緊急度分析中にエラーが発生しました。", Err.Description
+End Sub
+
+' 感情・トーン分析
+Private Sub AnalyzeEmotionTone(ByVal mailItem As Object)
+    On Error GoTo ErrorHandler
+    
+    ShowProgress "感情とトーンを分析中..."
+    
+    Dim emailBody As String
+    emailBody = GetEmailBodyText(mailItem)
+    
+    If Not CheckContentLength(emailBody) Then
+        Exit Sub
+    End If
+    
+    Dim systemPrompt As String
+    systemPrompt = SYSTEM_PROMPT_ANALYZER & vbCrLf & _
+                   "以下のメールの感情とトーンを分析し、以下の形式で出力してください：" & vbCrLf & _
+                   "1. 全体的な感情傾向（ポジティブ、ニュートラル、ネガティブなど）" & vbCrLf & _
+                   "2. 検出された具体的な感情（喜び、怒り、期待、不満、感謝など）" & vbCrLf & _
+                   "3. 文章のトーン（フォーマル、カジュアル、丁寧、強制的など）" & vbCrLf & _
+                   "4. 文化的・ビジネス的背景の考慮事項" & vbCrLf & _
+                   "5. 送信者の意図と期待する返信の推測" & vbCrLf & _
+                   "6. 返信時に注意すべき感情やトーンの推奨"
+    
+    Dim userMessage As String
+    userMessage = "以下のメールの感情とトーンを分析してください：" & vbCrLf & vbCrLf & _
+                  "【メール情報】" & vbCrLf & _
+                  "件名: " & mailItem.Subject & vbCrLf & _
+                  "送信者: " & mailItem.SenderName & " <" & mailItem.SenderEmailAddress & ">" & vbCrLf & _
+                  "受信日時: " & mailItem.ReceivedTime & vbCrLf & vbCrLf & _
+                  "【本文】" & vbCrLf & emailBody
+    
+    Dim result As String
+    result = SendOpenAIRequest(systemPrompt, userMessage, MAX_TOKEN)
+    
+    If result <> "" Then
+        ShowAnalysisResult "感情・トーン分析結果", result
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    ShowError "感情・トーン分析中にエラーが発生しました。", Err.Description
+End Sub
+
+' 要約作成
+Private Sub CreateSummary(ByVal mailItem As Object)
+    On Error GoTo ErrorHandler
+    
+    ShowProgress "メールの要約を作成中..."
+    
+    Dim emailBody As String
+    emailBody = GetEmailBodyText(mailItem)
+    
+    If Not CheckContentLength(emailBody) Then
+        Exit Sub
+    End If
+    
+    ' 要約の長さ選択
+    Dim summaryLengthChoice As String
+    summaryLengthChoice = InputBox("要約の長さを選択してください:" & vbCrLf & vbCrLf & _
+                                  "1. 短い（1-2文）" & vbCrLf & _
+                                  "2. 中程度（3-5文）" & vbCrLf & _
+                                  "3. 詳細（段落形式）" & vbCrLf & vbCrLf & _
+                                  "番号を入力してください:", _
+                                  APP_NAME & " - 要約作成", "2")
+    
+    Dim summaryLength As String
+    Select Case summaryLengthChoice
+        Case "1"
+            summaryLength = "短い（1-2文）"
+        Case "3"
+            summaryLength = "詳細（段落形式）"
+        Case Else
+            summaryLength = "中程度（3-5文）"
+    End Select
+    
+    Dim systemPrompt As String
+    systemPrompt = SYSTEM_PROMPT_ANALYZER & vbCrLf & _
+                   "以下のメールを" & summaryLength & "の長さで要約してください。" & vbCrLf & _
+                   "要約には以下を含めてください：" & vbCrLf & _
+                   "1. メインテーマ" & vbCrLf & _
+                   "2. 重要なポイント" & vbCrLf & _
+                   "3. 送信者の意図" & vbCrLf & _
+                   "4. 必要なアクション（もしあれば）" & vbCrLf & _
+                   "5. 締切や日時（もしあれば）"
+    
+    Dim userMessage As String
+    userMessage = "以下のメールを" & summaryLength & "で要約してください：" & vbCrLf & vbCrLf & _
+                  "【メール情報】" & vbCrLf & _
+                  "件名: " & mailItem.Subject & vbCrLf & _
+                  "送信者: " & mailItem.SenderName & " <" & mailItem.SenderEmailAddress & ">" & vbCrLf & _
+                  "受信日時: " & mailItem.ReceivedTime & vbCrLf & vbCrLf & _
+                  "【本文】" & vbCrLf & emailBody
+    
+    Dim result As String
+    result = SendOpenAIRequest(systemPrompt, userMessage, MAX_TOKEN)
+    
+    If result <> "" Then
+        ShowAnalysisResult "メール要約", result
+        
+        ' 要約のクリップボードへのコピーオプション
+        If MsgBox("この要約をクリップボードにコピーしますか？", vbYesNo + vbQuestion, APP_NAME) = vbYes Then
+            CopyToClipboard result
+            ShowMessage "要約をクリップボードにコピーしました。", "コピー完了"
+        End If
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    ShowError "メール要約作成中にエラーが発生しました。", Err.Description
+End Sub
+
+' クリップボードにテキストをコピー
+Private Sub CopyToClipboard(ByVal text As String)
+    On Error GoTo ErrorHandler
+    
+    Dim dataObj As Object
+    Set dataObj = CreateObject("New:{1C3B4210-F441-11CE-B9EA-00AA006B1A69}")
+    dataObj.SetText text
+    dataObj.PutInClipboard
+    
+    Exit Sub
+    
+ErrorHandler:
+    WriteLog "クリップボードへのコピーエラー: " & Err.Description, "ERROR"
+End Sub
+
 ' 分析結果表示（長いテキスト用）
 Private Sub ShowAnalysisResult(ByVal title As String, ByVal content As String)
     Const maxLength As Integer = MAX_TOKEN
@@ -575,6 +746,104 @@ Private Sub ShowAnalysisResult(ByVal title As String, ByVal content As String)
             pageNum = pageNum + 1
         Wend
     End If
+End Sub
+
+' 内容明確化
+Private Sub ClarifyEmailContent(ByVal mailItem As Object)
+    On Error GoTo ErrorHandler
+    
+    ShowProgress "メール内容を明確化中..."
+    
+    Dim emailBody As String
+    emailBody = GetEmailBodyText(mailItem)
+    
+    If Not CheckContentLength(emailBody) Then
+        Exit Sub
+    End If
+    
+    ' 明確化タイプの選択
+    Dim clarificationType As String
+    clarificationType = InputBox("実行する明確化タイプを選択してください:" & vbCrLf & vbCrLf & _
+                               "1. あいまいな表現の明確化" & vbCrLf & _
+                               "2. 難解な専門用語の説明" & vbCrLf & _
+                               "3. 隠れた意図の分析" & vbCrLf & _
+                               "4. 文化的・言語的背景の解説" & vbCrLf & _
+                               "5. 論点の整理" & vbCrLf & vbCrLf & _
+                               "番号を入力してください:", _
+                               APP_NAME & " - 明確化タイプ", "1")
+    
+    Dim clarificationTypeText As String
+    Select Case clarificationType
+        Case "2"
+            clarificationTypeText = "難解な専門用語の説明"
+        Case "3"
+            clarificationTypeText = "隠れた意図の分析"
+        Case "4"
+            clarificationTypeText = "文化的・言語的背景の解説"
+        Case "5"
+            clarificationTypeText = "論点の整理"
+        Case Else
+            clarificationTypeText = "あいまいな表現の明確化"
+    End Select
+    
+    Dim systemPrompt As String
+    systemPrompt = SYSTEM_PROMPT_ANALYZER & vbCrLf & _
+                   "以下のメール内容の「" & clarificationTypeText & "」を行い、より明確にしてください。" & vbCrLf & _
+                   "特に以下の点に注目して分析してください：" & vbCrLf
+    
+    ' 明確化タイプに応じたプロンプト追加
+    Select Case clarificationType
+        Case "1" ' あいまいな表現の明確化
+            systemPrompt = systemPrompt & _
+                   "1. あいまいな表現や婉曲表現の特定" & vbCrLf & _
+                   "2. それらの表現の可能性のある意味の解釈" & vbCrLf & _
+                   "3. 明確化のための言い換え提案" & vbCrLf & _
+                   "4. 明確化を求めるべき質問例"
+        Case "2" ' 難解な専門用語の説明
+            systemPrompt = systemPrompt & _
+                   "1. メール内の専門用語や特殊な表現の特定" & vbCrLf & _
+                   "2. それらの用語の平易な説明" & vbCrLf & _
+                   "3. 用語の背景知識や文脈" & vbCrLf & _
+                   "4. 関連する基本概念の解説"
+        Case "3" ' 隠れた意図の分析
+            systemPrompt = systemPrompt & _
+                   "1. 明示されていない送信者の意図や期待の推測" & vbCrLf & _
+                   "2. 言外の要求や期待の特定" & vbCrLf & _
+                   "3. 送信者の立場や状況の考慮" & vbCrLf & _
+                   "4. 適切な対応方法の提案"
+        Case "4" ' 文化的・言語的背景の解説
+            systemPrompt = systemPrompt & _
+                   "1. 文化的な表現や慣用句の特定" & vbCrLf & _
+                   "2. ビジネスコミュニケーションの文化的背景" & vbCrLf & _
+                   "3. フォーマル/インフォーマル表現の解釈" & vbCrLf & _
+                   "4. 言葉の選択に表れる敬意や関係性の考察"
+        Case "5" ' 論点の整理
+            systemPrompt = systemPrompt & _
+                   "1. メール内の主要な論点の特定と整理" & vbCrLf & _
+                   "2. 論理展開の構造化" & vbCrLf & _
+                   "3. 複雑な内容の要素分解" & vbCrLf & _
+                   "4. 理解しやすい順序での再構成"
+    End Select
+    
+    Dim userMessage As String
+    userMessage = "以下のメールの「" & clarificationTypeText & "」を行ってください：" & vbCrLf & vbCrLf & _
+                  "【メール情報】" & vbCrLf & _
+                  "件名: " & mailItem.Subject & vbCrLf & _
+                  "送信者: " & mailItem.SenderName & " <" & mailItem.SenderEmailAddress & ">" & vbCrLf & _
+                  "受信日時: " & mailItem.ReceivedTime & vbCrLf & vbCrLf & _
+                  "【本文】" & vbCrLf & emailBody
+    
+    Dim result As String
+    result = SendOpenAIRequest(systemPrompt, userMessage, MAX_TOKEN)
+    
+    If result <> "" Then
+        ShowAnalysisResult clarificationTypeText & " 結果", result
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    ShowError "内容明確化中にエラーが発生しました。", Err.Description
 End Sub
 
 ' =============================================================================
@@ -1125,6 +1394,206 @@ Private Sub DetectUnusedSearchFolders()
     
 ErrorHandler:
     ShowError "不要フォルダ検出中にエラーが発生しました。", Err.Description
+End Sub
+
+' フォルダ整理提案
+Private Sub SuggestFolderOrganization()
+    On Error GoTo ErrorHandler
+    
+    ShowProgress "フォルダ整理案を作成中..."
+    
+    Dim searchFolders As Object
+    Dim folderInfo As String
+    Dim i As Integer
+    
+    Set searchFolders = Application.Session.DefaultStore.GetSearchFolders
+    
+    folderInfo = "【現在の検索フォルダ一覧】" & vbCrLf & vbCrLf
+    folderInfo = folderInfo & "総検索フォルダ数: " & searchFolders.Count & vbCrLf & vbCrLf
+    
+    ' フォルダ一覧の取得
+    For i = 1 To searchFolders.Count
+        Dim folder As Object
+        Set folder = searchFolders.Item(i)
+        
+        folderInfo = folderInfo & i & ". " & folder.Name & vbCrLf
+        folderInfo = folderInfo & "   アイテム数: " & folder.Items.Count & vbCrLf
+        folderInfo = folderInfo & "   作成日: " & folder.CreationTime & vbCrLf
+        
+        ' アクティブ状態の確認
+        If folder.Items.Count > 0 Then
+            folderInfo = folderInfo & "   状態: アクティブ" & vbCrLf
+        Else
+            folderInfo = folderInfo & "   状態: 空" & vbCrLf
+        End If
+        
+        ' 検索フォルダ名からカテゴリや目的を推測
+        Dim folderNameLower As String
+        folderNameLower = LCase(folder.Name)
+        
+        If InStr(folderNameLower, "プロジェクト") > 0 Or InStr(folderNameLower, "案件") > 0 Then
+            folderInfo = folderInfo & "   カテゴリ: プロジェクト関連" & vbCrLf
+        ElseIf InStr(folderNameLower, "会議") > 0 Or InStr(folderNameLower, "ミーティング") > 0 Then
+            folderInfo = folderInfo & "   カテゴリ: 会議関連" & vbCrLf
+        ElseIf InStr(folderNameLower, "重要") > 0 Or InStr(folderNameLower, "緊急") > 0 Then
+            folderInfo = folderInfo & "   カテゴリ: 重要/緊急" & vbCrLf
+        ElseIf InStr(folderNameLower, "顧客") > 0 Or InStr(folderNameLower, "クライアント") > 0 Then
+            folderInfo = folderInfo & "   カテゴリ: 顧客関連" & vbCrLf
+        ElseIf InStr(folderNameLower, "社内") > 0 Or InStr(folderNameLower, "部門") > 0 Then
+            folderInfo = folderInfo & "   カテゴリ: 社内連絡" & vbCrLf
+        Else
+            folderInfo = folderInfo & "   カテゴリ: その他/分類不明" & vbCrLf
+        End If
+        
+        folderInfo = folderInfo & vbCrLf
+    Next i
+    
+    ' AI分析の実行
+    Dim systemPrompt As String
+    systemPrompt = SYSTEM_PROMPT_SEARCH & vbCrLf & _
+                   "現在の検索フォルダ構成を分析し、効率的な整理方法を提案してください。" & vbCrLf & _
+                   "以下の点を考慮して具体的な提案をしてください：" & vbCrLf & _
+                   "1. フォルダの名称統一化（命名規則の提案）" & vbCrLf & _
+                   "2. カテゴリ別の整理方法" & vbCrLf & _
+                   "3. 重複フォルダの統合" & vbCrLf & _
+                   "4. フォルダ階層の整理" & vbCrLf & _
+                   "5. 検索フォルダの作成基準" & vbCrLf & _
+                   "6. アーカイブ/定期メンテナンス方法"
+    
+    Dim result As String
+    result = SendOpenAIRequest(systemPrompt, folderInfo, 2500)
+    
+    If result <> "" Then
+        ShowAnalysisResult "フォルダ整理提案", folderInfo & vbCrLf & vbCrLf & _
+                           "【AI提案内容】" & vbCrLf & vbCrLf & result
+    Else
+        ShowAnalysisResult "フォルダ整理提案", folderInfo & vbCrLf & vbCrLf & _
+                           "AI分析を実行できませんでした。API設定を確認してください。"
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    ShowError "フォルダ整理提案中にエラーが発生しました。", Err.Description
+End Sub
+
+' 検索条件分析
+Private Sub AnalyzeSearchConditions()
+    On Error GoTo ErrorHandler
+    
+    ShowProgress "検索条件を分析中..."
+    
+    Dim searchFolders As Object
+    Set searchFolders = Application.Session.DefaultStore.GetSearchFolders
+    
+    If searchFolders.Count = 0 Then
+        ShowMessage "検索フォルダが存在しません。検索フォルダを作成してから実行してください。", "フォルダなし", vbExclamation
+        Exit Sub
+    End If
+    
+    ' 分析対象フォルダの選択
+    Dim folderList As String
+    Dim i As Integer
+    
+    folderList = "分析する検索フォルダを選択してください:" & vbCrLf & vbCrLf
+    
+    For i = 1 To searchFolders.Count
+        folderList = folderList & i & ". " & searchFolders.Item(i).Name & vbCrLf
+    Next i
+    
+    folderList = folderList & vbCrLf & "番号を入力してください:"
+    
+    Dim folderChoice As String
+    folderChoice = InputBox(folderList, APP_NAME & " - フォルダ選択")
+    
+    If folderChoice = "" Then Exit Sub
+    
+    ' 選択された番号の検証
+    Dim folderIndex As Integer
+    On Error Resume Next
+    folderIndex = CInt(folderChoice)
+    On Error GoTo ErrorHandler
+    
+    If folderIndex < 1 Or folderIndex > searchFolders.Count Then
+        ShowMessage "無効な選択です。1-" & searchFolders.Count & "の番号を入力してください。", "入力エラー", vbExclamation
+        Exit Sub
+    End If
+    
+    ' 選択されたフォルダの情報取得
+    Dim selectedFolder As Object
+    Set selectedFolder = searchFolders.Item(folderIndex)
+    
+    ShowProgress "フォルダ「" & selectedFolder.Name & "」の検索条件を分析中..."
+    
+    ' フォルダの詳細情報収集
+    Dim folderInfo As String
+    folderInfo = "【検索フォルダ情報】" & vbCrLf & vbCrLf & _
+                "フォルダ名: " & selectedFolder.Name & vbCrLf & _
+                "作成日時: " & selectedFolder.CreationTime & vbCrLf & _
+                "アイテム数: " & selectedFolder.Items.Count & vbCrLf
+                
+    ' フォルダに含まれるメールのサンプルを収集
+    Dim sampleMail As String
+    sampleMail = ""
+    
+    If selectedFolder.Items.Count > 0 Then
+        Dim mailCount As Integer
+        mailCount = 0
+        
+        ' 最大5件のメールをサンプルとして収集
+        For i = 1 To selectedFolder.Items.Count
+            If mailCount >= 5 Then Exit For
+            
+            On Error Resume Next
+            Dim item As Object
+            Set item = selectedFolder.Items.Item(i)
+            
+            If Not item Is Nothing Then
+                If item.Class = olMail Then
+                    mailCount = mailCount + 1
+                    sampleMail = sampleMail & "■ サンプルメール " & mailCount & ":" & vbCrLf & _
+                                "件名: " & item.Subject & vbCrLf & _
+                                "送信者: " & item.SenderName & vbCrLf & _
+                                "受信日: " & item.ReceivedTime & vbCrLf & _
+                                "カテゴリ: " & item.Categories & vbCrLf & _
+                                "添付ファイル: " & (item.Attachments.Count > 0) & vbCrLf & vbCrLf
+                End If
+            End If
+            On Error GoTo ErrorHandler
+        Next i
+    End If
+    
+    If sampleMail = "" Then
+        sampleMail = "フォルダ内にメールアイテムが見つかりませんでした。"
+    End If
+    
+    ' AI分析の実行
+    Dim systemPrompt As String
+    systemPrompt = SYSTEM_PROMPT_SEARCH & vbCrLf & _
+                   "以下の検索フォルダとそのサンプルメールを分析し、このフォルダの検索条件を推測してください。" & vbCrLf & _
+                   "以下の観点で分析してください：" & vbCrLf & _
+                   "1. 推測される検索条件（送信者、キーワード、日付範囲など）" & vbCrLf & _
+                   "2. 検索フォルダの目的と用途" & vbCrLf & _
+                   "3. より効果的にするための検索条件の改善提案" & vbCrLf & _
+                   "4. サンプルメールに共通する特徴" & vbCrLf & _
+                   "5. 検索条件の再作成例（具体的な条件式）"
+    
+    Dim analysisContent As String
+    analysisContent = folderInfo & vbCrLf & _
+                     "【サンプルメール】" & vbCrLf & vbCrLf & _
+                     sampleMail
+    
+    Dim result As String
+    result = SendOpenAIRequest(systemPrompt, analysisContent, 2500)
+    
+    If result <> "" Then
+        ShowAnalysisResult "検索条件分析結果: " & selectedFolder.Name, result
+    End If
+    
+    Exit Sub
+    
+ErrorHandler:
+    ShowError "検索条件分析中にエラーが発生しました。", Err.Description
 End Sub
 
 ' =============================================================================
