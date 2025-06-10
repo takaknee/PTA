@@ -140,7 +140,7 @@ Private Sub GenerateRejectionEmail(ByVal originalMail As Object, Optional ByVal 
         ' 返信メールを作成
         CreateReplyEmail originalMail, parsedEmail.Subject, parsedEmail.Body
         
-        ShowSuccess "営業断りメールの下書きを作成しました。内容を確認してから送信してください。"
+        ShowSuccess "営業断りメールの返信ウィンドウを開きました。内容を確認してから送信してください。"
     End If
     
     Exit Sub
@@ -203,7 +203,7 @@ Private Sub GenerateAcceptanceEmail(ByVal originalMail As Object, Optional ByVal
         ' 返信メールを作成
         CreateReplyEmail originalMail, parsedEmail.Subject, parsedEmail.Body
         
-        ShowSuccess "承諾メールの下書きを作成しました。内容を確認してから送信してください。"
+        ShowSuccess "承諾メールの返信ウィンドウを開きました。内容を確認してから送信してください。"
     End If
     
     Exit Sub
@@ -300,7 +300,7 @@ Private Sub GenerateCustomEmail(ByVal emailType As String, ByVal details As Stri
         ' 新規メールを作成
         CreateNewEmail parsedEmail.Subject, parsedEmail.Body
         
-        ShowSuccess "カスタムメールの下書きを作成しました。"
+        ShowSuccess "カスタムメールの編集ウィンドウを開きました。"
     End If
     
     Exit Sub
@@ -407,7 +407,7 @@ Private Sub CreateReplyEmail(ByVal originalMail As Object, ByVal subject As Stri
     End If
     
     replyMail.Body = body
-    replyMail.Save
+    replyMail.Display
     
     Exit Sub
     
@@ -427,7 +427,7 @@ Private Sub CreateNewEmail(ByVal subject As String, ByVal body As String)
     
     newMail.Subject = subject
     newMail.Body = body
-    newMail.Save
+    newMail.Display
     
     Exit Sub
     
