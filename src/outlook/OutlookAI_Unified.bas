@@ -494,6 +494,54 @@ ErrorHandler:
     ShowError "カスタムメール作成中にエラーが発生しました。", Err.Description
 End Sub
 
+' 検索フォルダ分析
+Public Sub AnalyzeSearchFolders()
+    On Error GoTo ErrorHandler
+    
+    ShowProgress "検索フォルダを分析中..."
+    
+    Dim analysisResult As String
+    analysisResult = "🔍 検索フォルダ分析結果" & vbCrLf & vbCrLf
+    
+    ' 基本的な検索フォルダ情報を収集
+    Dim folderCount As Integer
+    Dim unreadCount As Integer
+    
+    ' Outlookアプリケーションの取得
+    Dim olApp As Object
+    Set olApp = Application
+    
+    ' 受信トレイの情報
+    Dim inbox As Object
+    Set inbox = olApp.GetNamespace("MAPI").GetDefaultFolder(olFolderInbox)
+    
+    folderCount = inbox.Folders.Count
+    unreadCount = inbox.UnReadItemCount
+    
+    analysisResult = analysisResult & "📧 受信トレイ情報:" & vbCrLf
+    analysisResult = analysisResult & "  • 未読メール数: " & unreadCount & " 件" & vbCrLf
+    analysisResult = analysisResult & "  • サブフォルダ数: " & folderCount & " 個" & vbCrLf & vbCrLf
+    
+    ' 追加の分析情報
+    analysisResult = analysisResult & "💡 整理のヒント:" & vbCrLf
+    If unreadCount > 50 Then
+        analysisResult = analysisResult & "  • 未読メールが多いです。優先度の高いものから処理することをお勧めします。" & vbCrLf
+    ElseIf unreadCount > 10 Then
+        analysisResult = analysisResult & "  • 適切な未読メール数です。定期的な確認を続けてください。" & vbCrLf
+    Else
+        analysisResult = analysisResult & "  • 未読メール数が少なく、良好な管理状況です。" & vbCrLf
+    End If
+    
+    analysisResult = analysisResult & "  • 定期的なフォルダ整理でメール管理効率を向上させましょう。" & vbCrLf
+    
+    ShowMessage analysisResult, "検索フォルダ分析結果"
+    
+    Exit Sub
+    
+ErrorHandler:
+    ShowError "検索フォルダ分析中にエラーが発生しました。", Err.Description
+End Sub
+
 ' 返信メールの作成
 Private Sub CreateReplyEmail(ByVal originalMail As Object, ByVal subject As String, ByVal body As String)
     On Error GoTo ErrorHandler
@@ -617,4 +665,62 @@ End Sub
 ' API接続テスト
 Public Sub API接続テスト()
     Call TestAPIConnection
+End Sub
+
+' =============================================================================
+' 統合UI関数（モダンUI対応）
+' =============================================================================
+
+' 統合メニュー表示（モダンUI版）
+Public Sub AIヘルパー_統合メニュー()
+    On Error GoTo ErrorHandler
+    
+    ' OutlookAI_MainForm.bas の ShowMainForm を呼び出し
+    Call ShowMainForm
+    
+    Exit Sub
+    
+ErrorHandler:
+    ' OutlookAI_MainForm.bas が見つからない場合のフォールバック
+    ShowMessage "統合フォーム (OutlookAI_MainForm.bas) が見つかりません。" & vbCrLf & "改良版メニューを表示します。", "フォールバック", vbExclamation
+    Call ShowEnhancedMainMenu
+End Sub
+
+' 統合メニュー表示（日本語エイリアス）
+Public Sub 統合メニュー()
+    Call AIヘルパー_統合メニュー
+End Sub
+
+' 改良版メニュー（フォールバック用）
+Public Sub ShowEnhancedMainMenu()
+    Dim choice As String
+    Dim menuText As String
+    
+    ' 絵文字とカテゴリ分けで見やすくしたメニュー
+    menuText = "🤖 " & APP_NAME & " v" & APP_VERSION & " - Enhanced Menu" & vbCrLf & vbCrLf
+    menuText = menuText & "📊 メール解析:" & vbCrLf
+    menuText = menuText & "  1. 📧 メール内容を解析" & vbCrLf & vbCrLf
+    menuText = menuText & "✉️ メール作成:" & vbCrLf
+    menuText = menuText & "  2. ❌ 営業断りメール作成" & vbCrLf
+    menuText = menuText & "  3. ✅ 承諾メール作成" & vbCrLf
+    menuText = menuText & "  4. 📝 カスタムメール作成" & vbCrLf & vbCrLf
+    menuText = menuText & "⚙️ システム管理:" & vbCrLf
+    menuText = menuText & "  5. ⚙️ 設定管理" & vbCrLf
+    menuText = menuText & "  6. 🔌 API接続テスト" & vbCrLf
+    menuText = menuText & "  7. ℹ️ バージョン情報" & vbCrLf & vbCrLf
+    menuText = menuText & "実行したい機能の番号を入力してください:"
+    
+    choice = InputBox(menuText, APP_NAME & " - 改良版メニュー")
+    
+    Select Case choice
+        Case "1": Call AnalyzeSelectedEmail
+        Case "2": Call CreateRejectionEmail
+        Case "3": Call CreateAcceptanceEmail
+        Case "4": Call CreateCustomBusinessEmail
+        Case "5": Call ManageConfiguration
+        Case "6": Call TestAPIConnection
+        Case "7": Call ShowVersionInfo
+        Case "": ' キャンセル時は何もしない
+        Case Else: ShowMessage "無効な選択です。1-7の番号を入力してください。", "入力エラー", vbExclamation
+    End Select
 End Sub

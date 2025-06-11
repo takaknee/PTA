@@ -124,3 +124,101 @@ Public Sub ShowSimplificationResults()
     
     MsgBox results, vbInformation, "簡素化効果"
 End Sub
+
+' =============================================================================
+' モダンUI機能のテスト
+' =============================================================================
+
+' 統合UI機能のテスト
+Public Sub TestModernUIFunctions()
+    On Error GoTo ErrorHandler
+    
+    Dim testResults As String
+    testResults = "モダンUI機能テスト結果" & vbCrLf & vbCrLf
+    
+    ' 日本語エイリアス関数の存在確認
+    testResults = testResults & "日本語エイリアス関数:" & vbCrLf
+    
+    ' AIヘルパー_統合メニュー関数の確認
+    On Error Resume Next
+    Call AIヘルパー_統合メニュー
+    If Err.Number = 0 Then
+        testResults = testResults & "✅ AIヘルパー_統合メニュー: 利用可能" & vbCrLf
+    Else
+        testResults = testResults & "❌ AIヘルパー_統合メニュー: エラー - " & Err.Description & vbCrLf
+    End If
+    On Error GoTo ErrorHandler
+    
+    ' 統合メニュー関数の確認
+    On Error Resume Next
+    Call 統合メニュー
+    If Err.Number = 0 Then
+        testResults = testResults & "✅ 統合メニュー: 利用可能" & vbCrLf
+    Else
+        testResults = testResults & "❌ 統合メニュー: エラー - " & Err.Description & vbCrLf
+    End If
+    On Error GoTo ErrorHandler
+    
+    ' ShowEnhancedMainMenu関数の確認
+    On Error Resume Next
+    Call ShowEnhancedMainMenu
+    If Err.Number = 0 Then
+        testResults = testResults & "✅ ShowEnhancedMainMenu: 利用可能" & vbCrLf
+    Else
+        testResults = testResults & "❌ ShowEnhancedMainMenu: エラー - " & Err.Description & vbCrLf
+    End If
+    On Error GoTo ErrorHandler
+    
+    ' AnalyzeSearchFolders関数の確認
+    On Error Resume Next
+    Call AnalyzeSearchFolders
+    If Err.Number = 0 Then
+        testResults = testResults & "✅ AnalyzeSearchFolders: 利用可能" & vbCrLf
+    Else
+        testResults = testResults & "❌ AnalyzeSearchFolders: エラー - " & Err.Description & vbCrLf
+    End If
+    On Error GoTo ErrorHandler
+    
+    testResults = testResults & vbCrLf & "テスト完了日時: " & Format(Now, "yyyy-mm-dd hh:nn:ss")
+    
+    MsgBox testResults, vbInformation, "モダンUI機能テスト"
+    
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "モダンUI機能テスト中にエラーが発生しました: " & Err.Description, vbCritical, "テストエラー"
+End Sub
+
+' OutlookAI_MainForm.bas の存在確認テスト
+Public Sub TestMainFormAvailability()
+    On Error GoTo ErrorHandler
+    
+    Dim testResult As String
+    testResult = "OutlookAI_MainForm.bas 可用性テスト" & vbCrLf & vbCrLf
+    
+    ' ShowMainForm関数の存在確認
+    On Error Resume Next
+    Call ShowMainForm
+    If Err.Number = 0 Then
+        testResult = testResult & "✅ ShowMainForm関数: 利用可能" & vbCrLf
+        testResult = testResult & "📝 OutlookAI_MainForm.bas が正しくインポートされています" & vbCrLf
+    ElseIf Err.Number = 1004 Then ' プロシージャが見つからない
+        testResult = testResult & "❌ ShowMainForm関数: 見つかりません" & vbCrLf
+        testResult = testResult & "📝 OutlookAI_MainForm.bas をVBAプロジェクトにインポートしてください" & vbCrLf
+    Else
+        testResult = testResult & "⚠️ ShowMainForm関数: エラー - " & Err.Description & vbCrLf
+    End If
+    On Error GoTo ErrorHandler
+    
+    testResult = testResult & vbCrLf & "インストール方法:" & vbCrLf
+    testResult = testResult & "1. VBAエディタを開く" & vbCrLf
+    testResult = testResult & "2. ファイル > インポート でOutlookAI_MainForm.basを選択" & vbCrLf
+    testResult = testResult & "3. AIヘルパー_統合メニュー を実行してテスト"
+    
+    MsgBox testResult, vbInformation, "MainForm可用性テスト"
+    
+    Exit Sub
+    
+ErrorHandler:
+    MsgBox "MainForm可用性テスト中にエラーが発生しました: " & Err.Description, vbCritical, "テストエラー"
+End Sub
