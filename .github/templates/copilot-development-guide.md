@@ -84,6 +84,46 @@ Outlook VBAでOpenAI APIを使用した「メール要約機能」を実装し�
 
 ## よくある問題と解決法
 
+### タスク実行中の典型的な課題
+
+#### 1. 大きなタスクの分割方法
+```
+例：「メール配信システムの全面改修」
+
+❌ 悪い分割例:
+- メール配信システムを作り直す
+
+✅ 良い分割例:
+1. 既存システムの分析と要件整理
+2. 新しいメール送信APIの調査
+3. テンプレート管理機能の設計
+4. 会員管理データベースの設計
+5. メール送信ロジックの実装
+6. エラーハンドリングの実装
+7. ログ機能の実装
+8. テスト実装と実行
+9. 既存システムからの移行
+10. ドキュメント更新
+```
+
+#### 2. 技術的負債への対応
+```javascript
+// レガシーコードの段階的改善例
+function improveExistingCode() {
+  // Phase 1: 現状の動作を保証するテストを作成
+  testExistingFunctionality();
+  
+  // Phase 2: 小さな単位でのリファクタリング
+  refactorSmallFunctions();
+  
+  // Phase 3: 大きな構造の改善
+  refactorArchitecture();
+  
+  // Phase 4: 新機能の追加
+  addNewFeatures();
+}
+```
+
 ### Google Apps Script
 
 **Q: undefined function エラーが発生する**
@@ -236,6 +276,131 @@ function validateInput(input) {
 ```
 
 ## トラブルシューティング手順
+
+### 体系的問題解決アプローチ
+
+#### 1. 問題の分類と優先度付け
+```
+問題分類マトリクス:
+                     影響度
+                   低    中    高
+重要度   高    |  B  |  A  |  A  |
+        中    |  C  |  B  |  A  |
+        低    |  D  |  C  |  B  |
+
+A: 即座に対応 (1時間以内)
+B: 当日中に対応 (8時間以内) 
+C: 週内に対応 (1週間以内)
+D: 計画的に対応 (次回メンテナンス時)
+```
+
+#### 2. 段階的デバッグ手法
+```javascript
+// デバッグのための段階的アプローチ
+function systematicDebugging(issue) {
+  console.log(`問題調査開始: ${issue.description}`);
+  
+  // Step 1: 再現性の確認
+  const isReproducible = tryToReproduce(issue);
+  if (!isReproducible) {
+    console.log("一時的な問題の可能性 - 監視継続");
+    return;
+  }
+  
+  // Step 2: 最小限の再現ケース作成
+  const minimalCase = createMinimalReproduction(issue);
+  
+  // Step 3: 変更履歴の確認
+  const recentChanges = checkRecentChanges();
+  
+  // Step 4: 段階的な機能無効化
+  const isolatedProblem = isolateIssue(minimalCase);
+  
+  // Step 5: 解決策の実装と検証
+  const solution = implementSolution(isolatedProblem);
+  validateSolution(solution);
+  
+  console.log("問題解決完了");
+}
+```
+
+## チーム開発とコラボレーション
+
+### 1. GitHub Copilot を使ったペアプログラミング
+```
+セッション準備:
+1. 共通のコンテキスト設定
+   - プロジェクト概要の共有
+   - 作業対象コードの確認
+   - 目標と制約の合意
+
+2. ロール分担
+   - ドライバー: コードを実際に書く人
+   - ナビゲーター: 全体設計と品質チェック
+   - Copilot: 実装パターンの提案
+
+3. 進行方法
+   - 15分単位でのロール交代
+   - 各ステップでの実装方針確認
+   - リアルタイムでのコードレビュー
+```
+
+### 2. 知識継承のためのドキュメント化
+```markdown
+## 実装記録テンプレート
+
+### 概要
+- 機能名: [機能名]
+- 担当者: [担当者名]
+- 実装期間: [開始日] - [完了日]
+
+### 技術的判断
+- 選択した技術: [技術名]
+- 選択理由: [理由]
+- 代替案と比較: [比較内容]
+
+### 実装パターン
+```javascript
+// 主要な実装パターン
+function examplePattern() {
+  // 実装内容
+}
+```
+
+### 学習ポイント
+- 新しく学んだこと: [内容]
+- 既存知識との関連: [関連性]
+- 今後の応用可能性: [応用例]
+
+### 注意点とトラップ
+- 陥りやすい問題: [問題内容]
+- 回避方法: [回避策]
+- 参考資料: [URL等]
+```
+
+### 3. レビュー効率化のためのChecklists
+```markdown
+## 機能実装レビューチェックリスト
+
+### 基本項目
+- [ ] 要件に対する実装の完全性
+- [ ] 既存機能への影響なし
+- [ ] エラーハンドリングの適切性
+- [ ] ログ出力の日本語化
+- [ ] セキュリティ要件の遵守
+
+### PTA固有項目  
+- [ ] 会員情報の適切な取り扱い
+- [ ] メール配信の設定確認
+- [ ] スプレッドシート権限の確認
+- [ ] API制限の考慮
+
+### 品質項目
+- [ ] コードの可読性
+- [ ] テストカバレッジ
+- [ ] パフォーマンス要件
+- [ ] ドキュメント更新
+```
 
 1. **エラーログの確認**
    - Google Apps Script: 実行ログ画面
