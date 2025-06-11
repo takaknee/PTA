@@ -28,9 +28,7 @@ Microsoft Outlook で Azure OpenAI API を活用してメール処理を効率�
 ### 🎯 **クイックスタート（利便性向上版）**
 
 1. **ファイルをインポート**:
-   - `OutlookAI_Unified.bas` （必須・更新版）
-   - `OutlookAI_MainForm.bas` （推奨・新機能）
-   - `OutlookAI_QuickSetup.bas` （推奨・セットアップ支援）
+   - `OutlookAI_Unified.bas` （全機能統合版・1ファイルのみ）
 
 2. **クイックセットアップ実行**: `クイックセットアップ`
 
@@ -140,12 +138,10 @@ Microsoft Outlook で Azure OpenAI API を活用してメール処理を効率�
 
 複数ファイルを個別管理したい場合や、既存環境のアップグレード：
 
-#### **利便性向上版ファイル（推奨追加）**
-- `OutlookAI_MainForm.bas` - 新しい統合UI・日本語関数
-- `OutlookAI_QuickSetup.bas` - クイックセットアップ支援
-- `OutlookAI_Tests.bas` - 機能テスト（オプション）
+#### **利便性向上版ファイル（推奨）**
+- `OutlookAI_Unified.bas` - **全機能統合版**（最も簡単・推奨）
 
-#### **基本ファイル**
+#### **従来モジュール分割版ファイル（オプション）**
 
 #### 1. ファイルのダウンロード
 必要なVBAファイルをダウンロードします：
