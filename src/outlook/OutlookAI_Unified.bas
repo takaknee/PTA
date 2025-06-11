@@ -1708,3 +1708,116 @@ Private Sub ResetConfiguration()
         ShowMessage resetGuide, "設定初期化手順"
     End If
 End Sub
+
+' =============================================================================
+' ユーザビリティ向上機能（2024年追加）
+' =============================================================================
+
+' 新しい統合UIのエントリーポイント
+Public Sub AIヘルパー_統合メニュー()
+    ' OutlookAI_MainForm.bas が利用可能な場合は新しいUIを使用
+    ' フォールバック: 改良版クラシックメニュー
+    Call ShowEnhancedMainMenu
+End Sub
+
+' 改良版メインメニュー（日本語エイリアス含む）
+Public Sub ShowEnhancedMainMenu()
+    Dim choice As String
+    Dim menuText As String
+    
+    menuText = "🤖 " & APP_NAME & " v" & APP_VERSION & vbCrLf & vbCrLf & _
+               "📊 メール解析:" & vbCrLf & _
+               "  1️⃣ メール内容解析" & vbCrLf & _
+               "  2️⃣ 検索フォルダ分析" & vbCrLf & vbCrLf & _
+               "✉️ メール作成支援:" & vbCrLf & _
+               "  3️⃣ 営業断りメール作成" & vbCrLf & _
+               "  4️⃣ 承諾メール作成" & vbCrLf & _
+               "  5️⃣ カスタムメール作成" & vbCrLf & vbCrLf & _
+               "⚙️ システム管理:" & vbCrLf & _
+               "  6️⃣ 設定管理" & vbCrLf & _
+               "  7️⃣ API接続テスト" & vbCrLf & vbCrLf & _
+               "💡 ヒント: 番号入力の代わりに日本語関数名でも実行可能" & vbCrLf & _
+               "   例: 「メール内容解析」関数を直接実行" & vbCrLf & vbCrLf & _
+               "実行したい機能の番号を入力してください:"
+    
+    choice = InputBox(menuText, APP_NAME & " - 統合メニュー")
+    
+    Select Case choice
+        Case "1"
+            Call AnalyzeSelectedEmail
+        Case "2"
+            Call AnalyzeSearchFolders
+        Case "3"
+            Call CreateRejectionEmail
+        Case "4"
+            Call CreateAcceptanceEmail
+        Case "5"
+            Call CreateCustomBusinessEmail
+        Case "6"
+            Call ManageConfiguration
+        Case "7"
+            Call TestAPIConnection
+        Case ""
+            ' キャンセルされた場合は何もしない
+        Case Else
+            ShowMessage "無効な選択です。1-7の番号を入力してください。" & vbCrLf & vbCrLf & _
+                       "💡 ヒント: 各機能は日本語関数名でも直接実行できます：" & vbCrLf & _
+                       "• メール内容解析" & vbCrLf & _
+                       "• 営業断りメール作成" & vbCrLf & _
+                       "• 承諾メール作成 など", "入力エラー", vbExclamation
+    End Select
+End Sub
+
+' =============================================================================
+' 日本語関数エイリアス（利便性向上のため）
+' =============================================================================
+
+' 📧 メール内容解析：選択されたメールの内容をAIで分析
+Public Sub メール内容解析()
+    Call AnalyzeSelectedEmail
+End Sub
+
+' 📁 検索フォルダ分析：検索フォルダの内容と分類状況を分析
+Public Sub 検索フォルダ分析()
+    Call AnalyzeSearchFolders
+End Sub
+
+' ❌ 営業断りメール：営業メールに対する丁寧な断りメールを作成
+Public Sub 営業断りメール作成()
+    Call CreateRejectionEmail
+End Sub
+
+' ✅ 承諾メール：ビジネス提案への承諾メールを作成
+Public Sub 承諾メール作成()
+    Call CreateAcceptanceEmail
+End Sub
+
+' ✏️ カスタムメール：カスタムプロンプトでビジネスメールを作成
+Public Sub カスタムメール作成()
+    Call CreateCustomBusinessEmail
+End Sub
+
+' 🔧 設定管理：API設定や各種設定の管理
+Public Sub 設定管理()
+    Call ManageConfiguration
+End Sub
+
+' 🔌 API接続テスト：OpenAI APIとの接続状態をテスト
+Public Sub API接続テスト()
+    Call TestAPIConnection
+End Sub
+
+' 🤖 統合メニュー表示：新しい使いやすいメニューを表示
+Public Sub 統合メニュー表示()
+    Call AIヘルパー_統合メニュー
+End Sub
+
+' =============================================================================
+' 後方互換性のための関数エイリアス
+' =============================================================================
+
+' 従来のメインメニュー（後方互換性のため保持）
+' 注意: 新規利用者は「AIヘルパー_統合メニュー」または日本語関数名を推奨
+Public Sub メインメニュー表示()
+    Call ShowMainMenu
+End Sub
