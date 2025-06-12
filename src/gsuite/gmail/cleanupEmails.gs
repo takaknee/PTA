@@ -25,6 +25,7 @@ function onOpen() {
     .addItem('プロモーションメールを削除', 'deletePromotionEmails')
     .addItem('一年以上前のメールを削除', 'deleteOldEmails')
     .addItem('送信元別メール分析', 'analyzeSenders')
+    .addItem('特定送信者のメールを削除', 'deleteEmailsBySendersPrompt')
     .addItem('ラベル一覧を表示', 'listAllLabels')
     .addItem('特定ラベルのメールを削除', 'deleteEmailsByLabelPrompt')
     .addToUi();
@@ -114,6 +115,168 @@ function deleteEmailsByLabel(labelName) {
 }
 
 /**
+ * 指定された送信者のメールを削除する
+ * @param {string} senderEmail - 削除対象の送信者メールアドレス
+ * @returns {Object} 処理結果の情報
+ */
+function deleteEmailsBySender(senderEmail) {
+  try {
+    if (!senderEmail) {
+      throw new Error('送信者メールアドレスが指定されていません');
+    }
+    
+    // メールアドレスの基本的な形式チェック
+    if (!senderEmail.includes('@')) {
+      throw new Error(`無効なメールアドレスです: ${senderEmail}`);
+    }
+    
+    // Gmail検索クエリを構築（from: 演算子を使用）
+    const query = `from:${senderEmail}`;
+    return batchDeleteEmails(query, `送信者「${senderEmail}」の`);
+  } catch (error) {
+    logError(`送信者 "${senderEmail}" のメール削除中にエラーが発生しました`, error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+/**
+ * 複数の送信者のメールを削除する
+ * @param {Array<string>} senderEmails - 削除対象の送信者メールアドレス配列
+ * @returns {Object} 処理結果の情報
+ */
+function deleteEmailsByMultipleSenders(senderEmails) {
+  try {
+    if (!senderEmails || senderEmails.length === 0) {
+      throw new Error('送信者メールアドレスが指定されていません');
+    }
+    
+    let totalDeleted = 0;
+    const results = [];
+    
+    logInfo(`${senderEmails.length}件の送信者からのメール削除を開始します`);
+    
+    for (let i = 0; i < senderEmails.length; i++) {
+      const senderEmail = senderEmails[i].trim();
+      if (senderEmail) {
+        logInfo(`${i + 1}/${senderEmails.length}: 送信者「${senderEmail}」のメールを削除中...`);
+        const result = deleteEmailsBySender(senderEmail);
+        results.push({
+          sender: senderEmail,
+          success: result.success,
+          count: result.count || 0,
+          error: result.error
+        });
+        
+        if (result.success) {
+          totalDeleted += result.count || 0;
+        }
+        
+        // API制限を考慮して少し待機
+        if (i < senderEmails.length - 1) {
+          Utilities.sleep(500);
+        }
+      }
+    }
+    
+    // 結果サマリーを作成
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.length - successCount;
+    
+    logInfo(`複数送信者メール削除完了: 成功 ${successCount}件、失敗 ${failureCount}件、総削除数 ${totalDeleted}件`);
+    
+    return {
+      success: failureCount === 0,
+      totalDeleted: totalDeleted,
+      successCount: successCount,
+      failureCount: failureCount,
+      results: results,
+      message: `${successCount}件の送信者から合計${totalDeleted}件のメールを削除しました`
+    };
+  } catch (error) {
+    logError('複数送信者メール削除中にエラーが発生しました', error);
+    return { success: false, error: error.toString() };
+  }
+}
+
+/**
+ * ユーザープロンプトを表示して特定送信者のメールを削除する
+ */
+function deleteEmailsBySendersPrompt() {
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.prompt(
+    '送信者メール削除',
+    '削除するメールの送信者メールアドレスを入力してください。\n複数指定する場合は、カンマ(,)で区切って入力してください。\n\n例: spam@example.com, newsletter@company.com',
+    ui.ButtonSet.OK_CANCEL
+  );
+  
+  // ユーザーの応答を確認
+  if (response.getSelectedButton() === ui.Button.OK) {
+    const inputText = response.getResponseText().trim();
+    if (inputText) {
+      // 入力されたテキストをカンマで分割して送信者リストを作成
+      const senderEmails = inputText.split(',').map(email => email.trim()).filter(email => email.length > 0);
+      
+      if (senderEmails.length === 0) {
+        ui.alert('エラー', '有効な送信者メールアドレスを入力してください。', ui.ButtonSet.OK);
+        return;
+      }
+      
+      // 入力されたメールアドレスの基本的な形式チェック
+      const invalidEmails = senderEmails.filter(email => !email.includes('@'));
+      if (invalidEmails.length > 0) {
+        ui.alert('エラー', `無効なメールアドレスが含まれています: ${invalidEmails.join(', ')}`, ui.ButtonSet.OK);
+        return;
+      }
+      
+      // 削除前に確認
+      const senderList = senderEmails.length > 3 
+        ? `${senderEmails.slice(0, 3).join(', ')} 他${senderEmails.length - 3}件`
+        : senderEmails.join(', ');
+      
+      const confirmResponse = ui.alert(
+        '確認',
+        `以下の送信者からのメールをすべて削除します。この操作は元に戻せません。続行しますか？\n\n送信者: ${senderList}\n合計: ${senderEmails.length}件`,
+        ui.ButtonSet.YES_NO
+      );
+      
+      if (confirmResponse === ui.Button.YES) {
+        // 処理中のメッセージを表示
+        ui.alert('処理開始', `${senderEmails.length}件の送信者からのメール削除を開始します。\nしばらくお待ちください...`, ui.ButtonSet.OK);
+        
+        let result;
+        if (senderEmails.length === 1) {
+          // 単一送信者の場合
+          result = deleteEmailsBySender(senderEmails[0]);
+          if (result.success) {
+            ui.alert('完了', `送信者「${senderEmails[0]}」から${result.count}件のメールを削除しました。`, ui.ButtonSet.OK);
+          } else {
+            ui.alert('エラー', `削除中にエラーが発生しました: ${result.error}`, ui.ButtonSet.OK);
+          }
+        } else {
+          // 複数送信者の場合
+          result = deleteEmailsByMultipleSenders(senderEmails);
+          if (result.success) {
+            ui.alert('完了', 
+              `${result.successCount}件の送信者から合計${result.totalDeleted}件のメールを削除しました。`, 
+              ui.ButtonSet.OK);
+          } else {
+            const errorDetails = result.results 
+              ? result.results.filter(r => !r.success).map(r => `${r.sender}: ${r.error}`).join('\n')
+              : result.error || '不明なエラー';
+            
+            ui.alert('一部エラー', 
+              `処理が完了しましたが、一部でエラーが発生しました。\n\n成功: ${result.successCount}件\n失敗: ${result.failureCount}件\n合計削除数: ${result.totalDeleted}件\n\nエラー詳細:\n${errorDetails}`, 
+              ui.ButtonSet.OK);
+          }
+        }
+      }
+    } else {
+      ui.alert('エラー', '送信者メールアドレスを入力してください。', ui.ButtonSet.OK);
+    }
+  }
+}
+
+/**
  * ユーザープロンプトを表示して特定ラベルのメールを削除する
  */
 function deleteEmailsByLabelPrompt() {
@@ -125,7 +288,7 @@ function deleteEmailsByLabelPrompt() {
   );
   
   // ユーザーの応答を確認
-  if (response.getSelectedButton() == ui.Button.OK) {
+  if (response.getSelectedButton() === ui.Button.OK) {
     const labelName = response.getResponseText().trim();
     if (labelName) {
       // 削除前に確認
@@ -135,7 +298,7 @@ function deleteEmailsByLabelPrompt() {
         ui.ButtonSet.YES_NO
       );
       
-      if (confirmResponse == ui.Button.YES) {
+      if (confirmResponse === ui.Button.YES) {
         const result = deleteEmailsByLabel(labelName);
         if (result.success) {
           ui.alert('完了', `${result.count}件のメールを削除しました。`, ui.ButtonSet.OK);

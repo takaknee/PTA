@@ -90,6 +90,75 @@ function testConfiguration() {
 }
 
 /**
+ * Gmail送信者削除機能のテスト
+ */
+function testSenderDeletionFunctionality() {
+  console.log('=== Gmail送信者削除機能テスト ===');
+  
+  try {
+    // メールアドレス抽出機能のテスト
+    const testFromFields = [
+      'Test User <test@example.com>',
+      'test@example.com',
+      'Another User <another@domain.co.jp>',
+      'simple@email.com'
+    ];
+    
+    console.log('メールアドレス抽出テスト:');
+    testFromFields.forEach(fromField => {
+      // extractEmailAddress関数が存在する場合のみテスト実行
+      if (typeof extractEmailAddress === 'function') {
+        const extracted = extractEmailAddress(fromField);
+        console.log(`  ${fromField} → ${extracted}`);
+      } else {
+        console.log('  extractEmailAddress関数が見つかりません（Gmail cleanupEmails.gsが必要）');
+      }
+    });
+    
+    // 送信者削除関数の存在確認
+    if (typeof deleteEmailsBySender === 'function') {
+      console.log('deleteEmailsBySender関数: 利用可能');
+    } else {
+      console.log('deleteEmailsBySender関数: 見つかりません');
+    }
+    
+    if (typeof deleteEmailsByMultipleSenders === 'function') {
+      console.log('deleteEmailsByMultipleSenders関数: 利用可能');
+    } else {
+      console.log('deleteEmailsByMultipleSenders関数: 見つかりません');
+    }
+    
+    if (typeof deleteEmailsBySendersPrompt === 'function') {
+      console.log('deleteEmailsBySendersPrompt関数: 利用可能');
+    } else {
+      console.log('deleteEmailsBySendersPrompt関数: 見つかりません');
+    }
+    
+    // 入力値検証のシミュレーション
+    console.log('\n入力値検証テスト:');
+    const testInputs = [
+      'test@example.com',
+      'test@example.com,another@domain.com',
+      'invalid-email',
+      '',
+      'valid@test.com, , empty@test.com'
+    ];
+    
+    testInputs.forEach(input => {
+      const emails = input.split(',').map(email => email.trim()).filter(email => email.length > 0);
+      const invalidEmails = emails.filter(email => !email.includes('@'));
+      const isValid = emails.length > 0 && invalidEmails.length === 0;
+      console.log(`  "${input}" → 有効: ${isValid}, 抽出: [${emails.join(', ')}]`);
+    });
+    
+    console.log('=== Gmail送信者削除機能テスト完了 ===');
+    
+  } catch (error) {
+    console.error('送信者削除機能テスト中にエラーが発生しました:', error);
+  }
+}
+
+/**
  * 全テストの実行
  */
 function runAllTests() {
@@ -98,6 +167,7 @@ function runAllTests() {
   testConfiguration();
   testEmailValidation(); 
   testBasicFunctionality();
+  testSenderDeletionFunctionality();
   
   console.log('PTA情報配信システム - 全テスト完了');
 }
