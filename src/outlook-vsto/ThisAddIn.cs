@@ -135,6 +135,12 @@ namespace OutlookPTAAddin
             services.AddSingleton&lt;EmailAnalysisService&gt;();
             services.AddSingleton&lt;EmailComposerService&gt;();
 
+            // Graph API サービス
+            services.AddSingleton&lt;Infrastructure.Graph.GraphService&gt;();
+
+            // 統合サービス
+            services.AddSingleton&lt;IntegrationService&gt;();
+
             _serviceProvider = services.BuildServiceProvider();
         }
 
