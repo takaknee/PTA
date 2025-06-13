@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# VSTO Build Script for PTA Outlook Add-in
+# PTA Outlook アドイン用 VSTOビルドスクリプト
 # VSTOアドインのビルドスクリプト
 
 echo "🚀 PTA Outlook VSTO アドインのビルドを開始します"

@@ -6,6 +6,7 @@
 ### 主要技術スタック
 - **Google Apps Script (GAS)**: Gmail自動化、スプレッドシート操作、カレンダー管理
 - **VBA (Outlook)**: メール処理、AI連携（OpenAI API）、検索フォルダ分析
+- **VSTO (C#)**: Outlook アドイン、M365展開対応、保守性向上
 - **JavaScript/Node.js**: ビルドツール、テスト、CI/CD
 
 ### アーキテクチャ
@@ -16,6 +17,7 @@ PTA/
 │   │   ├── gmail/       # メール処理自動化
 │   │   └── pta/         # PTA業務特化機能
 │   ├── outlook/         # Outlook VBA マクロ
+│   ├── outlook-vsto/    # Outlook VSTO アドイン (C#)
 │   └── excel/           # Excel VBA AI連携
 ├── docs/                # 技術文書・仕様書
 └── .github/            # CI/CD・品質管理
@@ -64,6 +66,36 @@ Private Sub ProcessEmailWithAI()
 ErrorHandler:
     ShowError "メール処理中にエラーが発生しました", Err.Description
 End Sub
+
+// ✅ VSTO推奨パターン (C#)
+public async Task ProcessEmailWithAIAsync()
+{
+    try
+    {
+        _logger.LogInformation("メール解析処理を開始します");
+        
+        // 選択されたメールアイテムの取得
+        var mailItem = GetSelectedMailItem();
+        if (mailItem == null)
+        {
+            throw new InvalidOperationException("メールが選択されていません");
+        }
+        
+        // AI処理の実行（非同期）
+        var result = await _emailAnalysisService.AnalyzeEmailAsync(mailItem);
+        
+        // 結果の表示
+        ShowAnalysisResult(result);
+        
+        _logger.LogInformation("メール解析処理が完了しました");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "メール解析処理中にエラーが発生しました");
+        MessageBox.Show($"メール解析中にエラーが発生しました:\n{ex.Message}", 
+                       "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+}
 ```
 
 ### 3. エラーハンドリングパターン
@@ -165,6 +197,95 @@ Private Function GetAPISetting(key As String, defaultValue As String) As String
     GetAPISetting = GetSetting("OutlookAI", "Settings", key, defaultValue)
     On Error GoTo 0
 End Function
+```
+
+### VSTO + OpenAI API パターン
+```csharp
+// API呼び出しの標準パターン（非同期）
+public async Task<string> CallOpenAIAPIAsync(string content, string systemPrompt)
+{
+    try
+    {
+        _logger.LogDebug("OpenAI API呼び出しを開始します");
+        
+        // リクエストボディの構築
+        var requestBody = new
+        {
+            model = _configService.GetOpenAIModel(),
+            messages = new[]
+            {
+                new { role = "system", content = systemPrompt },
+                new { role = "user", content = content }
+            },
+            max_tokens = _configService.GetMaxTokens(),
+            temperature = 0.7
+        };
+        
+        var json = JsonConvert.SerializeObject(requestBody);
+        var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+        
+        // API設定の取得
+        var apiKey = _configService.GetOpenAIApiKey();
+        var endpoint = _configService.GetOpenAIEndpoint();
+        
+        _httpClient.DefaultRequestHeaders.Authorization = 
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+        
+        // API呼び出し実行
+        var response = await _httpClient.PostAsync(endpoint, httpContent);
+        
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var result = ParseOpenAIResponse(responseContent);
+            
+            _logger.LogDebug("OpenAI API呼び出しが成功しました");
+            return result;
+        }
+        else
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new OpenAIException($"API呼び出しエラー: {response.StatusCode} - {errorContent}");
+        }
+    }
+    catch (HttpRequestException ex)
+    {
+        _logger.LogError(ex, "HTTP通信エラーが発生しました");
+        throw new OpenAIException("API通信中にエラーが発生しました", ex);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "OpenAI API呼び出し中に予期しないエラーが発生しました");
+        throw;
+    }
+}
+
+// 設定管理パターン（依存関係注入）
+public class ConfigurationService
+{
+    private readonly ILogger<ConfigurationService> _logger;
+    
+    public string GetOpenAIApiKey()
+    {
+        try
+        {
+            // Windows Credential Manager からの安全な取得
+            var credential = CredentialManager.ReadCredential("OutlookPTA_OpenAI");
+            return credential?.Password ?? ConfigurationManager.AppSettings["OpenAIApiKey"];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "OpenAI APIキーの取得中に警告が発生しました");
+            return ConfigurationManager.AppSettings["OpenAIApiKey"];
+        }
+    }
+    
+    public string GetOpenAIEndpoint()
+    {
+        return ConfigurationManager.AppSettings["OpenAIEndpoint"] ?? 
+               throw new ConfigurationException("OpenAIエンドポイントが設定されていません");
+    }
+}
 ```
 
 ## セキュリティとコンプライアンス
@@ -323,8 +444,10 @@ Worksheet                   ' ワークシート操作
 1. **メール自動送信機能**: `src/gsuite/pta/informationDistribution.gs` 参考
 2. **スプレッドシート操作**: `src/gsuite/pta/memberManagement.gs` 参考  
 3. **VBA + AI連携**: `src/outlook/OutlookAI_Unified.bas` 参考
-4. **設定管理**: `AI_ConfigManager.bas` パターン使用
-5. **エラーハンドリング**: 既存の`ShowError`/`logError`パターン踏襲
+4. **VSTO + AI連携**: `src/outlook-vsto/Core/Services/EmailAnalysisService.cs` 参考
+5. **VSTO UI統合**: `src/outlook-vsto/UI/Ribbon/PTARibbon.cs` 参考
+6. **設定管理**: `AI_ConfigManager.bas` (VBA) / `ConfigurationService.cs` (VSTO) パターン使用
+7. **エラーハンドリング**: 既存の`ShowError`/`logError`パターン踏襲
 
 ## テストとバリデーション戦略
 
