@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using OutlookPTAAddin.Core.Models;
-using OutlookPTAAddin.Core.Configuration;
+using OutlookPTAAddin.Core.Services;
 
 namespace OutlookPTAAddin.Infrastructure.OpenAI
 {
@@ -13,7 +13,7 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
     /// OpenAI API サービス
     /// VBAのOpenAI API呼び出し機能をVSTOで再実装
     /// &lt;/summary&gt;
-    public class OpenAIService
+    public class OpenAIService : IAIService
     {
         #region フィールド
 
@@ -24,6 +24,15 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
         // VBA版と同様の設定値
         private const int MAX_TOKENS = 2000;
         private const int TIMEOUT_SECONDS = 30;
+
+        #endregion
+
+        #region IAIService プロパティ
+
+        /// <summary>
+        /// AIプロバイダー名
+        /// </summary>
+        public string ProviderName => "OpenAI";
 
         #endregion
 
@@ -272,6 +281,28 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
             catch
             {
                 return responseContent;
+            }
+        }
+
+        /// <summary>
+        /// サービスが利用可能かどうかを確認する
+        /// </summary>
+        /// <returns>利用可能な場合はtrue</returns>
+        public bool IsAvailable()
+        {
+            try
+            {
+                var apiKey = _configService.GetOpenAIApiKey();
+                var endpoint = _configService.GetOpenAIEndpoint();
+
+                return !string.IsNullOrWhiteSpace(apiKey) && 
+                       !string.IsNullOrWhiteSpace(endpoint) &&
+                       apiKey != "YOUR_API_KEY_HERE";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "OpenAI サービス可用性チェック中にエラーが発生しました");
+                return false;
             }
         }
 

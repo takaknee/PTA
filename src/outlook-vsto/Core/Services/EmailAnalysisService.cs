@@ -16,7 +16,7 @@ namespace OutlookPTAAddin.Core.Services
         #region フィールド
 
         private readonly ILogger&lt;EmailAnalysisService&gt; _logger;
-        private readonly OpenAIService _openAIService;
+        private readonly AIServiceManager _aiServiceManager;
 
         // VBA版と同様のプロンプトテンプレート
         private const string SYSTEM_PROMPT = @"あなたは日本語のビジネスメール分析の専門家です。
@@ -39,11 +39,11 @@ namespace OutlookPTAAddin.Core.Services
         /// コンストラクター
         /// &lt;/summary&gt;
         /// &lt;param name="logger"&gt;ログサービス&lt;/param&gt;
-        /// &lt;param name="openAIService"&gt;OpenAI サービス&lt;/param&gt;
-        public EmailAnalysisService(ILogger&lt;EmailAnalysisService&gt; logger, OpenAIService openAIService)
+        /// &lt;param name="aiServiceManager"&gt;AIサービス管理者&lt;/param&gt;
+        public EmailAnalysisService(ILogger&lt;EmailAnalysisService&gt; logger, AIServiceManager aiServiceManager)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _openAIService = openAIService ?? throw new ArgumentNullException(nameof(openAIService));
+            _aiServiceManager = aiServiceManager ?? throw new ArgumentNullException(nameof(aiServiceManager));
         }
 
         #endregion
@@ -82,8 +82,8 @@ namespace OutlookPTAAddin.Core.Services
                     emailContent = emailContent.Substring(0, maxContentLength) + "\\n\\n[内容が切り詰められました]";
                 }
 
-                // OpenAI APIで解析実行
-                var analysisResult = await _openAIService.AnalyzeTextAsync(SYSTEM_PROMPT, emailContent);
+                // AI APIで解析実行
+                var analysisResult = await _aiServiceManager.AnalyzeTextAsync(SYSTEM_PROMPT, emailContent);
 
                 _logger.LogInformation("メール解析完了");
                 return analysisResult;
