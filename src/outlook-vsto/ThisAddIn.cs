@@ -8,6 +8,7 @@ using OutlookPTAAddin.Core.Services;
 using OutlookPTAAddin.Core.Configuration;
 using OutlookPTAAddin.Infrastructure.OpenAI;
 using OutlookPTAAddin.Infrastructure.Logging;
+using OutlookPTAAddin.Infrastructure.Claude;
 
 namespace OutlookPTAAddin
 {
@@ -24,6 +25,7 @@ namespace OutlookPTAAddin
         private EmailAnalysisService _emailAnalysisService;
         private EmailComposerService _emailComposerService;
         private ConfigurationService _configurationService;
+        private AIServiceManager _aiServiceManager;
 
         #endregion
 
@@ -108,9 +110,26 @@ namespace OutlookPTAAddin
             // 設定サービス
             services.AddSingleton&lt;ConfigurationService&gt;();
 
-            // OpenAI サービス  
+            // AI サービス  
             services.AddHttpClient&lt;OpenAIService&gt;();
+            services.AddHttpClient&lt;ClaudeService&gt;();
+            
+            // AI サービスの登録
             services.AddSingleton&lt;OpenAIService&gt;();
+            services.AddSingleton&lt;ClaudeService&gt;();
+            
+            // IAIService の実装を登録
+            services.AddSingleton&lt;IAIService&gt;(provider =&gt; provider.GetRequiredService&lt;OpenAIService&gt;());
+            services.AddSingleton&lt;IAIService&gt;(provider =&gt; provider.GetRequiredService&lt;ClaudeService&gt;());
+            
+            // AI サービス管理者
+            services.AddSingleton&lt;AIServiceManager&gt;(provider =&gt;
+            {
+                var logger = provider.GetRequiredService&lt;ILogger&lt;AIServiceManager&gt;&gt;();
+                var openAIService = provider.GetRequiredService&lt;OpenAIService&gt;();
+                var claudeService = provider.GetRequiredService&lt;ClaudeService&gt;();
+                return new AIServiceManager(logger, new IAIService[] { openAIService, claudeService });
+            });
 
             // ビジネスロジックサービス
             services.AddSingleton&lt;EmailAnalysisService&gt;();
@@ -128,6 +147,7 @@ namespace OutlookPTAAddin
             _configurationService = _serviceProvider.GetRequiredService&lt;ConfigurationService&gt;();
             _emailAnalysisService = _serviceProvider.GetRequiredService&lt;EmailAnalysisService&gt;();
             _emailComposerService = _serviceProvider.GetRequiredService&lt;EmailComposerService&gt;();
+            _aiServiceManager = _serviceProvider.GetRequiredService&lt;AIServiceManager&gt;();
 
             // 設定の初期化
             _configurationService.Initialize();
