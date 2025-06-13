@@ -1,0 +1,454 @@
+using System;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using Microsoft.Office.Tools.Ribbon;
+using Microsoft.Office.Interop.Outlook;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using OutlookPTAAddin.Core.Services;
+
+namespace OutlookPTAAddin.UI.Ribbon
+{
+    /// &lt;summary&gt;
+    /// PTA Outlook アドイン リボンUI
+    /// &lt;/summary&gt;
+    [ComVisible(true)]
+    public partial class PTARibbon : RibbonBase
+    {
+        #region フィールド
+
+        private ILogger&lt;PTARibbon&gt; _logger;
+        private EmailAnalysisService _emailAnalysisService;
+        private EmailComposerService _emailComposerService;
+
+        #endregion
+
+        #region コンストラクター
+
+        /// &lt;summary&gt;
+        /// コンストラクター
+        /// &lt;/summary&gt;
+        public PTARibbon() : base(Globals.Factory.GetRibbonFactory())
+        {
+            InitializeComponent();
+        }
+
+        #endregion
+
+        #region イベントハンドラー
+
+        /// &lt;summary&gt;
+        /// リボン読み込み時の処理
+        /// &lt;/summary&gt;
+        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
+        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        private void PTARibbon_Load(object sender, RibbonUIEventArgs e)
+        {
+            try
+            {
+                // サービスの取得
+                var serviceProvider = Globals.ThisAddIn.ServiceProvider;
+                _logger = serviceProvider?.GetService&lt;ILogger&lt;PTARibbon&gt;&gt;();
+                _emailAnalysisService = serviceProvider?.GetService&lt;EmailAnalysisService&gt;();
+                _emailComposerService = serviceProvider?.GetService&lt;EmailComposerService&gt;();
+
+                _logger?.LogInformation("PTA リボンUIが読み込まれました");
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"リボンUI初期化エラー: {ex.Message}", "PTA Outlook アドイン", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// &lt;summary&gt;
+        /// メール解析ボタンクリック
+        /// &lt;/summary&gt;
+        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
+        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        private async void btnAnalyzeEmail_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                _logger?.LogInformation("メール解析ボタンがクリックされました");
+
+                if (_emailAnalysisService == null)
+                {
+                    MessageBox.Show("メール解析サービスが利用できません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // プログレス表示
+                var progressForm = new ProgressForm("メール内容を解析中...");
+                progressForm.Show();
+
+                try
+                {
+                    var result = await _emailAnalysisService.AnalyzeSelectedEmailAsync();
+                    
+                    progressForm.Close();
+                    
+                    // 結果を表示
+                    var resultForm = new ResultDisplayForm("メール解析結果", result);
+                    resultForm.ShowDialog();
+                }
+                finally
+                {
+                    progressForm?.Close();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _logger?.LogError(ex, "メール解析処理中にエラーが発生しました");
+                MessageBox.Show($"メール解析中にエラーが発生しました:\\n{ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// &lt;summary&gt;
+        /// 営業断りメール作成ボタンクリック
+        /// &lt;/summary&gt;
+        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
+        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        private async void btnCreateRejectionEmail_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                _logger?.LogInformation("営業断りメール作成ボタンがクリックされました");
+
+                if (_emailComposerService == null)
+                {
+                    MessageBox.Show("メール作成サービスが利用できません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // プログレス表示
+                var progressForm = new ProgressForm("営業断りメールを作成中...");
+                progressForm.Show();
+
+                try
+                {
+                    await _emailComposerService.CreateRejectionReplyToSelectedAsync();
+                    progressForm.Close();
+                    
+                    MessageBox.Show("営業断りメールが作成されました。", "完了", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                finally
+                {
+                    progressForm?.Close();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _logger?.LogError(ex, "営業断りメール作成中にエラーが発生しました");
+                MessageBox.Show($"営業断りメール作成中にエラーが発生しました:\\n{ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// &lt;summary&gt;
+        /// 承諾メール作成ボタンクリック
+        /// &lt;/summary&gt;
+        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
+        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        private async void btnCreateAcceptanceEmail_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                _logger?.LogInformation("承諾メール作成ボタンがクリックされました");
+
+                if (_emailComposerService == null)
+                {
+                    MessageBox.Show("メール作成サービスが利用できません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // プログレス表示
+                var progressForm = new ProgressForm("承諾メールを作成中...");
+                progressForm.Show();
+
+                try
+                {
+                    await _emailComposerService.CreateAcceptanceReplyToSelectedAsync();
+                    progressForm.Close();
+                    
+                    MessageBox.Show("承諾メールが作成されました。", "完了", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                finally
+                {
+                    progressForm?.Close();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _logger?.LogError(ex, "承諾メール作成中にエラーが発生しました");
+                MessageBox.Show($"承諾メール作成中にエラーが発生しました:\\n{ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// &lt;summary&gt;
+        /// カスタムメール作成ボタンクリック
+        /// &lt;/summary&gt;
+        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
+        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        private async void btnCreateCustomEmail_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                _logger?.LogInformation("カスタムメール作成ボタンがクリックされました");
+
+                if (_emailComposerService == null)
+                {
+                    MessageBox.Show("メール作成サービスが利用できません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                // カスタムプロンプトの入力
+                var promptForm = new CustomPromptForm();
+                if (promptForm.ShowDialog() == DialogResult.OK)
+                {
+                    var customPrompt = promptForm.CustomPrompt;
+                    
+                    if (string.IsNullOrWhiteSpace(customPrompt))
+                    {
+                        MessageBox.Show("カスタムプロンプトが入力されていません。", "入力エラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    // プログレス表示
+                    var progressForm = new ProgressForm("カスタムメールを作成中...");
+                    progressForm.Show();
+
+                    try
+                    {
+                        await _emailComposerService.CreateCustomReplyToSelectedAsync(customPrompt);
+                        progressForm.Close();
+                        
+                        MessageBox.Show("カスタムメールが作成されました。", "完了", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    finally
+                    {
+                        progressForm?.Close();
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                _logger?.LogError(ex, "カスタムメール作成中にエラーが発生しました");
+                MessageBox.Show($"カスタムメール作成中にエラーが発生しました:\\n{ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// &lt;summary&gt;
+        /// 設定ボタンクリック
+        /// &lt;/summary&gt;
+        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
+        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        private void btnSettings_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                _logger?.LogInformation("設定ボタンがクリックされました");
+
+                var settingsForm = new SettingsForm();
+                settingsForm.ShowDialog();
+            }
+            catch (System.Exception ex)
+            {
+                _logger?.LogError(ex, "設定画面表示中にエラーが発生しました");
+                MessageBox.Show($"設定画面表示中にエラーが発生しました:\\n{ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// &lt;summary&gt;
+        /// バージョン情報ボタンクリック
+        /// &lt;/summary&gt;
+        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
+        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        private void btnAbout_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                _logger?.LogInformation("バージョン情報ボタンがクリックされました");
+
+                var aboutForm = new AboutForm();
+                aboutForm.ShowDialog();
+            }
+            catch (System.Exception ex)
+            {
+                _logger?.LogError(ex, "バージョン情報表示中にエラーが発生しました");
+                MessageBox.Show($"バージョン情報表示中にエラーが発生しました:\\n{ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        #endregion
+
+        #region プライベートメソッド
+
+        /// &lt;summary&gt;
+        /// 部分的なメソッド実装（デザイナー用）
+        /// &lt;/summary&gt;
+        partial void InitializeComponent();
+
+        #endregion
+    }
+
+    #region 簡単なフォームクラス
+
+    /// &lt;summary&gt;
+    /// プログレス表示フォーム
+    /// &lt;/summary&gt;
+    public class ProgressForm : Form
+    {
+        public ProgressForm(string message)
+        {
+            Text = "処理中";
+            Size = new System.Drawing.Size(300, 100);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            StartPosition = FormStartPosition.CenterParent;
+
+            var label = new Label
+            {
+                Text = message,
+                Dock = DockStyle.Fill,
+                TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+            };
+
+            Controls.Add(label);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// 結果表示フォーム
+    /// &lt;/summary&gt;
+    public class ResultDisplayForm : Form
+    {
+        public ResultDisplayForm(string title, string content)
+        {
+            Text = title;
+            Size = new System.Drawing.Size(600, 400);
+            StartPosition = FormStartPosition.CenterParent;
+
+            var textBox = new TextBox
+            {
+                Text = content,
+                Multiline = true,
+                ScrollBars = ScrollBars.Vertical,
+                ReadOnly = true,
+                Dock = DockStyle.Fill
+            };
+
+            Controls.Add(textBox);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// カスタムプロンプト入力フォーム
+    /// &lt;/summary&gt;
+    public class CustomPromptForm : Form
+    {
+        public string CustomPrompt { get; private set; }
+
+        public CustomPromptForm()
+        {
+            Text = "カスタムプロンプト入力";
+            Size = new System.Drawing.Size(500, 300);
+            StartPosition = FormStartPosition.CenterParent;
+
+            var label = new Label
+            {
+                Text = "作成したいメールの内容を詳しく記述してください:",
+                Location = new System.Drawing.Point(10, 10),
+                Size = new System.Drawing.Size(460, 20)
+            };
+
+            var textBox = new TextBox
+            {
+                Location = new System.Drawing.Point(10, 35),
+                Size = new System.Drawing.Size(460, 150),
+                Multiline = true,
+                ScrollBars = ScrollBars.Vertical
+            };
+
+            var btnOK = new Button
+            {
+                Text = "OK",
+                Location = new System.Drawing.Point(315, 200),
+                DialogResult = DialogResult.OK
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "キャンセル",
+                Location = new System.Drawing.Point(395, 200),
+                DialogResult = DialogResult.Cancel
+            };
+
+            btnOK.Click += (s, e) =&gt; { CustomPrompt = textBox.Text; };
+
+            Controls.AddRange(new Control[] { label, textBox, btnOK, btnCancel });
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// 設定フォーム（プレースホルダー）
+    /// &lt;/summary&gt;
+    public class SettingsForm : Form
+    {
+        public SettingsForm()
+        {
+            Text = "設定";
+            Size = new System.Drawing.Size(400, 300);
+            StartPosition = FormStartPosition.CenterParent;
+
+            var label = new Label
+            {
+                Text = "設定画面（将来実装予定）",
+                Dock = DockStyle.Fill,
+                TextAlign = System.Drawing.ContentAlignment.MiddleCenter
+            };
+
+            Controls.Add(label);
+        }
+    }
+
+    /// &lt;summary&gt;
+    /// バージョン情報フォーム
+    /// &lt;/summary&gt;
+    public class AboutForm : Form
+    {
+        public AboutForm()
+        {
+            Text = "バージョン情報";
+            Size = new System.Drawing.Size(350, 200);
+            StartPosition = FormStartPosition.CenterParent;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+
+            var info = $"PTA Outlook アドイン\\n\\nバージョン: 1.0.0 VSTO\\n作成日: 2024年\\n\\n" +
+                      $"VSTOで再実装されたOutlook AI Helper\\n\\n主要機能:\\n" +
+                      $"・メール内容解析\\n・営業断りメール作成\\n・承諾メール作成\\n・カスタムメール作成";
+
+            var label = new Label
+            {
+                Text = info,
+                Location = new System.Drawing.Point(20, 20),
+                Size = new System.Drawing.Size(300, 120),
+                TextAlign = System.Drawing.ContentAlignment.TopLeft
+            };
+
+            var btnOK = new Button
+            {
+                Text = "OK",
+                Location = new System.Drawing.Point(135, 150),
+                DialogResult = DialogResult.OK
+            };
+
+            Controls.AddRange(new Control[] { label, btnOK });
+        }
+    }
+
+    #endregion
+}
