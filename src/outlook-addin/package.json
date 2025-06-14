@@ -1,0 +1,46 @@
+{
+  "name": "pta-outlook-addin",
+  "version": "1.0.0",
+  "description": "PTA Outlook Add-in - AI supported email processing",
+  "main": "src/taskpane.html",
+  "scripts": {
+    "start": "office-addin-dev-certs install && office-addin-dev-server --source ./src",
+    "start:web": "office-addin-dev-server --source ./src --port 3000",
+    "build": "echo 'Build process for Office Add-in'",
+    "lint": "eslint 'src/**/*.js'",
+    "lint:fix": "eslint 'src/**/*.js' --fix",
+    "validate": "office-addin-manifest validate manifest/manifest.xml",
+    "sideload": "office-addin-debugging start manifest/manifest.xml",
+    "stop": "office-addin-debugging stop manifest/manifest.xml"
+  },
+  "keywords": [
+    "outlook",
+    "office-addin",
+    "pta",
+    "ai",
+    "email-automation",
+    "japanese"
+  ],
+  "author": "PTA Development Team",
+  "license": "MIT",
+  "dependencies": {
+    "@microsoft/office-js": "^1.1.88"
+  },
+  "devDependencies": {
+    "@types/office-js": "^1.0.366",
+    "eslint": "^8.57.0",
+    "office-addin-cli": "^1.6.0",
+    "office-addin-debugging": "^5.1.0",
+    "office-addin-dev-certs": "^1.13.0",
+    "office-addin-dev-server": "^2.1.0",
+    "office-addin-manifest": "^1.13.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/takaknee/PTA.git",
+    "directory": "src/outlook-addin"
+  }
+}

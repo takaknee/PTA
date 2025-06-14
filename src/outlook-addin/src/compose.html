@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PTA Outlook アドイン - メール作成</title>
+
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    
+    <!-- PTA Styles -->
+    <link rel="stylesheet" type="text/css" href="../assets/styles.css" />
+</head>
+
+<body class="ms-font-m ms-welcome">
+    <header class="ms-welcome__header ms-bgColor-neutralLighter">
+        <img width="90" height="90" src="../assets/logo-filled.png" alt="PTA" title="PTA" />
+        <h1 class="ms-font-su">PTA メール作成支援</h1>
+    </header>
+    
+    <main id="app-body" class="ms-welcome__main">
+        <div class="ms-welcome__content">
+            <div class="notification-container">
+                <p class="ms-font-l">AIを使用してメール作成を支援します。</p>
+            </div>
+            
+            <div class="controls-container">
+                <div class="form-group">
+                    <label for="email-type" class="ms-font-m">メールタイプ：</label>
+                    <select id="email-type" class="form-control">
+                        <option value="announcement">お知らせ</option>
+                        <option value="request">依頼</option>
+                        <option value="reminder">リマインダー</option>
+                        <option value="response">返信</option>
+                        <option value="custom">カスタム</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="message-content" class="ms-font-m">メッセージ内容：</label>
+                    <textarea id="message-content" class="form-control" rows="4" 
+                              placeholder="伝えたい内容を簡潔に入力してください"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tone" class="ms-font-m">文体：</label>
+                    <select id="tone" class="form-control">
+                        <option value="formal">丁寧・フォーマル</option>
+                        <option value="friendly">親しみやすい</option>
+                        <option value="business">ビジネス</option>
+                    </select>
+                </div>
+                
+                <button class="ms-welcome__action" id="generate-button">
+                    <span class="ms-font-m">メール文章生成</span>
+                </button>
+                
+                <button class="ms-welcome__action" id="insert-button" style="display: none;">
+                    <span class="ms-font-m">本文に挿入</span>
+                </button>
+            </div>
+            
+            <div id="result-container" class="result-container" style="display: none;">
+                <h3>生成された文章</h3>
+                <div id="generated-text" class="generated-text"></div>
+            </div>
+            
+            <div id="loading-container" class="loading-container" style="display: none;">
+                <div class="ms-Spinner ms-Spinner--large"></div>
+                <p class="ms-font-m">AI文章生成中...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- PTA Scripts -->
+    <script type="text/javascript" src="compose.js"></script>
+</body>
+</html>
