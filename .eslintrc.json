@@ -48,6 +48,19 @@
         "no-implicit-globals": "off",
         "no-unused-vars": "off"
       }
+    },
+    {
+      "files": ["src/edge-extension/**/*.js"],
+      "env": {
+        "browser": true,
+        "webextensions": true
+      },
+      "globals": {
+        "chrome": "readonly"
+      },
+      "rules": {
+        "no-case-declarations": "error"
+      }
     }
   ]
 }

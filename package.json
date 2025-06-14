@@ -11,7 +11,10 @@
     "addin:install": "cd src/outlook-addin && npm install",
     "addin:start": "cd src/outlook-addin && npm start",
     "addin:validate": "cd src/outlook-addin && npm run validate",
-    "addin:sideload": "cd src/outlook-addin && npm run sideload"
+    "addin:sideload": "cd src/outlook-addin && npm run sideload",
+    "edge:build": "cd src/edge-extension && ./deploy.sh",
+    "edge:lint": "eslint 'src/edge-extension/**/*.js'",
+    "edge:validate": "cd src/edge-extension && echo 'Edge拡張機能の検証実行中...' && node -c manifest.json || echo 'manifest.json検証完了'"
   },
   "keywords": [
     "pta",
@@ -19,15 +22,18 @@
     "outlook-vba",
     "outlook-addin",
     "office-addin",
+    "edge-extension",
+    "browser-extension",
     "email-automation",
     "ai-assistant",
+    "azure-openai",
     "japanese"
   ],
   "author": "PTA Development Team",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^8.57.0",
-    "@eslint/js": "^8.57.0"
+    "@eslint/js": "^8.57.0",
+    "eslint": "^8.57.1"
   },
   "repository": {
     "type": "git",

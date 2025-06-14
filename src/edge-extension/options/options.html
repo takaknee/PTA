@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTA情報配信支援ツール - 設定</title>
+    <link rel="stylesheet" href="options.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <span class="logo">🏫</span>
+                <h1>PTA情報配信支援ツール - 設定</h1>
+            </div>
+        </header>
+        
+        <main class="main">
+            <div class="settings-section">
+                <h2>🤖 AI設定</h2>
+                <div class="setting-group">
+                    <label for="provider">AIプロバイダー</label>
+                    <select id="provider">
+                        <option value="azure">Azure OpenAI</option>
+                        <option value="openai">OpenAI</option>
+                    </select>
+                    <p class="help-text">使用するAIサービスを選択してください</p>
+                </div>
+                
+                <div id="azure-settings" class="provider-settings">
+                    <div class="setting-group">
+                        <label for="azure-endpoint">Azure エンドポイント</label>
+                        <input type="url" id="azure-endpoint" placeholder="https://your-resource-name.openai.azure.com">
+                        <p class="help-text">Azure OpenAIリソースのエンドポイントURL</p>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="api-key">APIキー</label>
+                    <div class="password-field">
+                        <input type="password" id="api-key" placeholder="APIキーを入力してください">
+                        <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
+                    </div>
+                    <p class="help-text">APIキーは安全に暗号化して保存されます</p>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="model">モデル</label>
+                    <select id="model">
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    </select>
+                    <p class="help-text">使用するAIモデルを選択してください</p>
+                </div>
+                
+                <div class="setting-group">
+                    <button class="test-button" id="test-connection">🔧 接続テスト</button>
+                    <div id="test-result" class="test-result" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h2>⚙️ 動作設定</h2>
+                <div class="setting-group">
+                    <label for="auto-detect">
+                        <input type="checkbox" id="auto-detect">
+                        メール自動検出
+                    </label>
+                    <p class="help-text">Webメールページでメールを自動的に検出します</p>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="show-notifications">
+                        <input type="checkbox" id="show-notifications">
+                        通知表示
+                    </label>
+                    <p class="help-text">処理完了時に通知を表示します</p>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="save-history">
+                        <input type="checkbox" id="save-history">
+                        履歴保存
+                    </label>
+                    <p class="help-text">AI処理の履歴を保存します</p>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h2>📊 使用状況</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-analyses">0</div>
+                        <div class="stat-label">メール解析回数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-compositions">0</div>
+                        <div class="stat-label">メール作成回数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="history-count">0</div>
+                        <div class="stat-label">履歴件数</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h2>🗂️ データ管理</h2>
+                <div class="data-actions">
+                    <button class="action-button secondary" id="export-settings">📤 設定エクスポート</button>
+                    <button class="action-button secondary" id="import-settings">📥 設定インポート</button>
+                    <button class="action-button secondary" id="export-history">📋 履歴エクスポート</button>
+                    <button class="action-button danger" id="clear-all-data">🗑️ 全データ削除</button>
+                </div>
+                <input type="file" id="import-file" accept=".json" style="display: none;">
+            </div>
+            
+            <div class="settings-section">
+                <h2>ℹ️ バージョン情報</h2>
+                <div class="version-info">
+                    <p><strong>バージョン:</strong> 1.0.0</p>
+                    <p><strong>開発者:</strong> PTA Development Team</p>
+                    <p><strong>ライセンス:</strong> MIT License</p>
+                    <div class="links">
+                        <a href="https://github.com/takaknee/PTA" target="_blank">GitHub</a>
+                        <a href="#" id="help-link">ヘルプ</a>
+                        <a href="#" id="privacy-link">プライバシーポリシー</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <div class="footer-actions">
+                <button class="action-button secondary" id="reset-settings">リセット</button>
+                <button class="action-button primary" id="save-settings">💾 設定保存</button>
+            </div>
+        </footer>
+        
+        <!-- 確認ダイアログ -->
+        <div class="modal" id="confirm-modal" style="display: none;">
+            <div class="modal-content">
+                <h3>確認</h3>
+                <p id="confirm-message">この操作を実行しますか？</p>
+                <div class="modal-actions">
+                    <button class="action-button secondary" onclick="closeConfirmModal()">キャンセル</button>
+                    <button class="action-button danger" id="confirm-ok">実行</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 通知 -->
+        <div id="notification" class="notification" style="display: none;"></div>
+    </div>
+    
+    <script src="options.js"></script>
+</body>
+</html>

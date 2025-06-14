@@ -1,0 +1,372 @@
+/*
+ * PTA Edge拡張機能 - コンテンツスクリプト用CSS
+ * Copyright (c) 2024 PTA Development Team
+ */
+
+/* PTA支援ボタン */
+.pta-support-button {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+    transition: all 0.3s ease;
+    z-index: 10000;
+}
+
+.pta-support-button:hover {
+    background: linear-gradient(135deg, #1976D2, #1565C0);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+    transform: translateY(-1px);
+}
+
+.pta-button-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pta-icon {
+    font-size: 16px;
+}
+
+.pta-text {
+    font-weight: 500;
+}
+
+/* PTA ダイアログ */
+.pta-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20000;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.pta-dialog-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.pta-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+    border-radius: 12px 12px 0 0;
+}
+
+.pta-dialog-header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.pta-close-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.pta-close-button:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.pta-dialog-body {
+    padding: 20px;
+}
+
+.pta-email-info,
+.pta-page-info {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #2196F3;
+}
+
+.pta-email-info h3,
+.pta-page-info h3 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.pta-email-info p,
+.pta-page-info p {
+    margin: 8px 0;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.pta-email-info strong,
+.pta-page-info strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.pta-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.pta-action-button {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: 120px;
+}
+
+.pta-action-button:hover {
+    background: linear-gradient(135deg, #45a049, #3d8b40);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.pta-action-button:nth-child(2) {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+}
+
+.pta-action-button:nth-child(2):hover {
+    background: linear-gradient(135deg, #F57C00, #E65100);
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.pta-action-button:nth-child(3) {
+    background: linear-gradient(135deg, #607D8B, #455A64);
+}
+
+.pta-action-button:nth-child(3):hover {
+    background: linear-gradient(135deg, #455A64, #37474F);
+    box-shadow: 0 2px 8px rgba(96, 125, 139, 0.3);
+}
+
+.pta-result {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.pta-result.success {
+    background: #f1f8e9;
+    border-color: #4CAF50;
+}
+
+.pta-result.error {
+    background: #ffebee;
+    border-color: #f44336;
+}
+
+.pta-result h3 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.pta-result pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+    color: #333;
+}
+
+.pta-loading {
+    text-align: center;
+    padding: 20px;
+}
+
+.pta-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #2196F3;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: pta-spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes pta-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.pta-loading p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* 通知 */
+.pta-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 25000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    animation: pta-slide-in 0.3s ease;
+}
+
+.pta-notification.info {
+    background: #2196F3;
+}
+
+.pta-notification.success {
+    background: #4CAF50;
+}
+
+.pta-notification.error {
+    background: #f44336;
+}
+
+@keyframes pta-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .pta-dialog-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .pta-actions {
+        flex-direction: column;
+    }
+    
+    .pta-action-button {
+        min-width: auto;
+    }
+    
+    .pta-support-button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
+
+/* 高コントラスト対応 */
+@media (prefers-contrast: high) {
+    .pta-support-button {
+        background: #000;
+        color: #fff;
+        border: 2px solid #fff;
+    }
+    
+    .pta-dialog {
+        background: rgba(0, 0, 0, 0.9);
+    }
+    
+    .pta-dialog-content {
+        border: 2px solid #000;
+    }
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    .pta-dialog-content {
+        background: #2d2d2d;
+        color: #fff;
+    }
+    
+    .pta-dialog-header {
+        background: linear-gradient(135deg, #3a3a3a, #2d2d2d);
+    }
+    
+    .pta-dialog-header h2 {
+        color: #fff;
+    }
+    
+    .pta-email-info,
+    .pta-page-info {
+        background: #3a3a3a;
+        color: #fff;
+    }
+    
+    .pta-email-info h3,
+    .pta-page-info h3 {
+        color: #fff;
+    }
+    
+    .pta-email-info p,
+    .pta-page-info p {
+        color: #ccc;
+    }
+    
+    .pta-email-info strong,
+    .pta-page-info strong {
+        color: #fff;
+    }
+    
+    .pta-result {
+        background: #3a3a3a;
+        border-color: #555;
+        color: #fff;
+    }
+    
+    .pta-result h3 {
+        color: #fff;
+    }
+    
+    .pta-result pre {
+        color: #fff;
+    }
+    
+    .pta-loading p {
+        color: #ccc;
+    }
+}
