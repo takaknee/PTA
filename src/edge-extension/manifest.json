@@ -11,10 +11,11 @@
     "scripting",
     "contextMenus"
   ],
-  
-  "host_permissions": [
+    "host_permissions": [
     "https://*/*",
-    "http://*/*"
+    "http://*/*",
+    "https://api.openai.com/*",
+    "https://*.openai.azure.com/*"
   ],
   
   "background": {

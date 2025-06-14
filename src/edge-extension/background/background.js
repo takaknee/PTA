@@ -6,7 +6,7 @@
 // 拡張機能のインストール時
 chrome.runtime.onInstalled.addListener((details) => {
     console.log('PTA支援ツールがインストールされました');
-    
+
     // 初期設定を保存
     if (details.reason === 'install') {
         chrome.storage.local.set({
@@ -19,7 +19,7 @@ chrome.runtime.onInstalled.addListener((details) => {
             }
         });
     }
-    
+
     // コンテキストメニューを作成
     createContextMenus();
 });
@@ -36,7 +36,7 @@ function createContextMenus() {
             title: '🏫 選択文をPTA支援ツールで分析',
             contexts: ['selection']
         });
-        
+
         // ページ全体用メニュー
         chrome.contextMenus.create({
             id: 'pta-analyze-page',
@@ -60,7 +60,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
                 }
             });
             break;
-            
+
         case 'pta-analyze-page':
             // ページ全体を要約
             chrome.tabs.sendMessage(tab.id, {
@@ -80,23 +80,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'analyzeEmail':
             handleEmailAnalysis(message.data, sendResponse);
             return true; // 非同期レスポンス
-            
+
         case 'analyzePage':
             handlePageAnalysis(message.data, sendResponse);
             return true; // 非同期レスポンス
-            
+
         case 'analyzeSelection':
             handleSelectionAnalysis(message.data, sendResponse);
             return true; // 非同期レスポンス
-            
+
         case 'composeEmail':
             handleEmailComposition(message.data, sendResponse);
             return true; // 非同期レスポンス
-            
+
         case 'testApiConnection':
             handleApiTest(message.data, sendResponse);
             return true; // 非同期レスポンス
-            
+
         default:
             sendResponse({ error: 'サポートされていないアクションです' });
     }
@@ -108,15 +108,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function handleEmailAnalysis(data, sendResponse) {
     try {
         const settings = await getSettings();
-        
+
         if (!settings.apiKey) {
             sendResponse({ error: 'APIキーが設定されていません' });
             return;
         }
-        
+
         const prompt = createAnalysisPrompt(data);
         const result = await callAIAPI(prompt, settings);
-        
+
         // 履歴に保存
         await saveToHistory({
             type: 'analysis',
@@ -124,7 +124,7 @@ async function handleEmailAnalysis(data, sendResponse) {
             emailSubject: data.subject,
             result: result
         });
-        
+
         sendResponse({ success: true, result: result });
     } catch (error) {
         console.error('メール解析エラー:', error);
@@ -138,15 +138,15 @@ async function handleEmailAnalysis(data, sendResponse) {
 async function handlePageAnalysis(data, sendResponse) {
     try {
         const settings = await getSettings();
-        
+
         if (!settings.apiKey) {
             sendResponse({ error: 'APIキーが設定されていません' });
             return;
         }
-        
+
         const prompt = createPageAnalysisPrompt(data);
         const result = await callAIAPI(prompt, settings);
-        
+
         // 履歴に保存
         await saveToHistory({
             type: 'page_analysis',
@@ -155,7 +155,7 @@ async function handlePageAnalysis(data, sendResponse) {
             pageUrl: data.pageUrl,
             result: result
         });
-        
+
         sendResponse({ success: true, result: result });
     } catch (error) {
         console.error('ページ解析エラー:', error);
@@ -169,15 +169,15 @@ async function handlePageAnalysis(data, sendResponse) {
 async function handleSelectionAnalysis(data, sendResponse) {
     try {
         const settings = await getSettings();
-        
+
         if (!settings.apiKey) {
             sendResponse({ error: 'APIキーが設定されていません' });
             return;
         }
-        
+
         const prompt = createSelectionAnalysisPrompt(data);
         const result = await callAIAPI(prompt, settings);
-        
+
         // 履歴に保存
         await saveToHistory({
             type: 'selection_analysis',
@@ -187,7 +187,7 @@ async function handleSelectionAnalysis(data, sendResponse) {
             selectedText: data.selectedText.substring(0, 100) + '...',
             result: result
         });
-        
+
         sendResponse({ success: true, result: result });
     } catch (error) {
         console.error('選択テキスト解析エラー:', error);
@@ -197,15 +197,15 @@ async function handleSelectionAnalysis(data, sendResponse) {
 async function handleEmailComposition(data, sendResponse) {
     try {
         const settings = await getSettings();
-        
+
         if (!settings.apiKey) {
             sendResponse({ error: 'APIキーが設定されていません' });
             return;
         }
-        
+
         const prompt = createCompositionPrompt(data);
         const result = await callAIAPI(prompt, settings);
-        
+
         // 履歴に保存
         await saveToHistory({
             type: 'composition',
@@ -213,7 +213,7 @@ async function handleEmailComposition(data, sendResponse) {
             requestType: data.type,
             result: result
         });
-        
+
         sendResponse({ success: true, result: result });
     } catch (error) {
         console.error('メール作成エラー:', error);
@@ -228,10 +228,10 @@ async function handleApiTest(data, sendResponse) {
     try {
         const testPrompt = 'こんにちは。API接続テストです。簡単に挨拶をしてください。';
         await callAIAPI(testPrompt, data);
-        
-        sendResponse({ 
-            success: true, 
-            result: 'API接続テストが成功しました。' 
+
+        sendResponse({
+            success: true,
+            result: 'API接続テストが成功しました。'
         });
     } catch (error) {
         console.error('API接続テストエラー:', error);
@@ -245,14 +245,14 @@ async function handleApiTest(data, sendResponse) {
 async function callAIAPI(prompt, settings) {
     const apiKey = settings.apiKey;
     const provider = settings.provider || 'azure';
-    const model = settings.model || 'gpt-4';
-    
+    const model = settings.model || 'gpt-4o-mini';
+
     if (!apiKey) {
         throw new Error('APIキーが設定されていません。');
     }
-    
+
     let endpoint, headers, body;
-    
+
     switch (provider) {
         case 'openai':
             endpoint = 'https://api.openai.com/v1/chat/completions';
@@ -276,10 +276,13 @@ async function callAIAPI(prompt, settings) {
                 temperature: 0.7
             });
             break;
-            
+
         case 'azure': {
             const azureEndpoint = settings.azureEndpoint || '';
-            endpoint = `${azureEndpoint}/openai/deployments/${model}/chat/completions?api-version=2023-05-15`;
+            if (!azureEndpoint) {
+                throw new Error('Azure エンドポイントが設定されていません。');
+            }
+            endpoint = `${azureEndpoint}/openai/deployments/${model}/chat/completions?api-version=2024-02-15-preview`;
             headers = {
                 'Content-Type': 'application/json',
                 'api-key': apiKey
@@ -300,33 +303,76 @@ async function callAIAPI(prompt, settings) {
             });
             break;
         }
-            
+
         default:
             throw new Error('サポートされていないAIプロバイダーです: ' + provider);
     }
-    
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: headers,
-        body: body
-    });
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`APIエラー (${response.status}): ${errorText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (provider === 'openai' || provider === 'azure') {
-        if (data.choices && data.choices.length > 0) {
-            return data.choices[0].message.content.trim();
-        } else {
-            throw new Error('AIからの有効な応答が得られませんでした');
+
+    try {
+        console.log('API呼び出し開始:', { endpoint, provider, model });
+        
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: body,
+            // Chrome拡張機能用の追加設定
+            mode: 'cors',
+            credentials: 'omit'
+        });
+
+        console.log('API応答受信:', { status: response.status, ok: response.ok });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('APIエラー:', { status: response.status, error: errorText });
+            
+            // より詳細なエラーメッセージを提供
+            switch (response.status) {
+                case 401:
+                    throw new Error('APIキーが無効です。設定を確認してください。');
+                case 403:
+                    throw new Error('APIアクセスが拒否されました。権限を確認してください。');
+                case 429:
+                    throw new Error('API利用制限に達しました。しばらく待ってから再試行してください。');
+                case 500:
+                case 502:
+                case 503:
+                    throw new Error('APIサーバーエラーが発生しました。しばらく待ってから再試行してください。');
+                default:
+                    throw new Error(`APIエラー (${response.status}): ${errorText || 'Unknown error'}`);
+            }
         }
+
+        const data = await response.json();
+        console.log('API応答データ:', data);
+
+        if (provider === 'openai' || provider === 'azure') {
+            if (data.choices && data.choices.length > 0) {
+                return data.choices[0].message.content.trim();
+            } else {
+                throw new Error('AIからの有効な応答が得られませんでした');
+            }
+        }
+
+        throw new Error('予期しないAPI応答形式です');
+        
+    } catch (error) {
+        console.error('fetch エラー:', error);
+        
+        // TypeError: Failed to fetch の場合の詳細なエラーメッセージ
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+            throw new Error(
+                'ネットワーク接続エラーが発生しました。以下を確認してください:\n' +
+                '• インターネット接続が正常か\n' +
+                '• APIエンドポイントURLが正しいか\n' +
+                '• ファイアウォールやプロキシの設定\n' +
+                '• CORSポリシーの制限'
+            );
+        }
+        
+        // その他のエラーはそのまま再スロー
+        throw error;
     }
-    
-    throw new Error('予期しないAPI応答形式です');
 }
 
 /**
@@ -347,18 +393,18 @@ async function saveToHistory(entry) {
     return new Promise((resolve) => {
         chrome.storage.local.get(['pta_history'], (result) => {
             let history = result.pta_history || [];
-            
+
             // 新しいエントリを先頭に追加
             history.unshift({
                 ...entry,
                 id: Date.now()
             });
-            
+
             // 最新50件のみ保持
             if (history.length > 50) {
                 history = history.slice(0, 50);
             }
-            
+
             chrome.storage.local.set({ 'pta_history': history }, resolve);
         });
     });
@@ -449,26 +495,26 @@ ${emailData.body || '（本文なし）'}
  */
 function createCompositionPrompt(requestData) {
     const basePrompt = 'PTA活動に関するメールを作成してください。';
-    
+
     switch (requestData.type) {
         case 'notice':
             return `${basePrompt}
 内容: ${requestData.content}
 種類: お知らせメール
 要件: 丁寧で分かりやすい文面で、PTA会員向けのお知らせを作成してください。`;
-            
+
         case 'reminder':
             return `${basePrompt}
 内容: ${requestData.content}
 種類: リマインダーメール
 要件: 緊急度を適切に表現し、期限や重要な情報を強調してください。`;
-            
+
         case 'survey':
             return `${basePrompt}
 内容: ${requestData.content}
 種類: アンケート依頼メール
 要件: 協力をお願いする丁寧な文面で、回答方法を明確に示してください。`;
-            
+
         default:
             return `${basePrompt}
 内容: ${requestData.content}

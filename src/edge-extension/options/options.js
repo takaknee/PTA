@@ -4,7 +4,7 @@
  */
 
 // DOM読み込み完了時の初期化
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeOptions();
 });
 
@@ -22,7 +22,7 @@ function initializeOptions() {
     document.getElementById('export-history').addEventListener('click', exportHistory);
     document.getElementById('clear-all-data').addEventListener('click', clearAllData);
     document.getElementById('import-file').addEventListener('change', handleImportFile);
-    
+
     // 現在の設定を読み込み
     loadSettings();
     loadStatistics();
@@ -34,7 +34,7 @@ function initializeOptions() {
 function handleProviderChange() {
     const provider = document.getElementById('provider').value;
     const azureSettings = document.getElementById('azure-settings');
-    
+
     if (provider === 'azure') {
         azureSettings.style.display = 'block';
     } else {
@@ -49,23 +49,22 @@ function loadSettings() {
     chrome.storage.local.get(['pta_settings'], (result) => {
         const settings = result.pta_settings || {
             provider: 'azure',
-            model: 'gpt-4',
+            model: 'gpt-4o-mini',
             apiKey: '',
             azureEndpoint: '',
             autoDetect: true,
             showNotifications: true,
             saveHistory: true
         };
-        
         // UI要素に設定値を反映
         document.getElementById('provider').value = settings.provider || 'azure';
-        document.getElementById('model').value = settings.model || 'gpt-4';
+        document.getElementById('model').value = settings.model || 'gpt-4o-mini';
         document.getElementById('api-key').value = settings.apiKey || '';
         document.getElementById('azure-endpoint').value = settings.azureEndpoint || '';
         document.getElementById('auto-detect').checked = settings.autoDetect !== false;
         document.getElementById('show-notifications').checked = settings.showNotifications !== false;
         document.getElementById('save-history').checked = settings.saveHistory !== false;
-        
+
         // プロバイダー設定の表示制御
         handleProviderChange();
     });
@@ -77,11 +76,11 @@ function loadSettings() {
 function loadStatistics() {
     chrome.storage.local.get(['pta_history', 'pta_statistics'], (result) => {
         const history = result.pta_history || [];
-        
+
         // 解析・作成回数の集計
         const analyses = history.filter(item => item.type === 'analysis').length;
         const compositions = history.filter(item => item.type === 'composition').length;
-        
+
         document.getElementById('total-analyses').textContent = analyses;
         document.getElementById('total-compositions').textContent = compositions;
         document.getElementById('history-count').textContent = history.length;
@@ -95,21 +94,21 @@ function testConnection() {
     const settings = getCurrentSettings();
     const testResult = document.getElementById('test-result');
     const testButton = document.getElementById('test-connection');
-    
+
     if (!settings.apiKey) {
         showTestResult('APIキーを入力してください', 'error');
         return;
     }
-    
+
     if (settings.provider === 'azure' && !settings.azureEndpoint) {
         showTestResult('Azureエンドポイントを入力してください', 'error');
         return;
     }
-    
+
     testButton.disabled = true;
     testButton.textContent = '🔄 テスト中...';
     testResult.style.display = 'none';
-    
+
     // バックグラウンドスクリプトに接続テストを依頼
     chrome.runtime.sendMessage({
         action: 'testApiConnection',
@@ -117,7 +116,7 @@ function testConnection() {
     }, (response) => {
         testButton.disabled = false;
         testButton.textContent = '🔧 接続テスト';
-        
+
         if (response.success) {
             showTestResult('✅ 接続テストが成功しました', 'success');
         } else {
@@ -134,7 +133,7 @@ function showTestResult(message, type) {
     testResult.textContent = message;
     testResult.className = `test-result ${type}`;
     testResult.style.display = 'block';
-    
+
     // 5秒後に自動で非表示
     setTimeout(() => {
         testResult.style.display = 'none';
@@ -161,18 +160,18 @@ function getCurrentSettings() {
  */
 function saveSettings() {
     const settings = getCurrentSettings();
-    
+
     // 必須項目の検証
     if (!settings.apiKey) {
         showNotification('APIキーを入力してください', 'error');
         return;
     }
-    
+
     if (settings.provider === 'azure' && !settings.azureEndpoint) {
         showNotification('Azureエンドポイントを入力してください', 'error');
         return;
     }
-    
+
     // 保存実行
     chrome.storage.local.set({ 'pta_settings': settings }, () => {
         showNotification('✅ 設定を保存しました', 'success');
@@ -186,14 +185,14 @@ function resetSettings() {
     showConfirmDialog('設定をリセットしますか？', () => {
         const defaultSettings = {
             provider: 'azure',
-            model: 'gpt-4',
+            model: 'gpt-4o-mini',
             apiKey: '',
             azureEndpoint: '',
             autoDetect: true,
             showNotifications: true,
             saveHistory: true
         };
-        
+
         chrome.storage.local.set({ 'pta_settings': defaultSettings }, () => {
             loadSettings();
             showNotification('設定をリセットしました', 'info');
@@ -207,21 +206,21 @@ function resetSettings() {
 function exportSettings() {
     chrome.storage.local.get(['pta_settings'], (result) => {
         const settings = result.pta_settings || {};
-        
+
         // APIキーを除外
         const exportData = { ...settings };
         delete exportData.apiKey;
-        
+
         const blob = new Blob([JSON.stringify(exportData, null, 2)], {
             type: 'application/json'
         });
-        
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = 'pta-settings.json';
         a.click();
-        
+
         URL.revokeObjectURL(url);
         showNotification('設定をエクスポートしました', 'success');
     });
@@ -240,12 +239,12 @@ function importSettings() {
 function handleImportFile(event) {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         try {
             const importedSettings = JSON.parse(e.target.result);
-            
+
             // 現在の設定とマージ（APIキーは保持）
             chrome.storage.local.get(['pta_settings'], (result) => {
                 const currentSettings = result.pta_settings || {};
@@ -253,20 +252,20 @@ function handleImportFile(event) {
                     ...importedSettings,
                     apiKey: currentSettings.apiKey // APIキーは保持
                 };
-                
+
                 chrome.storage.local.set({ 'pta_settings': mergedSettings }, () => {
                     loadSettings();
                     showNotification('設定をインポートしました', 'success');
                 });
             });
-            
+
         } catch (error) {
             showNotification('設定ファイルの形式が正しくありません', 'error');
         }
     };
-    
+
     reader.readAsText(file);
-    
+
     // ファイル選択をリセット
     event.target.value = '';
 }
@@ -277,22 +276,22 @@ function handleImportFile(event) {
 function exportHistory() {
     chrome.storage.local.get(['pta_history'], (result) => {
         const history = result.pta_history || [];
-        
+
         if (history.length === 0) {
             showNotification('エクスポートする履歴がありません', 'info');
             return;
         }
-        
+
         const blob = new Blob([JSON.stringify(history, null, 2)], {
             type: 'application/json'
         });
-        
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = 'pta-history.json';
         a.click();
-        
+
         URL.revokeObjectURL(url);
         showNotification('履歴をエクスポートしました', 'success');
     });
@@ -318,14 +317,14 @@ function showConfirmDialog(message, callback) {
     const modal = document.getElementById('confirm-modal');
     const messageElement = document.getElementById('confirm-message');
     const okButton = document.getElementById('confirm-ok');
-    
+
     messageElement.textContent = message;
     modal.style.display = 'flex';
-    
+
     // 既存のイベントリスナーを削除
     okButton.replaceWith(okButton.cloneNode(true));
     const newOkButton = document.getElementById('confirm-ok');
-    
+
     newOkButton.addEventListener('click', () => {
         closeConfirmModal();
         callback();
@@ -347,7 +346,7 @@ function showNotification(message, type = 'info') {
     notification.textContent = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
-    
+
     // 3秒後に自動で非表示
     setTimeout(() => {
         notification.style.display = 'none';
@@ -360,7 +359,7 @@ function showNotification(message, type = 'info') {
 function togglePassword() {
     const apiKeyInput = document.getElementById('api-key');
     const toggleButton = document.querySelector('.toggle-password');
-    
+
     if (apiKeyInput.type === 'password') {
         apiKeyInput.type = 'text';
         toggleButton.textContent = '🙈';
