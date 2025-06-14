@@ -9,7 +9,9 @@ PTA関連の情報配信を自動化するシステムです。Google Workspace�
 - **Gmail整理スクリプト** (`src/gsuite/gmail/`): メール自動整理・クリーンアップ
 
 ### Microsoft Outlook連携  
-- **Outlook AI Helper** (`src/outlook/`): OpenAI APIを使用したメール分析・作成支援
+- **Outlook AI Helper (VBA)** (`src/outlook/`): OpenAI APIを使用したメール分析・作成支援（従来版）
+- **Outlook AI Helper (Office Add-in)** (`src/outlook-addin/`): 最新のOffice Add-ins技術による軽量版（推奨）
+- **Outlook VSTO アドイン** (`src/outlook-vsto/`): C#による高機能版（レガシー）
 
 ## CI/CD・品質管理
 
@@ -45,7 +47,27 @@ npm run security
 
 - **PTA情報配信システム**: [セットアップガイド](src/gsuite/pta/SETUP.md)
 - **Gmail整理スクリプト**: [使用方法](src/gsuite/gmail/README.md)  
-- **Outlook AI Helper**: [クイックスタートガイド](docs/outlook/quickstart.md)
+- **Outlook AI Helper (VBA)**: [クイックスタートガイド](docs/outlook/quickstart.md)
+- **Outlook Add-in (推奨)**: [セットアップガイド](src/outlook-addin/README.md)
+
+## ✨ 最新情報：Office Add-ins 移行完了
+
+**VSTOからOffice Add-ins（Office拡張機能）への移行が完了しました！**
+
+### 🎯 推奨の移行パス
+
+1. **従来のVBA版** → **Office Add-in版**（推奨）
+2. 既存のVSTO版は将来的に廃止予定
+
+### 🌟 Office Add-in版の利点
+
+- ✅ **クロスプラットフォーム**: Windows/Mac/Web全対応
+- ✅ **軽量配信**: マニフェストファイルのみで配信
+- ✅ **自動更新**: ブラウザキャッシュによる透明な更新
+- ✅ **簡単インストール**: ClickOnce不要
+- ✅ **将来保証**: Microsoft推奨の最新技術
+
+詳細は [Office Add-in移行ガイド](src/outlook-addin/MIGRATION.md) をご覧ください。
 
 ## セキュリティ注意事項
 
