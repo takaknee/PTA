@@ -8,6 +8,7 @@ using Microsoft.Office.Interop.Outlook;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OutlookPTAAddin.Core.Services;
+using OutlookPTAAddin.UI.Dialogs;
 
 namespace OutlookPTAAddin.UI.Ribbon
 {
@@ -22,6 +23,7 @@ namespace OutlookPTAAddin.UI.Ribbon
         private ILogger&lt;PTARibbon&gt; _logger;
         private EmailAnalysisService _emailAnalysisService;
         private EmailComposerService _emailComposerService;
+        private AIServiceManager _aiServiceManager;
 
         #endregion
 
@@ -53,6 +55,7 @@ namespace OutlookPTAAddin.UI.Ribbon
                 _logger = serviceProvider?.GetService&lt;ILogger&lt;PTARibbon&gt;&gt;();
                 _emailAnalysisService = serviceProvider?.GetService&lt;EmailAnalysisService&gt;();
                 _emailComposerService = serviceProvider?.GetService&lt;EmailComposerService&gt;();
+                _aiServiceManager = serviceProvider?.GetService&lt;AIServiceManager&gt;();
 
                 _logger?.LogInformation("PTA リボンUIが読み込まれました");
             }
@@ -79,24 +82,23 @@ namespace OutlookPTAAddin.UI.Ribbon
                     return;
                 }
 
-                // プログレス表示
-                var progressForm = new ProgressForm("メール内容を解析中...");
-                progressForm.Show();
-
-                try
-                {
-                    var result = await _emailAnalysisService.AnalyzeSelectedEmailAsync();
-                    
-                    progressForm.Close();
-                    
-                    // 結果を表示
-                    var resultForm = new ResultDisplayForm("メール解析結果", result);
-                    resultForm.ShowDialog();
-                }
-                finally
-                {
-                    progressForm?.Close();
-                }
+                // プログレス表示付きで解析実行
+                await ProgressDialog.RunWithProgressAsync(
+                    null,
+                    async (dialog, cancellationToken) =>
+                    {
+                        dialog.UpdateStatus("選択されたメールを解析中...", "AI APIにリクエストを送信しています");
+                        var result = await _emailAnalysisService.AnalyzeSelectedEmailAsync();
+                        
+                        dialog.UpdateStatus("解析結果を表示中...");
+                        // 結果表示ダイアログを表示
+                        var resultForm = new ResultDisplayForm("メール解析結果", result);
+                        resultForm.ShowDialog();
+                    },
+                    "メール解析",
+                    "メールの内容を解析しています...",
+                    true
+                );
             }
             catch (System.Exception ex)
             {
@@ -249,8 +251,19 @@ namespace OutlookPTAAddin.UI.Ribbon
             {
                 _logger?.LogInformation("設定ボタンがクリックされました");
 
-                var settingsForm = new SettingsForm();
-                settingsForm.ShowDialog();
+                if (_aiServiceManager == null)
+                {
+                    MessageBox.Show("AI サービス管理者が利用できません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                var settingsLogger = Globals.ThisAddIn.ServiceProvider?.GetService&lt;ILogger&lt;SettingsDialog&gt;&gt;();
+                var settingsDialog = new SettingsDialog(settingsLogger, _aiServiceManager);
+                
+                if (settingsDialog.ShowDialog() == DialogResult.OK)
+                {
+                    MessageBox.Show("設定が保存されました。", "設定完了", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
             }
             catch (System.Exception ex)
             {
