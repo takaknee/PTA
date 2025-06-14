@@ -12,15 +12,15 @@ using OutlookPTAAddin.UI.Dialogs;
 
 namespace OutlookPTAAddin.UI.Ribbon
 {
-    /// &lt;summary&gt;
+    /// <summary>
     /// PTA Outlook アドイン リボンUI
-    /// &lt;/summary&gt;
+    /// </summary>
     [ComVisible(true)]
     public partial class PTARibbon : RibbonBase
     {
         #region フィールド
 
-        private ILogger&lt;PTARibbon&gt; _logger;
+        private ILogger<PTARibbon> _logger;
         private EmailAnalysisService _emailAnalysisService;
         private EmailComposerService _emailComposerService;
         private AIServiceManager _aiServiceManager;
@@ -29,9 +29,9 @@ namespace OutlookPTAAddin.UI.Ribbon
 
         #region コンストラクター
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// コンストラクター
-        /// &lt;/summary&gt;
+        /// </summary>
         public PTARibbon() : base(Globals.Factory.GetRibbonFactory())
         {
             InitializeComponent();
@@ -41,21 +41,21 @@ namespace OutlookPTAAddin.UI.Ribbon
 
         #region イベントハンドラー
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// リボン読み込み時の処理
-        /// &lt;/summary&gt;
-        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
-        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        /// </summary>
+        /// <param name="sender">送信者</param>
+        /// <param name="e">イベント引数</param>
         private void PTARibbon_Load(object sender, RibbonUIEventArgs e)
         {
             try
             {
                 // サービスの取得
                 var serviceProvider = Globals.ThisAddIn.ServiceProvider;
-                _logger = serviceProvider?.GetService&lt;ILogger&lt;PTARibbon&gt;&gt;();
-                _emailAnalysisService = serviceProvider?.GetService&lt;EmailAnalysisService&gt;();
-                _emailComposerService = serviceProvider?.GetService&lt;EmailComposerService&gt;();
-                _aiServiceManager = serviceProvider?.GetService&lt;AIServiceManager&gt;();
+                _logger = serviceProvider?.GetService<ILogger<PTARibbon>>();
+                _emailAnalysisService = serviceProvider?.GetService<EmailAnalysisService>();
+                _emailComposerService = serviceProvider?.GetService<EmailComposerService>();
+                _aiServiceManager = serviceProvider?.GetService<AIServiceManager>();
 
                 _logger?.LogInformation("PTA リボンUIが読み込まれました");
             }
@@ -65,11 +65,11 @@ namespace OutlookPTAAddin.UI.Ribbon
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// メール解析ボタンクリック
-        /// &lt;/summary&gt;
-        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
-        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        /// </summary>
+        /// <param name="sender">送信者</param>
+        /// <param name="e">イベント引数</param>
         private async void btnAnalyzeEmail_Click(object sender, RibbonControlEventArgs e)
         {
             try
@@ -107,11 +107,11 @@ namespace OutlookPTAAddin.UI.Ribbon
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 営業断りメール作成ボタンクリック
-        /// &lt;/summary&gt;
-        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
-        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        /// </summary>
+        /// <param name="sender">送信者</param>
+        /// <param name="e">イベント引数</param>
         private async void btnCreateRejectionEmail_Click(object sender, RibbonControlEventArgs e)
         {
             try
@@ -147,11 +147,11 @@ namespace OutlookPTAAddin.UI.Ribbon
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 承諾メール作成ボタンクリック
-        /// &lt;/summary&gt;
-        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
-        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        /// </summary>
+        /// <param name="sender">送信者</param>
+        /// <param name="e">イベント引数</param>
         private async void btnCreateAcceptanceEmail_Click(object sender, RibbonControlEventArgs e)
         {
             try
@@ -187,11 +187,11 @@ namespace OutlookPTAAddin.UI.Ribbon
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// カスタムメール作成ボタンクリック
-        /// &lt;/summary&gt;
-        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
-        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        /// </summary>
+        /// <param name="sender">送信者</param>
+        /// <param name="e">イベント引数</param>
         private async void btnCreateCustomEmail_Click(object sender, RibbonControlEventArgs e)
         {
             try
@@ -240,11 +240,11 @@ namespace OutlookPTAAddin.UI.Ribbon
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 設定ボタンクリック
-        /// &lt;/summary&gt;
-        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
-        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        /// </summary>
+        /// <param name="sender">送信者</param>
+        /// <param name="e">イベント引数</param>
         private void btnSettings_Click(object sender, RibbonControlEventArgs e)
         {
             try
@@ -257,7 +257,7 @@ namespace OutlookPTAAddin.UI.Ribbon
                     return;
                 }
 
-                var settingsLogger = Globals.ThisAddIn.ServiceProvider?.GetService&lt;ILogger&lt;SettingsDialog&gt;&gt;();
+                var settingsLogger = Globals.ThisAddIn.ServiceProvider?.GetService<ILogger<SettingsDialog>>();
                 var settingsDialog = new SettingsDialog(settingsLogger, _aiServiceManager);
                 
                 if (settingsDialog.ShowDialog() == DialogResult.OK)
@@ -272,11 +272,11 @@ namespace OutlookPTAAddin.UI.Ribbon
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// バージョン情報ボタンクリック
-        /// &lt;/summary&gt;
-        /// &lt;param name="sender"&gt;送信者&lt;/param&gt;
-        /// &lt;param name="e"&gt;イベント引数&lt;/param&gt;
+        /// </summary>
+        /// <param name="sender">送信者</param>
+        /// <param name="e">イベント引数</param>
         private void btnAbout_Click(object sender, RibbonControlEventArgs e)
         {
             try
@@ -297,9 +297,9 @@ namespace OutlookPTAAddin.UI.Ribbon
 
         #region プライベートメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 部分的なメソッド実装（デザイナー用）
-        /// &lt;/summary&gt;
+        /// </summary>
         partial void InitializeComponent();
 
         #endregion
@@ -307,9 +307,9 @@ namespace OutlookPTAAddin.UI.Ribbon
 
     #region 簡単なフォームクラス
 
-    /// &lt;summary&gt;
+    /// <summary>
     /// プログレス表示フォーム
-    /// &lt;/summary&gt;
+    /// </summary>
     public class ProgressForm : Form
     {
         public ProgressForm(string message)
@@ -332,9 +332,9 @@ namespace OutlookPTAAddin.UI.Ribbon
         }
     }
 
-    /// &lt;summary&gt;
+    /// <summary>
     /// 結果表示フォーム
-    /// &lt;/summary&gt;
+    /// </summary>
     public class ResultDisplayForm : Form
     {
         public ResultDisplayForm(string title, string content)
@@ -356,9 +356,9 @@ namespace OutlookPTAAddin.UI.Ribbon
         }
     }
 
-    /// &lt;summary&gt;
+    /// <summary>
     /// カスタムプロンプト入力フォーム
-    /// &lt;/summary&gt;
+    /// </summary>
     public class CustomPromptForm : Form
     {
         public string CustomPrompt { get; private set; }
@@ -398,15 +398,15 @@ namespace OutlookPTAAddin.UI.Ribbon
                 DialogResult = DialogResult.Cancel
             };
 
-            btnOK.Click += (s, e) =&gt; { CustomPrompt = textBox.Text; };
+            btnOK.Click += (s, e) => { CustomPrompt = textBox.Text; };
 
             Controls.AddRange(new Control[] { label, textBox, btnOK, btnCancel });
         }
     }
 
-    /// &lt;summary&gt;
+    /// <summary>
     /// 設定フォーム（プレースホルダー）
-    /// &lt;/summary&gt;
+    /// </summary>
     public class SettingsForm : Form
     {
         public SettingsForm()
@@ -426,9 +426,9 @@ namespace OutlookPTAAddin.UI.Ribbon
         }
     }
 
-    /// &lt;summary&gt;
+    /// <summary>
     /// バージョン情報フォーム
-    /// &lt;/summary&gt;
+    /// </summary>
     public class AboutForm : Form
     {
         public AboutForm()

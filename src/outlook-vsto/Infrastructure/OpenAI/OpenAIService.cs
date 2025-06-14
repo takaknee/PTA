@@ -9,16 +9,16 @@ using OutlookPTAAddin.Core.Services;
 
 namespace OutlookPTAAddin.Infrastructure.OpenAI
 {
-    /// &lt;summary&gt;
+    /// <summary>
     /// OpenAI API サービス
     /// VBAのOpenAI API呼び出し機能をVSTOで再実装
-    /// &lt;/summary&gt;
+    /// </summary>
     public class OpenAIService : IAIService
     {
         #region フィールド
 
         private readonly HttpClient _httpClient;
-        private readonly ILogger&lt;OpenAIService&gt; _logger;
+        private readonly ILogger<OpenAIService> _logger;
         private readonly ConfigurationService _configService;
 
         // VBA版と同様の設定値
@@ -38,13 +38,13 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
 
         #region コンストラクター
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// コンストラクター
-        /// &lt;/summary&gt;
-        /// &lt;param name="httpClient"&gt;HTTPクライアント&lt;/param&gt;
-        /// &lt;param name="logger"&gt;ログサービス&lt;/param&gt;
-        /// &lt;param name="configService"&gt;設定サービス&lt;/param&gt;
-        public OpenAIService(HttpClient httpClient, ILogger&lt;OpenAIService&gt; logger, ConfigurationService configService)
+        /// </summary>
+        /// <param name="httpClient">HTTPクライアント</param>
+        /// <param name="logger">ログサービス</param>
+        /// <param name="configService">設定サービス</param>
+        public OpenAIService(HttpClient httpClient, ILogger<OpenAIService> logger, ConfigurationService configService)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -58,13 +58,13 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
 
         #region パブリックメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// テキスト解析を実行する
-        /// &lt;/summary&gt;
-        /// &lt;param name="systemPrompt"&gt;システムプロンプト&lt;/param&gt;
-        /// &lt;param name="userContent"&gt;ユーザーコンテンツ&lt;/param&gt;
-        /// &lt;returns&gt;解析結果&lt;/returns&gt;
-        public async Task&lt;string&gt; AnalyzeTextAsync(string systemPrompt, string userContent)
+        /// </summary>
+        /// <param name="systemPrompt">システムプロンプト</param>
+        /// <param name="userContent">ユーザーコンテンツ</param>
+        /// <returns>解析結果</returns>
+        public async Task<string> AnalyzeTextAsync(string systemPrompt, string userContent)
         {
             try
             {
@@ -92,13 +92,13 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// テキスト生成を実行する
-        /// &lt;/summary&gt;
-        /// &lt;param name="systemPrompt"&gt;システムプロンプト&lt;/param&gt;
-        /// &lt;param name="userPrompt"&gt;ユーザープロンプト&lt;/param&gt;
-        /// &lt;returns&gt;生成されたテキスト&lt;/returns&gt;
-        public async Task&lt;string&gt; GenerateTextAsync(string systemPrompt, string userPrompt)
+        /// </summary>
+        /// <param name="systemPrompt">システムプロンプト</param>
+        /// <param name="userPrompt">ユーザープロンプト</param>
+        /// <returns>生成されたテキスト</returns>
+        public async Task<string> GenerateTextAsync(string systemPrompt, string userPrompt)
         {
             try
             {
@@ -126,11 +126,11 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// API接続テストを実行する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;テスト結果メッセージ&lt;/returns&gt;
-        public async Task&lt;string&gt; TestConnectionAsync()
+        /// </summary>
+        /// <returns>テスト結果メッセージ</returns>
+        public async Task<string> TestConnectionAsync()
         {
             try
             {
@@ -167,13 +167,13 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
 
         #region プライベートメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// OpenAI APIを呼び出す
-        /// &lt;/summary&gt;
-        /// &lt;param name="systemPrompt"&gt;システムプロンプト&lt;/param&gt;
-        /// &lt;param name="userPrompt"&gt;ユーザープロンプト&lt;/param&gt;
-        /// &lt;returns&gt;APIレスポンス&lt;/returns&gt;
-        private async Task&lt;string&gt; CallOpenAIAPIAsync(string systemPrompt, string userPrompt)
+        /// </summary>
+        /// <param name="systemPrompt">システムプロンプト</param>
+        /// <param name="userPrompt">ユーザープロンプト</param>
+        /// <returns>APIレスポンス</returns>
+        private async Task<string> CallOpenAIAPIAsync(string systemPrompt, string userPrompt)
         {
             try
             {
@@ -239,9 +239,9 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
                 }
 
                 // レスポンスの解析
-                var responseData = JsonConvert.DeserializeObject&lt;dynamic&gt;(responseContent);
+                var responseData = JsonConvert.DeserializeObject<dynamic>(responseContent);
                 
-                if (responseData?.choices != null && responseData.choices.Count &gt; 0)
+                if (responseData?.choices != null && responseData.choices.Count > 0)
                 {
                     var messageContent = responseData.choices[0].message?.content?.ToString();
                     if (!string.IsNullOrEmpty(messageContent))
@@ -266,16 +266,16 @@ namespace OutlookPTAAddin.Infrastructure.OpenAI
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// エラーレスポンスからメッセージを抽出する
-        /// &lt;/summary&gt;
-        /// &lt;param name="responseContent"&gt;レスポンス内容&lt;/param&gt;
-        /// &lt;returns&gt;エラーメッセージ&lt;/returns&gt;
+        /// </summary>
+        /// <param name="responseContent">レスポンス内容</param>
+        /// <returns>エラーメッセージ</returns>
         private string GetErrorMessage(string responseContent)
         {
             try
             {
-                var errorData = JsonConvert.DeserializeObject&lt;dynamic&gt;(responseContent);
+                var errorData = JsonConvert.DeserializeObject<dynamic>(responseContent);
                 return errorData?.error?.message?.ToString() ?? "詳細不明";
             }
             catch

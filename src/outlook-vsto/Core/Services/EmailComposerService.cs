@@ -7,15 +7,15 @@ using OutlookPTAAddin.Core.Models;
 
 namespace OutlookPTAAddin.Core.Services
 {
-    /// &lt;summary&gt;
+    /// <summary>
     /// メール作成サービス
     /// VBAのメール作成機能をVSTOで再実装
-    /// &lt;/summary&gt;
+    /// </summary>
     public class EmailComposerService
     {
         #region フィールド
 
-        private readonly ILogger&lt;EmailComposerService&gt; _logger;
+        private readonly ILogger<EmailComposerService> _logger;
         private readonly OpenAIService _openAIService;
 
         // VBA版と同様のプロンプトテンプレート
@@ -54,12 +54,12 @@ namespace OutlookPTAAddin.Core.Services
 
         #region コンストラクター
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// コンストラクター
-        /// &lt;/summary&gt;
-        /// &lt;param name="logger"&gt;ログサービス&lt;/param&gt;
-        /// &lt;param name="openAIService"&gt;OpenAI サービス&lt;/param&gt;
-        public EmailComposerService(ILogger&lt;EmailComposerService&gt; logger, OpenAIService openAIService)
+        /// </summary>
+        /// <param name="logger">ログサービス</param>
+        /// <param name="openAIService">OpenAI サービス</param>
+        public EmailComposerService(ILogger<EmailComposerService> logger, OpenAIService openAIService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _openAIService = openAIService ?? throw new ArgumentNullException(nameof(openAIService));
@@ -69,12 +69,12 @@ namespace OutlookPTAAddin.Core.Services
 
         #region パブリックメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 営業断りメールを作成する（VBA版のCreateRejectionEmailと同等）
-        /// &lt;/summary&gt;
-        /// &lt;param name="originalMail"&gt;元のメール（返信元）&lt;/param&gt;
-        /// &lt;returns&gt;作成されたメールアイテム&lt;/returns&gt;
-        public async Task&lt;MailItem&gt; CreateRejectionEmailAsync(MailItem originalMail = null)
+        /// </summary>
+        /// <param name="originalMail">元のメール（返信元）</param>
+        /// <returns>作成されたメールアイテム</returns>
+        public async Task<MailItem> CreateRejectionEmailAsync(MailItem originalMail = null)
         {
             try
             {
@@ -125,12 +125,12 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 承諾メールを作成する（VBA版のCreateAcceptanceEmailと同等）
-        /// &lt;/summary&gt;
-        /// &lt;param name="originalMail"&gt;元のメール（返信元）&lt;/param&gt;
-        /// &lt;returns&gt;作成されたメールアイテム&lt;/returns&gt;
-        public async Task&lt;MailItem&gt; CreateAcceptanceEmailAsync(MailItem originalMail = null)
+        /// </summary>
+        /// <param name="originalMail">元のメール（返信元）</param>
+        /// <returns>作成されたメールアイテム</returns>
+        public async Task<MailItem> CreateAcceptanceEmailAsync(MailItem originalMail = null)
         {
             try
             {
@@ -181,13 +181,13 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// カスタムメールを作成する（VBA版のCreateCustomBusinessEmailと同等）
-        /// &lt;/summary&gt;
-        /// &lt;param name="customPrompt"&gt;カスタムプロンプト&lt;/param&gt;
-        /// &lt;param name="originalMail"&gt;元のメール（オプション）&lt;/param&gt;
-        /// &lt;returns&gt;作成されたメールアイテム&lt;/returns&gt;
-        public async Task&lt;MailItem&gt; CreateCustomEmailAsync(string customPrompt, MailItem originalMail = null)
+        /// </summary>
+        /// <param name="customPrompt">カスタムプロンプト</param>
+        /// <param name="originalMail">元のメール（オプション）</param>
+        /// <returns>作成されたメールアイテム</returns>
+        public async Task<MailItem> CreateCustomEmailAsync(string customPrompt, MailItem originalMail = null)
         {
             try
             {
@@ -243,11 +243,11 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 選択されたメールへの営業断り返信を作成する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;作成されたメールアイテム&lt;/returns&gt;
-        public async Task&lt;MailItem&gt; CreateRejectionReplyToSelectedAsync()
+        /// </summary>
+        /// <returns>作成されたメールアイテム</returns>
+        public async Task<MailItem> CreateRejectionReplyToSelectedAsync()
         {
             try
             {
@@ -266,11 +266,11 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 選択されたメールへの承諾返信を作成する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;作成されたメールアイテム&lt;/returns&gt;
-        public async Task&lt;MailItem&gt; CreateAcceptanceReplyToSelectedAsync()
+        /// </summary>
+        /// <returns>作成されたメールアイテム</returns>
+        public async Task<MailItem> CreateAcceptanceReplyToSelectedAsync()
         {
             try
             {
@@ -289,12 +289,12 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 選択されたメールへのカスタム返信を作成する
-        /// &lt;/summary&gt;
-        /// &lt;param name="customPrompt"&gt;カスタムプロンプト&lt;/param&gt;
-        /// &lt;returns&gt;作成されたメールアイテム&lt;/returns&gt;
-        public async Task&lt;MailItem&gt; CreateCustomReplyToSelectedAsync(string customPrompt)
+        /// </summary>
+        /// <param name="customPrompt">カスタムプロンプト</param>
+        /// <returns>作成されたメールアイテム</returns>
+        public async Task<MailItem> CreateCustomReplyToSelectedAsync(string customPrompt)
         {
             try
             {
@@ -312,10 +312,10 @@ namespace OutlookPTAAddin.Core.Services
 
         #region プライベートメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 現在選択されているメールを取得する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;選択されたメール（選択されていない場合はnull）&lt;/returns&gt;
+        /// </summary>
+        /// <returns>選択されたメール（選択されていない場合はnull）</returns>
         private MailItem GetSelectedMail()
         {
             try
@@ -323,7 +323,7 @@ namespace OutlookPTAAddin.Core.Services
                 var outlookApp = Globals.ThisAddIn.Application;
                 var selection = outlookApp.ActiveExplorer()?.Selection;
                 
-                if (selection != null && selection.Count &gt; 0)
+                if (selection != null && selection.Count > 0)
                 {
                     var selectedItem = selection[1];
                     return selectedItem as MailItem;
@@ -338,11 +338,11 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// メールからテキスト content を抽出する
-        /// &lt;/summary&gt;
-        /// &lt;param name="mailItem"&gt;メールアイテム&lt;/param&gt;
-        /// &lt;returns&gt;抽出されたテキスト&lt;/returns&gt;
+        /// </summary>
+        /// <param name="mailItem">メールアイテム</param>
+        /// <returns>抽出されたテキスト</returns>
         private string ExtractEmailContent(MailItem mailItem)
         {
             try
@@ -359,7 +359,7 @@ namespace OutlookPTAAddin.Core.Services
                 // 本文（最初の1000文字まで）
                 content.AppendLine("=== 元メール本文 ===");
                 var body = mailItem.Body ?? "";
-                if (body.Length &gt; 1000)
+                if (body.Length > 1000)
                 {
                     body = body.Substring(0, 1000) + "...";
                 }

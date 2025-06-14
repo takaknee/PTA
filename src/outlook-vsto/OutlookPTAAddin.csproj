@@ -1,116 +1,116 @@
-&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+<Project Sdk="Microsoft.NET.Sdk">
 
-  &lt;PropertyGroup&gt;
-    &lt;TargetFramework&gt;net48&lt;/TargetFramework&gt;
-    &lt;UseWindowsForms&gt;true&lt;/UseWindowsForms&gt;
-    &lt;UseWPF&gt;false&lt;/UseWPF&gt;
-    &lt;AssemblyTitle&gt;Outlook PTA アドイン&lt;/AssemblyTitle&gt;
-    &lt;AssemblyDescription&gt;PTA情報配信システム用Outlookアドイン&lt;/AssemblyDescription&gt;
-    &lt;AssemblyCompany&gt;PTA Development Team&lt;/AssemblyCompany&gt;
-    &lt;AssemblyProduct&gt;PTA Outlook VSTO Add-in&lt;/AssemblyProduct&gt;
-    &lt;AssemblyCopyright&gt;© 2024 PTA Development Team&lt;/AssemblyCopyright&gt;
-    &lt;AssemblyVersion&gt;1.0.0.0&lt;/AssemblyVersion&gt;
-    &lt;FileVersion&gt;1.0.0.0&lt;/FileVersion&gt;
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>false</UseWPF>
+    <AssemblyTitle>Outlook PTA アドイン</AssemblyTitle>
+    <AssemblyDescription>PTA情報配信システム用Outlookアドイン</AssemblyDescription>
+    <AssemblyCompany>PTA Development Team</AssemblyCompany>
+    <AssemblyProduct>PTA Outlook VSTO Add-in</AssemblyProduct>
+    <AssemblyCopyright>© 2024 PTA Development Team</AssemblyCopyright>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
     
-    &lt;!-- VSTO 設定 --&gt;
-    &lt;PublishUrl&gt;publish\&lt;/PublishUrl&gt;
-    &lt;IsWebBootstrapper&gt;false&lt;/IsWebBootstrapper&gt;
-    &lt;UpdateEnabled&gt;true&lt;/UpdateEnabled&gt;
-    &lt;UpdateMode&gt;Foreground&lt;/UpdateMode&gt;
-    &lt;UpdateInterval&gt;7&lt;/UpdateInterval&gt;
-    &lt;UpdateIntervalUnits&gt;Days&lt;/UpdateIntervalUnits&gt;
-    &lt;UpdatePeriodically&gt;false&lt;/UpdatePeriodically&gt;
-    &lt;UpdateRequired&gt;false&lt;/UpdateRequired&gt;
-    &lt;MapFileExtensions&gt;true&lt;/MapFileExtensions&gt;
-    &lt;ApplicationRevision&gt;0&lt;/ApplicationRevision&gt;
-    &lt;ApplicationVersion&gt;1.0.0.%2a&lt;/ApplicationVersion&gt;
-    &lt;UseApplicationTrust&gt;false&lt;/UseApplicationTrust&gt;
-    &lt;BootstrapperEnabled&gt;true&lt;/BootstrapperEnabled&gt;
-  &lt;/PropertyGroup&gt;
+    <!-- VSTO 設定 -->
+    <PublishUrl>publish\</PublishUrl>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UpdateEnabled>true</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
 
-  &lt;PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' "&gt;
-    &lt;PlatformTarget&gt;AnyCPU&lt;/PlatformTarget&gt;
-    &lt;DebugSymbols&gt;true&lt;/DebugSymbols&gt;
-    &lt;DebugType&gt;full&lt;/DebugType&gt;
-    &lt;Optimize&gt;false&lt;/Optimize&gt;
-    &lt;OutputPath&gt;bin\Debug\&lt;/OutputPath&gt;
-    &lt;DefineConstants&gt;DEBUG;TRACE&lt;/DefineConstants&gt;
-    &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
-    &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
-  &lt;/PropertyGroup&gt;
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
 
-  &lt;PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' "&gt;
-    &lt;PlatformTarget&gt;AnyCPU&lt;/PlatformTarget&gt;
-    &lt;DebugType&gt;pdbonly&lt;/DebugType&gt;
-    &lt;Optimize&gt;true&lt;/Optimize&gt;
-    &lt;OutputPath&gt;bin\Release\&lt;/OutputPath&gt;
-    &lt;DefineConstants&gt;TRACE&lt;/DefineConstants&gt;
-    &lt;ErrorReport&gt;prompt&lt;/ErrorReport&gt;
-    &lt;WarningLevel&gt;4&lt;/WarningLevel&gt;
-  &lt;/PropertyGroup&gt;
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
 
-  &lt;ItemGroup&gt;
-    &lt;!-- Office インターオペラビリティ --&gt;  
-    &lt;Reference Include="Microsoft.Office.Interop.Outlook"&gt;
-      &lt;HintPath&gt;$(MSBuildProgramFiles32)\Microsoft Office\root\Office16\ADDINS\Microsoft.Office.Interop.Outlook.dll&lt;/HintPath&gt;
-      &lt;EmbedInteropTypes&gt;true&lt;/EmbedInteropTypes&gt;
-    &lt;/Reference&gt;
+  <ItemGroup>
+    <!-- Office インターオペラビリティ -->  
+    <Reference Include="Microsoft.Office.Interop.Outlook">
+      <HintPath>$(MSBuildProgramFiles32)\Microsoft Office\root\Office16\ADDINS\Microsoft.Office.Interop.Outlook.dll</HintPath>
+      <EmbedInteropTypes>true</EmbedInteropTypes>
+    </Reference>
     
-    &lt;!-- VSTO Runtime --&gt;
-    &lt;Reference Include="Microsoft.Office.Tools.Outlook"&gt;
-      &lt;HintPath&gt;$(MSBuildProgramFiles32)\Microsoft Visual Studio\Shared\Visual Studio Tools for Office\PIA\Microsoft.Office.Tools.Outlook.dll&lt;/HintPath&gt;
-    &lt;/Reference&gt;
+    <!-- VSTO Runtime -->
+    <Reference Include="Microsoft.Office.Tools.Outlook">
+      <HintPath>$(MSBuildProgramFiles32)\Microsoft Visual Studio\Shared\Visual Studio Tools for Office\PIA\Microsoft.Office.Tools.Outlook.dll</HintPath>
+    </Reference>
     
-    &lt;!-- System references --&gt;
-    &lt;Reference Include="System" /&gt;
-    &lt;Reference Include="System.Core" /&gt;
-    &lt;Reference Include="System.Data" /&gt;
-    &lt;Reference Include="System.Drawing" /&gt;
-    &lt;Reference Include="System.Windows.Forms" /&gt;
-    &lt;Reference Include="System.Xml" /&gt;
-    &lt;Reference Include="Microsoft.CSharp" /&gt;
-    &lt;Reference Include="System.Configuration" /&gt;
-  &lt;/ItemGroup&gt;
+    <!-- System references -->
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Configuration" />
+  </ItemGroup>
 
-  &lt;ItemGroup&gt;
-    &lt;!-- NuGet パッケージ --&gt;
-    &lt;PackageReference Include="Newtonsoft.Json" Version="13.0.3" /&gt;
-    &lt;PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" /&gt;
-    &lt;PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" /&gt;
-    &lt;PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" /&gt;
-    &lt;PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" /&gt;
-    &lt;PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" /&gt;
-    &lt;PackageReference Include="System.Text.Json" Version="8.0.0" /&gt;
-  &lt;/ItemGroup&gt;
+  <ItemGroup>
+    <!-- NuGet パッケージ -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+  </ItemGroup>
 
-  &lt;ItemGroup&gt;
-    &lt;!-- 埋め込みリソース --&gt;
-    &lt;EmbeddedResource Include="Properties\Resources.resx"&gt;
-      &lt;Generator&gt;ResXFileCodeGenerator&lt;/Generator&gt;
-      &lt;LastGenOutput&gt;Resources.Designer.cs&lt;/LastGenOutput&gt;
-      &lt;SubType&gt;Designer&lt;/SubType&gt;
-    &lt;/EmbeddedResource&gt;
+  <ItemGroup>
+    <!-- 埋め込みリソース -->
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     
-    &lt;!-- 設定ファイル --&gt;
-    &lt;None Include="appsettings.json"&gt;
-      &lt;CopyToOutputDirectory&gt;PreserveNewest&lt;/CopyToOutputDirectory&gt;
-    &lt;/None&gt;
-  &lt;/ItemGroup&gt;
+    <!-- 設定ファイル -->
+    <None Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
-  &lt;ItemGroup&gt;
-    &lt;!-- フォルダ構造 --&gt;
-    &lt;Folder Include="Core\Services\" /&gt;
-    &lt;Folder Include="Core\Models\" /&gt;
-    &lt;Folder Include="Core\Configuration\" /&gt;
-    &lt;Folder Include="UI\Ribbon\" /&gt;
-    &lt;Folder Include="UI\TaskPane\" /&gt;
-    &lt;Folder Include="UI\Dialogs\" /&gt;
-    &lt;Folder Include="Infrastructure\OpenAI\" /&gt;
-    &lt;Folder Include="Infrastructure\Logging\" /&gt;
-    &lt;Folder Include="Infrastructure\Storage\" /&gt;
-    &lt;Folder Include="Tests\Unit\" /&gt;
-    &lt;Folder Include="Tests\Integration\" /&gt;
-    &lt;Folder Include="Resources\" /&gt;
-  &lt;/ItemGroup&gt;
+  <ItemGroup>
+    <!-- フォルダ構造 -->
+    <Folder Include="Core\Services\" />
+    <Folder Include="Core\Models\" />
+    <Folder Include="Core\Configuration\" />
+    <Folder Include="UI\Ribbon\" />
+    <Folder Include="UI\TaskPane\" />
+    <Folder Include="UI\Dialogs\" />
+    <Folder Include="Infrastructure\OpenAI\" />
+    <Folder Include="Infrastructure\Logging\" />
+    <Folder Include="Infrastructure\Storage\" />
+    <Folder Include="Tests\Unit\" />
+    <Folder Include="Tests\Integration\" />
+    <Folder Include="Resources\" />
+  </ItemGroup>
 
-&lt;/Project&gt;
+</Project>

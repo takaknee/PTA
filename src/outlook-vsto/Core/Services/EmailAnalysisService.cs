@@ -7,15 +7,15 @@ using OutlookPTAAddin.Core.Models;
 
 namespace OutlookPTAAddin.Core.Services
 {
-    /// &lt;summary&gt;
+    /// <summary>
     /// メール解析サービス
     /// VBAの AnalyzeSelectedEmail 機能をVSTOで再実装
-    /// &lt;/summary&gt;
+    /// </summary>
     public class EmailAnalysisService
     {
         #region フィールド
 
-        private readonly ILogger&lt;EmailAnalysisService&gt; _logger;
+        private readonly ILogger<EmailAnalysisService> _logger;
         private readonly AIServiceManager _aiServiceManager;
 
         // VBA版と同様のプロンプトテンプレート
@@ -35,12 +35,12 @@ namespace OutlookPTAAddin.Core.Services
 
         #region コンストラクター
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// コンストラクター
-        /// &lt;/summary&gt;
-        /// &lt;param name="logger"&gt;ログサービス&lt;/param&gt;
-        /// &lt;param name="aiServiceManager"&gt;AIサービス管理者&lt;/param&gt;
-        public EmailAnalysisService(ILogger&lt;EmailAnalysisService&gt; logger, AIServiceManager aiServiceManager)
+        /// </summary>
+        /// <param name="logger">ログサービス</param>
+        /// <param name="aiServiceManager">AIサービス管理者</param>
+        public EmailAnalysisService(ILogger<EmailAnalysisService> logger, AIServiceManager aiServiceManager)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _aiServiceManager = aiServiceManager ?? throw new ArgumentNullException(nameof(aiServiceManager));
@@ -50,12 +50,12 @@ namespace OutlookPTAAddin.Core.Services
 
         #region パブリックメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// メール内容を解析する
-        /// &lt;/summary&gt;
-        /// &lt;param name="mailItem"&gt;解析対象のメールアイテム&lt;/param&gt;
-        /// &lt;returns&gt;解析結果&lt;/returns&gt;
-        public async Task&lt;string&gt; AnalyzeEmailAsync(MailItem mailItem)
+        /// </summary>
+        /// <param name="mailItem">解析対象のメールアイテム</param>
+        /// <returns>解析結果</returns>
+        public async Task<string> AnalyzeEmailAsync(MailItem mailItem)
         {
             try
             {
@@ -76,7 +76,7 @@ namespace OutlookPTAAddin.Core.Services
 
                 // 内容の長さチェック（VBA版と同様の制限）
                 const int maxContentLength = 50000;
-                if (emailContent.Length &gt; maxContentLength)
+                if (emailContent.Length > maxContentLength)
                 {
                     _logger.LogWarning($"メール内容が長すぎます（{emailContent.Length}文字）。切り詰めます。");
                     emailContent = emailContent.Substring(0, maxContentLength) + "\\n\\n[内容が切り詰められました]";
@@ -95,11 +95,11 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 選択されたメールを解析する（VBA版のAnalyzeSelectedEmailと同等）
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;解析結果&lt;/returns&gt;
-        public async Task&lt;string&gt; AnalyzeSelectedEmailAsync()
+        /// </summary>
+        /// <returns>解析結果</returns>
+        public async Task<string> AnalyzeSelectedEmailAsync()
         {
             try
             {
@@ -130,12 +130,12 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 検索フォルダの内容を分析する（VBA版のAnalyzeSearchFoldersと同等）
-        /// &lt;/summary&gt;
-        /// &lt;param name="folderName"&gt;検索フォルダ名&lt;/param&gt;
-        /// &lt;returns&gt;分析結果&lt;/returns&gt;
-        public async Task&lt;string&gt; AnalyzeSearchFolderAsync(string folderName)
+        /// </summary>
+        /// <param name="folderName">検索フォルダ名</param>
+        /// <returns>分析結果</returns>
+        public async Task<string> AnalyzeSearchFolderAsync(string folderName)
         {
             try
             {
@@ -167,7 +167,7 @@ namespace OutlookPTAAddin.Core.Services
                 // 最大10件まで分析（パフォーマンス考慮）
                 int analyzeCount = Math.Min(items.Count, 10);
                 
-                for (int i = 1; i &lt;= analyzeCount; i++)
+                for (int i = 1; i <= analyzeCount; i++)
                 {
                     if (items[i] is MailItem mailItem)
                     {
@@ -192,7 +192,7 @@ namespace OutlookPTAAddin.Core.Services
                     }
                 }
 
-                if (items.Count &gt; analyzeCount)
+                if (items.Count > analyzeCount)
                 {
                     analysisResults.AppendLine($"[注意] 残り{items.Count - analyzeCount}件のメールは表示されていません");
                 }
@@ -211,11 +211,11 @@ namespace OutlookPTAAddin.Core.Services
 
         #region プライベートメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// メールからテキスト content を抽出する
-        /// &lt;/summary&gt;
-        /// &lt;param name="mailItem"&gt;メールアイテム&lt;/param&gt;
-        /// &lt;returns&gt;抽出されたテキスト&lt;/returns&gt;
+        /// </summary>
+        /// <param name="mailItem">メールアイテム</param>
+        /// <returns>抽出されたテキスト</returns>
         private string ExtractEmailContent(MailItem mailItem)
         {
             try
@@ -225,7 +225,7 @@ namespace OutlookPTAAddin.Core.Services
                 // ヘッダー情報
                 content.AppendLine("=== メール情報 ===");
                 content.AppendLine($"件名: {mailItem.Subject ?? "（件名なし）"}");
-                content.AppendLine($"送信者: {mailItem.SenderName ?? "不明"} &lt;{mailItem.SenderEmailAddress ?? "不明"}&gt;");
+                content.AppendLine($"送信者: {mailItem.SenderName ?? "不明"} <{mailItem.SenderEmailAddress ?? "不明"}>");
                 content.AppendLine($"受信日時: {mailItem.ReceivedTime}");
                 content.AppendLine($"重要度: {GetImportanceName(mailItem.Importance)}");
                 content.AppendLine();
@@ -243,7 +243,7 @@ namespace OutlookPTAAddin.Core.Services
                     // HTMLタグを簡単に除去（完璧ではないが基本的な解析には十分）
                     var plainText = System.Text.RegularExpressions.Regex.Replace(
                         mailItem.HTMLBody, 
-                        "&lt;[^&gt;]*&gt;", 
+                        "<[^>]*>", 
                         string.Empty
                     );
                     content.AppendLine(plainText);
@@ -262,28 +262,28 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 重要度を日本語名で取得
-        /// &lt;/summary&gt;
-        /// &lt;param name="importance"&gt;重要度&lt;/param&gt;
-        /// &lt;returns&gt;日本語の重要度名&lt;/returns&gt;
+        /// </summary>
+        /// <param name="importance">重要度</param>
+        /// <returns>日本語の重要度名</returns>
         private string GetImportanceName(OlImportance importance)
         {
             return importance switch
             {
-                OlImportance.olImportanceLow =&gt; "低",
-                OlImportance.olImportanceNormal =&gt; "標準",
-                OlImportance.olImportanceHigh =&gt; "高",
-                _ =&gt; "不明"
+                OlImportance.olImportanceLow => "低",
+                OlImportance.olImportanceNormal => "標準",
+                OlImportance.olImportanceHigh => "高",
+                _ => "不明"
             };
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 検索フォルダを検索する
-        /// &lt;/summary&gt;
-        /// &lt;param name="nameSpace"&gt;MAPIネームスペース&lt;/param&gt;
-        /// &lt;param name="folderName"&gt;フォルダ名&lt;/param&gt;
-        /// &lt;returns&gt;検索フォルダ（見つからない場合はnull）&lt;/returns&gt;
+        /// </summary>
+        /// <param name="nameSpace">MAPIネームスペース</param>
+        /// <param name="folderName">フォルダ名</param>
+        /// <returns>検索フォルダ（見つからない場合はnull）</returns>
         private MAPIFolder FindSearchFolder(NameSpace nameSpace, string folderName)
         {
             try
@@ -315,12 +315,12 @@ namespace OutlookPTAAddin.Core.Services
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// サブフォルダを再帰的に検索する
-        /// &lt;/summary&gt;
-        /// &lt;param name="parentFolder"&gt;親フォルダ&lt;/param&gt;
-        /// &lt;param name="targetName"&gt;検索対象の名前&lt;/param&gt;
-        /// &lt;returns&gt;見つかったフォルダ（見つからない場合はnull）&lt;/returns&gt;
+        /// </summary>
+        /// <param name="parentFolder">親フォルダ</param>
+        /// <param name="targetName">検索対象の名前</param>
+        /// <returns>見つかったフォルダ（見つからない場合はnull）</returns>
         private MAPIFolder SearchSubFolders(MAPIFolder parentFolder, string targetName)
         {
             try

@@ -5,15 +5,15 @@ using OutlookPTAAddin.Core.Models;
 
 namespace OutlookPTAAddin.Core.Configuration
 {
-    /// &lt;summary&gt;
+    /// <summary>
     /// 設定管理サービス
     /// VBAの設定管理機能をVSTOで再実装
-    /// &lt;/summary&gt;
+    /// </summary>
     public class ConfigurationService
     {
         #region フィールド
 
-        private readonly ILogger&lt;ConfigurationService&gt; _logger;
+        private readonly ILogger<ConfigurationService> _logger;
 
         // デフォルト設定値（VBA版と同様）
         private const string DEFAULT_ENDPOINT = "https://your-azure-openai-endpoint.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview";
@@ -26,11 +26,11 @@ namespace OutlookPTAAddin.Core.Configuration
 
         #region コンストラクター
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// コンストラクター
-        /// &lt;/summary&gt;
-        /// &lt;param name="logger"&gt;ログサービス&lt;/param&gt;
-        public ConfigurationService(ILogger&lt;ConfigurationService&gt; logger)
+        /// </summary>
+        /// <param name="logger">ログサービス</param>
+        public ConfigurationService(ILogger<ConfigurationService> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -39,9 +39,9 @@ namespace OutlookPTAAddin.Core.Configuration
 
         #region パブリックメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 設定の初期化
-        /// &lt;/summary&gt;
+        /// </summary>
         public void Initialize()
         {
             try
@@ -60,10 +60,10 @@ namespace OutlookPTAAddin.Core.Configuration
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// OpenAI API キーを取得する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;APIキー&lt;/returns&gt;
+        /// </summary>
+        /// <returns>APIキー</returns>
         public string GetOpenAIApiKey()
         {
             try
@@ -99,10 +99,10 @@ namespace OutlookPTAAddin.Core.Configuration
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// OpenAI エンドポイントを取得する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;エンドポイントURL&lt;/returns&gt;
+        /// </summary>
+        /// <returns>エンドポイントURL</returns>
         public string GetOpenAIEndpoint()
         {
             try
@@ -117,10 +117,10 @@ namespace OutlookPTAAddin.Core.Configuration
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// OpenAI モデル名を取得する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;モデル名&lt;/returns&gt;
+        /// </summary>
+        /// <returns>モデル名</returns>
         public string GetOpenAIModel()
         {
             try
@@ -135,10 +135,10 @@ namespace OutlookPTAAddin.Core.Configuration
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// アプリケーション名を取得する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;アプリケーション名&lt;/returns&gt;
+        /// </summary>
+        /// <returns>アプリケーション名</returns>
         public string GetAppName()
         {
             try
@@ -153,10 +153,10 @@ namespace OutlookPTAAddin.Core.Configuration
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// アプリケーションバージョンを取得する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;バージョン&lt;/returns&gt;
+        /// </summary>
+        /// <returns>バージョン</returns>
         public string GetAppVersion()
         {
             try
@@ -171,10 +171,10 @@ namespace OutlookPTAAddin.Core.Configuration
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 設定情報を文字列で取得する（VBA版のShowConfigurationInfoと同等）
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;設定情報文字列&lt;/returns&gt;
+        /// </summary>
+        /// <returns>設定情報文字列</returns>
         public string GetConfigurationInfo()
         {
             try
@@ -203,10 +203,10 @@ namespace OutlookPTAAddin.Core.Configuration
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// OpenAI APIキーを設定する
-        /// &lt;/summary&gt;
-        /// &lt;param name="apiKey"&gt;APIキー&lt;/param&gt;
+        /// </summary>
+        /// <param name="apiKey">APIキー</param>
         public void SetOpenAIApiKey(string apiKey)
         {
             try
@@ -231,10 +231,10 @@ namespace OutlookPTAAddin.Core.Configuration
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 設定のバリデーションを実行する
-        /// &lt;/summary&gt;
-        /// &lt;returns&gt;バリデーション結果&lt;/returns&gt;
+        /// </summary>
+        /// <returns>バリデーション結果</returns>
         public bool ValidateConfiguration()
         {
             try
@@ -245,7 +245,7 @@ namespace OutlookPTAAddin.Core.Configuration
                 var endpoint = GetOpenAIEndpoint();
 
                 var isValid = true;
-                var issues = new System.Collections.Generic.List&lt;string&gt;();
+                var issues = new System.Collections.Generic.List<string>();
 
                 // APIキーの検証
                 if (string.IsNullOrWhiteSpace(apiKey) || apiKey == DEFAULT_API_KEY)
@@ -283,20 +283,20 @@ namespace OutlookPTAAddin.Core.Configuration
 
         #region プライベートメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// デフォルト設定を確保する
-        /// &lt;/summary&gt;
+        /// </summary>
         private void EnsureDefaultSettings()
         {
             // 必要に応じてデフォルト設定ファイルを作成
             // 現在は何もしない（将来の拡張用）
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 機密データをマスクする
-        /// &lt;/summary&gt;
-        /// &lt;param name="data"&gt;機密データ&lt;/param&gt;
-        /// &lt;returns&gt;マスクされたデータ&lt;/returns&gt;
+        /// </summary>
+        /// <param name="data">機密データ</param>
+        /// <returns>マスクされたデータ</returns>
         private string MaskSensitiveData(string data)
         {
             if (string.IsNullOrWhiteSpace(data))
@@ -304,7 +304,7 @@ namespace OutlookPTAAddin.Core.Configuration
                 return "（未設定）";
             }
 
-            if (data.Length &lt;= 10)
+            if (data.Length <= 10)
             {
                 return new string('*', data.Length);
             }
@@ -312,11 +312,11 @@ namespace OutlookPTAAddin.Core.Configuration
             return data.Substring(0, 10) + "...";
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 機密URLをマスクする
-        /// &lt;/summary&gt;
-        /// &lt;param name="url"&gt;URL&lt;/param&gt;
-        /// &lt;returns&gt;マスクされたURL&lt;/returns&gt;
+        /// </summary>
+        /// <param name="url">URL</param>
+        /// <returns>マスクされたURL</returns>
         private string MaskSensitiveUrl(string url)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -324,7 +324,7 @@ namespace OutlookPTAAddin.Core.Configuration
                 return "（未設定）";
             }
 
-            if (url.Length &lt;= 50)
+            if (url.Length <= 50)
             {
                 return url;
             }

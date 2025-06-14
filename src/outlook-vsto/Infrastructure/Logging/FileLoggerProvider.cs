@@ -4,18 +4,18 @@ using Microsoft.Extensions.Logging;
 
 namespace OutlookPTAAddin.Infrastructure.Logging
 {
-    /// &lt;summary&gt;
+    /// <summary>
     /// ファイルログプロバイダー
-    /// &lt;/summary&gt;
+    /// </summary>
     public class FileLoggerProvider : ILoggerProvider
     {
         private readonly string _filePath;
         private readonly object _lock = new object();
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// コンストラクター
-        /// &lt;/summary&gt;
-        /// &lt;param name="fileName"&gt;ログファイル名&lt;/param&gt;
+        /// </summary>
+        /// <param name="fileName">ログファイル名</param>
         public FileLoggerProvider(string fileName)
         {
             var logDirectory = Path.Combine(
@@ -28,40 +28,40 @@ namespace OutlookPTAAddin.Infrastructure.Logging
             _filePath = Path.Combine(logDirectory, fileName);
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// ロガーを作成する
-        /// &lt;/summary&gt;
-        /// &lt;param name="categoryName"&gt;カテゴリ名&lt;/param&gt;
-        /// &lt;returns&gt;ロガー&lt;/returns&gt;
+        /// </summary>
+        /// <param name="categoryName">カテゴリ名</param>
+        /// <returns>ロガー</returns>
         public ILogger CreateLogger(string categoryName)
         {
             return new FileLogger(categoryName, _filePath, _lock);
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// リソースを解放する
-        /// &lt;/summary&gt;
+        /// </summary>
         public void Dispose()
         {
             // 特にリソース解放は不要
         }
     }
 
-    /// &lt;summary&gt;
+    /// <summary>
     /// ファイルログ実装
-    /// &lt;/summary&gt;
+    /// </summary>
     public class FileLogger : ILogger
     {
         private readonly string _categoryName;
         private readonly string _filePath;
         private readonly object _lock;
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// コンストラクター
-        /// &lt;/summary&gt;
-        /// &lt;param name="categoryName"&gt;カテゴリ名&lt;/param&gt;
-        /// &lt;param name="filePath"&gt;ファイルパス&lt;/param&gt;
-        /// &lt;param name="lockObject"&gt;ロックオブジェクト&lt;/param&gt;
+        /// </summary>
+        /// <param name="categoryName">カテゴリ名</param>
+        /// <param name="filePath">ファイルパス</param>
+        /// <param name="lockObject">ロックオブジェクト</param>
         public FileLogger(string categoryName, string filePath, object lockObject)
         {
             _categoryName = categoryName;
@@ -69,37 +69,37 @@ namespace OutlookPTAAddin.Infrastructure.Logging
             _lock = lockObject;
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// ログスコープを開始する
-        /// &lt;/summary&gt;
-        /// &lt;typeparam name="TState"&gt;状態型&lt;/typeparam&gt;
-        /// &lt;param name="state"&gt;状態&lt;/param&gt;
-        /// &lt;returns&gt;スコープ&lt;/returns&gt;
-        public IDisposable BeginScope&lt;TState&gt;(TState state)
+        /// </summary>
+        /// <typeparam name="TState">状態型</typeparam>
+        /// <param name="state">状態</param>
+        /// <returns>スコープ</returns>
+        public IDisposable BeginScope<TState>(TState state)
         {
             return null;
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// ログレベルが有効かどうかを判定する
-        /// &lt;/summary&gt;
-        /// &lt;param name="logLevel"&gt;ログレベル&lt;/param&gt;
-        /// &lt;returns&gt;有効かどうか&lt;/returns&gt;
+        /// </summary>
+        /// <param name="logLevel">ログレベル</param>
+        /// <returns>有効かどうか</returns>
         public bool IsEnabled(LogLevel logLevel)
         {
             return logLevel != LogLevel.None;
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// ログを出力する
-        /// &lt;/summary&gt;
-        /// &lt;typeparam name="TState"&gt;状態型&lt;/typeparam&gt;
-        /// &lt;param name="logLevel"&gt;ログレベル&lt;/param&gt;
-        /// &lt;param name="eventId"&gt;イベントID&lt;/param&gt;
-        /// &lt;param name="state"&gt;状態&lt;/param&gt;
-        /// &lt;param name="exception"&gt;例外&lt;/param&gt;
-        /// &lt;param name="formatter"&gt;フォーマッター&lt;/param&gt;
-        public void Log&lt;TState&gt;(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func&lt;TState, Exception, string&gt; formatter)
+        /// </summary>
+        /// <typeparam name="TState">状態型</typeparam>
+        /// <param name="logLevel">ログレベル</param>
+        /// <param name="eventId">イベントID</param>
+        /// <param name="state">状態</param>
+        /// <param name="exception">例外</param>
+        /// <param name="formatter">フォーマッター</param>
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
             if (!IsEnabled(logLevel))
             {
@@ -129,22 +129,22 @@ namespace OutlookPTAAddin.Infrastructure.Logging
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// ログレベルを文字列に変換する
-        /// &lt;/summary&gt;
-        /// &lt;param name="logLevel"&gt;ログレベル&lt;/param&gt;
-        /// &lt;returns&gt;ログレベル文字列&lt;/returns&gt;
+        /// </summary>
+        /// <param name="logLevel">ログレベル</param>
+        /// <returns>ログレベル文字列</returns>
         private static string GetLogLevelString(LogLevel logLevel)
         {
             return logLevel switch
             {
-                LogLevel.Trace =&gt; "TRACE",
-                LogLevel.Debug =&gt; "DEBUG",
-                LogLevel.Information =&gt; "INFO ",
-                LogLevel.Warning =&gt; "WARN ",
-                LogLevel.Error =&gt; "ERROR",
-                LogLevel.Critical =&gt; "FATAL",
-                _ =&gt; "UNKNOW"
+                LogLevel.Trace => "TRACE",
+                LogLevel.Debug => "DEBUG",
+                LogLevel.Information => "INFO ",
+                LogLevel.Warning => "WARN ",
+                LogLevel.Error => "ERROR",
+                LogLevel.Critical => "FATAL",
+                _ => "UNKNOW"
             };
         }
     }

@@ -12,16 +12,16 @@ using OutlookPTAAddin.Infrastructure.Claude;
 
 namespace OutlookPTAAddin
 {
-    /// &lt;summary&gt;
+    /// <summary>
     /// PTA情報配信システム - Outlook VSTOアドイン
-    /// &lt;/summary&gt;
+    /// </summary>
     [ComVisible(true)]
     public partial class ThisAddIn
     {
         #region フィールド
 
         private ServiceProvider _serviceProvider;
-        private ILogger&lt;ThisAddIn&gt; _logger;
+        private ILogger<ThisAddIn> _logger;
         private EmailAnalysisService _emailAnalysisService;
         private EmailComposerService _emailComposerService;
         private ConfigurationService _configurationService;
@@ -31,9 +31,9 @@ namespace OutlookPTAAddin
 
         #region イベントハンドラー
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// アドイン起動時の初期化処理
-        /// &lt;/summary&gt;
+        /// </summary>
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             try
@@ -66,9 +66,9 @@ namespace OutlookPTAAddin
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// アドイン終了時の cleanup 処理
-        /// &lt;/summary&gt;
+        /// </summary>
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
             try
@@ -93,84 +93,84 @@ namespace OutlookPTAAddin
 
         #region 初期化メソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 依存関係注入の設定
-        /// &lt;/summary&gt;
+        /// </summary>
         private void ConfigureServices()
         {
             var services = new ServiceCollection();
 
             // ログサービスの設定
-            services.AddLogging(builder =&gt;
+            services.AddLogging(builder =>
             {
                 builder.AddConsole();
                 builder.AddProvider(new FileLoggerProvider("PTA_Outlook_Addin.log"));
             });
 
             // 設定サービス
-            services.AddSingleton&lt;ConfigurationService&gt;();
+            services.AddSingleton<ConfigurationService>();
 
             // AI サービス  
-            services.AddHttpClient&lt;OpenAIService&gt;();
-            services.AddHttpClient&lt;ClaudeService&gt;();
+            services.AddHttpClient<OpenAIService>();
+            services.AddHttpClient<ClaudeService>();
             
             // AI サービスの登録
-            services.AddSingleton&lt;OpenAIService&gt;();
-            services.AddSingleton&lt;ClaudeService&gt;();
+            services.AddSingleton<OpenAIService>();
+            services.AddSingleton<ClaudeService>();
             
             // IAIService の実装を登録
-            services.AddSingleton&lt;IAIService&gt;(provider =&gt; provider.GetRequiredService&lt;OpenAIService&gt;());
-            services.AddSingleton&lt;IAIService&gt;(provider =&gt; provider.GetRequiredService&lt;ClaudeService&gt;());
+            services.AddSingleton<IAIService>(provider => provider.GetRequiredService<OpenAIService>());
+            services.AddSingleton<IAIService>(provider => provider.GetRequiredService<ClaudeService>());
             
             // AI サービス管理者
-            services.AddSingleton&lt;AIServiceManager&gt;(provider =&gt;
+            services.AddSingleton<AIServiceManager>(provider =>
             {
-                var logger = provider.GetRequiredService&lt;ILogger&lt;AIServiceManager&gt;&gt;();
-                var openAIService = provider.GetRequiredService&lt;OpenAIService&gt;();
-                var claudeService = provider.GetRequiredService&lt;ClaudeService&gt;();
+                var logger = provider.GetRequiredService<ILogger<AIServiceManager>>();
+                var openAIService = provider.GetRequiredService<OpenAIService>();
+                var claudeService = provider.GetRequiredService<ClaudeService>();
                 return new AIServiceManager(logger, new IAIService[] { openAIService, claudeService });
             });
 
             // ビジネスロジックサービス
-            services.AddSingleton&lt;EmailAnalysisService&gt;();
-            services.AddSingleton&lt;EmailComposerService&gt;();
+            services.AddSingleton<EmailAnalysisService>();
+            services.AddSingleton<EmailComposerService>();
 
             // Graph API サービス
-            services.AddSingleton&lt;Infrastructure.Graph.GraphService&gt;();
+            services.AddSingleton<Infrastructure.Graph.GraphService>();
 
             // 統合サービス
-            services.AddSingleton&lt;IntegrationService&gt;();
+            services.AddSingleton<IntegrationService>();
 
             _serviceProvider = services.BuildServiceProvider();
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// サービスの初期化
-        /// &lt;/summary&gt;
+        /// </summary>
         private void InitializeServices()
         {
-            _logger = _serviceProvider.GetRequiredService&lt;ILogger&lt;ThisAddIn&gt;&gt;();
-            _configurationService = _serviceProvider.GetRequiredService&lt;ConfigurationService&gt;();
-            _emailAnalysisService = _serviceProvider.GetRequiredService&lt;EmailAnalysisService&gt;();
-            _emailComposerService = _serviceProvider.GetRequiredService&lt;EmailComposerService&gt;();
-            _aiServiceManager = _serviceProvider.GetRequiredService&lt;AIServiceManager&gt;();
+            _logger = _serviceProvider.GetRequiredService<ILogger<ThisAddIn>>();
+            _configurationService = _serviceProvider.GetRequiredService<ConfigurationService>();
+            _emailAnalysisService = _serviceProvider.GetRequiredService<EmailAnalysisService>();
+            _emailComposerService = _serviceProvider.GetRequiredService<EmailComposerService>();
+            _aiServiceManager = _serviceProvider.GetRequiredService<AIServiceManager>();
 
             // 設定の初期化
             _configurationService.Initialize();
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// UI要素の初期化
-        /// &lt;/summary&gt;
+        /// </summary>
         private void InitializeUI()
         {
             // リボンUIの初期化はRibbonクラスで実行される
             _logger?.LogDebug("UI要素の初期化完了");
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// イベントハンドラーの登録
-        /// &lt;/summary&gt;
+        /// </summary>
         private void RegisterEventHandlers()
         {
             // Outlookアプリケーションレベルのイベント
@@ -179,9 +179,9 @@ namespace OutlookPTAAddin
             _logger?.LogDebug("イベントハンドラーの登録完了");
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// イベントハンドラーの登録解除
-        /// &lt;/summary&gt;
+        /// </summary>
         private void UnregisterEventHandlers()
         {
             try
@@ -195,9 +195,9 @@ namespace OutlookPTAAddin
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// リソースのクリーンアップ
-        /// &lt;/summary&gt;
+        /// </summary>
         private void CleanupResources()
         {
             try
@@ -214,9 +214,9 @@ namespace OutlookPTAAddin
 
         #region Outlookイベントハンドラー
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// メール送信前のイベントハンドラー
-        /// &lt;/summary&gt;
+        /// </summary>
         private void Application_ItemSend(object Item, ref bool Cancel)
         {
             try
@@ -239,12 +239,12 @@ namespace OutlookPTAAddin
 
         #region パブリックメソッド
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// メール解析の実行
-        /// &lt;/summary&gt;
-        /// &lt;param name="mailItem"&gt;解析対象のメールアイテム&lt;/param&gt;
-        /// &lt;returns&gt;解析結果&lt;/returns&gt;
-        public async System.Threading.Tasks.Task&lt;string&gt; AnalyzeEmailAsync(MailItem mailItem)
+        /// </summary>
+        /// <param name="mailItem">解析対象のメールアイテム</param>
+        /// <returns>解析結果</returns>
+        public async System.Threading.Tasks.Task<string> AnalyzeEmailAsync(MailItem mailItem)
         {
             try
             {
@@ -267,12 +267,12 @@ namespace OutlookPTAAddin
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 営業断りメールの作成
-        /// &lt;/summary&gt;
-        /// &lt;param name="originalMail"&gt;元のメール&lt;/param&gt;
-        /// &lt;returns&gt;作成されたメール&lt;/returns&gt;
-        public async System.Threading.Tasks.Task&lt;MailItem&gt; CreateRejectionEmailAsync(MailItem originalMail)
+        /// </summary>
+        /// <param name="originalMail">元のメール</param>
+        /// <returns>作成されたメール</returns>
+        public async System.Threading.Tasks.Task<MailItem> CreateRejectionEmailAsync(MailItem originalMail)
         {
             try
             {
@@ -290,12 +290,12 @@ namespace OutlookPTAAddin
             }
         }
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// 承諾メールの作成
-        /// &lt;/summary&gt;
-        /// &lt;param name="originalMail"&gt;元のメール&lt;/param&gt;
-        /// &lt;returns&gt;作成されたメール&lt;/returns&gt;
-        public async System.Threading.Tasks.Task&lt;MailItem&gt; CreateAcceptanceEmailAsync(MailItem originalMail)
+        /// </summary>
+        /// <param name="originalMail">元のメール</param>
+        /// <returns>作成されたメール</returns>
+        public async System.Threading.Tasks.Task<MailItem> CreateAcceptanceEmailAsync(MailItem originalMail)
         {
             try
             {
@@ -317,10 +317,10 @@ namespace OutlookPTAAddin
 
         #region プロパティ
 
-        /// &lt;summary&gt;
+        /// <summary>
         /// サービスプロバイダーへのアクセス
-        /// &lt;/summary&gt;
-        public ServiceProvider ServiceProvider =&gt; _serviceProvider;
+        /// </summary>
+        public ServiceProvider ServiceProvider => _serviceProvider;
 
         #endregion
 
