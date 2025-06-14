@@ -222,25 +222,198 @@ async function handleEmailComposition(data, sendResponse) {
 }
 
 /**
- * API接続テスト
+ * システム診断機能
+ */
+async function runSystemDiagnostics() {
+    const diagnostics = {
+        timestamp: new Date().toISOString(),
+        chrome: {
+            version: navigator.userAgent,
+            offscreenSupport: typeof chrome.offscreen !== 'undefined',
+            runtimeSupport: typeof chrome.runtime !== 'undefined'
+        },
+        permissions: {},
+        offscreenDocument: {
+            canCreate: false,
+            exists: false,
+            error: null
+        },
+        network: {
+            basicConnectivity: false,
+            openaiReachable: false,
+            corsTest: false
+        }
+    };
+
+    try {
+        // 権限チェック
+        const permissions = await chrome.permissions.getAll();
+        diagnostics.permissions = permissions;
+
+        // Offscreen document診断
+        if (chrome.offscreen) {
+            try {
+                const contexts = await chrome.runtime.getContexts({
+                    contextTypes: ['OFFSCREEN_DOCUMENT']
+                });
+                diagnostics.offscreenDocument.exists = contexts.length > 0;
+                diagnostics.offscreenDocument.canCreate = true;
+            } catch (error) {
+                diagnostics.offscreenDocument.error = error.message;
+            }
+        }
+
+        // 基本的なネットワーク接続テスト
+        try {
+            const response = await fetch('https://www.google.com', {
+                method: 'HEAD',
+                mode: 'no-cors'
+            });
+            diagnostics.network.basicConnectivity = true;
+        } catch (error) {
+            diagnostics.network.basicConnectivity = false;
+        }
+
+        // OpenAI API 到達性テスト
+        try {
+            const response = await fetch('https://api.openai.com', {
+                method: 'HEAD',
+                mode: 'no-cors'
+            });
+            diagnostics.network.openaiReachable = true;
+        } catch (error) {
+            diagnostics.network.openaiReachable = false;
+        }
+
+    } catch (error) {
+        diagnostics.error = error.message;
+    }
+
+    console.log('システム診断結果:', diagnostics);
+    return diagnostics;
+}
+
+/**
+ * 改良版API接続テスト（診断機能付き）
  */
 async function handleApiTest(data, sendResponse) {
     try {
-        const testPrompt = 'こんにちは。API接続テストです。簡単に挨拶をしてください。';
-        await callAIAPI(testPrompt, data);
+        console.log('API接続テスト開始:', { provider: data.provider, model: data.model });
+
+        // システム診断を実行
+        const diagnostics = await runSystemDiagnostics();
+        console.log('診断結果:', diagnostics);
+
+        // 設定の基本検証
+        if (!data.apiKey) {
+            throw new Error('APIキーが設定されていません。');
+        }
+
+        if (data.provider === 'azure' && !data.azureEndpoint) {
+            throw new Error('Azure エンドポイントが設定されていません。');
+        }        // URLの妥当性チェック（詳細バリデーション）
+        if (data.provider === 'azure') {
+            const endpoint = data.azureEndpoint;
+
+            if (!endpoint) {
+                throw new Error('Azure エンドポイントが設定されていません。');
+            }
+
+            try {
+                const url = new URL(endpoint);
+                console.log('Azure エンドポイント解析:', {
+                    protocol: url.protocol,
+                    hostname: url.hostname,
+                    pathname: url.pathname,
+                    fullUrl: endpoint
+                });
+
+                // Azure OpenAI エンドポイントの形式チェック
+                if (!url.hostname.includes('.openai.azure.com')) {
+                    throw new Error(
+                        `無効なAzure OpenAIエンドポイントです。\n\n` +
+                        `入力値: ${endpoint}\n\n` +
+                        `正しい形式: https://your-resource-name.openai.azure.com\n\n` +
+                        `例: https://my-openai-resource.openai.azure.com`
+                    );
+                }
+
+                if (url.protocol !== 'https:') {
+                    throw new Error('Azure OpenAIエンドポイントはHTTPS形式である必要があります。');
+                }
+
+            } catch (urlError) {
+                if (urlError.message.includes('無効なAzure OpenAI')) {
+                    throw urlError; // 詳細なエラーメッセージをそのまま使用
+                }
+
+                throw new Error(
+                    `Azure エンドポイントのURLが無効です。\n\n` +
+                    `入力値: ${endpoint}\n\n` +
+                    `エラー詳細: ${urlError.message}\n\n` +
+                    `正しい形式: https://your-resource-name.openai.azure.com`
+                );
+            }
+        }
+
+        // Offscreen documentの状態確認
+        if (!diagnostics.offscreenDocument.canCreate) {
+            throw new Error('Offscreen document機能が利用できません。拡張機能の再インストールを試してください。');
+        }
+
+        const testPrompt = 'こんにちは。API接続テストです。「OK」とだけ返答してください。';
+
+        console.log('API呼び出し開始...');
+        const result = await callAIAPI(testPrompt, data);
+        console.log('API接続テスト成功:', result);
 
         sendResponse({
             success: true,
-            result: 'API接続テストが成功しました。'
+            result: `API接続テストが成功しました。応答: ${result.substring(0, 50)}...`,
+            diagnostics: diagnostics
         });
     } catch (error) {
         console.error('API接続テストエラー:', error);
-        sendResponse({ error: error.message });
+        console.error('エラースタック:', error.stack);
+
+        // 診断情報を取得
+        const diagnostics = await runSystemDiagnostics();
+
+        // より詳細なエラー情報を提供
+        let errorMessage = error.message;
+
+        if (error.message.includes('Failed to fetch') || error.message.includes('ネットワーク')) {
+            errorMessage = `ネットワーク接続エラー: ${error.message}\n\n🔍 詳細診断:\n`;
+
+            if (!diagnostics.network.basicConnectivity) {
+                errorMessage += '• インターネット接続に問題があります\n';
+            }
+
+            if (!diagnostics.offscreenDocument.canCreate) {
+                errorMessage += '• Offscreen document機能に問題があります\n';
+            }
+
+            if (diagnostics.offscreenDocument.error) {
+                errorMessage += `• Offscreen document エラー: ${diagnostics.offscreenDocument.error}\n`;
+            }
+
+            errorMessage += '\n📋 推奨対策:\n';
+            errorMessage += '• 拡張機能を無効化→有効化\n';
+            errorMessage += '• ブラウザを再起動\n';
+            errorMessage += '• 拡張機能を再インストール\n';
+            errorMessage += '• ネットワーク設定を確認\n';
+        }
+
+        sendResponse({
+            success: false,
+            error: errorMessage,
+            diagnostics: diagnostics
+        });
     }
 }
 
 /**
- * AI APIを呼び出し（既存のoutlook-addinコードを移植）
+ * AI APIを呼び出し（CORS制限回避版）
  */
 async function callAIAPI(prompt, settings) {
     const apiKey = settings.apiKey;
@@ -308,70 +481,114 @@ async function callAIAPI(prompt, settings) {
             throw new Error('サポートされていないAIプロバイダーです: ' + provider);
     }
 
+    // Offscreen documentを使用してCORS制限を回避
+    return await fetchWithOffscreen({
+        endpoint,
+        headers,
+        body,
+        provider
+    });
+}
+
+/**
+ * Offscreen documentを使用したfetch
+ */
+async function fetchWithOffscreen(requestData) {
+    console.log('fetchWithOffscreen開始:', requestData);
+
     try {
-        console.log('API呼び出し開始:', { endpoint, provider, model });
-        
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: headers,
-            body: body,
-            // Chrome拡張機能用の追加設定
-            mode: 'cors',
-            credentials: 'omit'
+        // Offscreen documentを作成または取得
+        await ensureOffscreenDocument();
+
+        console.log('Offscreen documentに送信するデータ:', requestData);
+
+        // Offscreen documentにメッセージを送信
+        const response = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('Offscreen document通信タイムアウト（30秒）'));
+            }, 30000);
+
+            chrome.runtime.sendMessage({
+                action: 'fetchAPI',
+                data: requestData
+            }, (response) => {
+                clearTimeout(timeout);
+
+                if (chrome.runtime.lastError) {
+                    console.error('Runtime error:', chrome.runtime.lastError);
+                    reject(new Error('Chrome runtime error: ' + chrome.runtime.lastError.message));
+                    return;
+                }
+
+                if (!response) {
+                    reject(new Error('Offscreen documentからの応答がありません'));
+                    return;
+                }
+
+                resolve(response);
+            });
         });
 
-        console.log('API応答受信:', { status: response.status, ok: response.ok });
+        console.log('Offscreen documentからの応答:', response);
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('APIエラー:', { status: response.status, error: errorText });
-            
-            // より詳細なエラーメッセージを提供
-            switch (response.status) {
-                case 401:
-                    throw new Error('APIキーが無効です。設定を確認してください。');
-                case 403:
-                    throw new Error('APIアクセスが拒否されました。権限を確認してください。');
-                case 429:
-                    throw new Error('API利用制限に達しました。しばらく待ってから再試行してください。');
-                case 500:
-                case 502:
-                case 503:
-                    throw new Error('APIサーバーエラーが発生しました。しばらく待ってから再試行してください。');
-                default:
-                    throw new Error(`APIエラー (${response.status}): ${errorText || 'Unknown error'}`);
-            }
+        if (response.success) {
+            return response.data;
+        } else {
+            throw new Error(response.error || 'Offscreen documentでエラーが発生しました');
         }
-
-        const data = await response.json();
-        console.log('API応答データ:', data);
-
-        if (provider === 'openai' || provider === 'azure') {
-            if (data.choices && data.choices.length > 0) {
-                return data.choices[0].message.content.trim();
-            } else {
-                throw new Error('AIからの有効な応答が得られませんでした');
-            }
-        }
-
-        throw new Error('予期しないAPI応答形式です');
-        
     } catch (error) {
-        console.error('fetch エラー:', error);
-        
-        // TypeError: Failed to fetch の場合の詳細なエラーメッセージ
-        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            throw new Error(
-                'ネットワーク接続エラーが発生しました。以下を確認してください:\n' +
-                '• インターネット接続が正常か\n' +
-                '• APIエンドポイントURLが正しいか\n' +
-                '• ファイアウォールやプロキシの設定\n' +
-                '• CORSポリシーの制限'
-            );
+        console.error('fetchWithOffscreen エラー:', error);
+
+        // デバッグ用：フォールバック処理の詳細ログ
+        console.log('フォールバック処理を開始します...');
+        try {
+            return await fallbackDirectFetch(requestData);
+        } catch (fallbackError) {
+            console.error('フォールバック処理も失敗:', fallbackError);
+            throw new Error(`主処理とフォールバック処理の両方が失敗しました:\n主処理: ${error.message}\nフォールバック: ${fallbackError.message}`);
         }
-        
-        // その他のエラーはそのまま再スロー
-        throw error;
+    }
+}
+
+/**
+ * Offscreen documentの作成・管理
+ */
+async function ensureOffscreenDocument() {
+    const offscreenUrl = chrome.runtime.getURL('offscreen/offscreen.html');
+    console.log('Offscreen document URL:', offscreenUrl);
+
+    try {
+        // 既存のoffscreen documentがあるかチェック
+        const existingContexts = await chrome.runtime.getContexts({
+            contextTypes: ['OFFSCREEN_DOCUMENT'],
+            documentUrls: [offscreenUrl]
+        });
+
+        console.log('既存のOffscreen document:', existingContexts.length);
+
+        if (existingContexts.length > 0) {
+            console.log('Offscreen document既に存在します');
+            return; // 既に存在する
+        }
+
+        console.log('新しいOffscreen documentを作成中...');
+
+        // 新しいoffscreen documentを作成
+        await chrome.offscreen.createDocument({
+            url: offscreenUrl,
+            reasons: [chrome.offscreen.Reason.WORKERS], // API呼び出し用に修正
+            justification: 'CORS制限回避のためのAPI呼び出し処理'
+        });
+
+        console.log('Offscreen document作成完了');
+
+        // 少し待機して初期化を完了させる
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+    } catch (error) {
+        console.error('Offscreen document作成エラー:', error);
+        console.error('Error details:', error.stack);
+        throw new Error('Offscreen document作成に失敗しました: ' + error.message);
     }
 }
 
@@ -519,5 +736,89 @@ function createCompositionPrompt(requestData) {
             return `${basePrompt}
 内容: ${requestData.content}
 要件: PTA活動に適した丁寧な文面で作成してください。`;
+    }
+}
+
+/**
+ * フォールバック: 直接fetchを試行（デバッグ・テスト用）
+ */
+async function fallbackDirectFetch(requestData) {
+    console.log('フォールバック: 直接fetch実行');
+    console.log('Request data:', requestData);
+
+    const { endpoint, headers, body, provider } = requestData;
+
+    try {
+        // まずはCORSありで試行
+        console.log('CORS有効でのfetch試行中...');
+        let response = await fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: body,
+            mode: 'cors',
+            credentials: 'omit',
+            cache: 'no-cache'
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('直接fetch成功（CORS有効）:', data);
+
+            // OpenAI/Azure OpenAI の応答解析
+            if (provider === 'openai' || provider === 'azure') {
+                if (data.choices && data.choices.length > 0) {
+                    return data.choices[0].message.content.trim();
+                } else {
+                    throw new Error('AIからの有効な応答が得られませんでした');
+                }
+            }
+
+            return data;
+        } else {
+            const errorText = await response.text();
+            throw new Error(`API呼び出しエラー (${response.status}): ${errorText}`);
+        }
+
+    } catch (corsError) {
+        console.log('CORS有効でのfetch失敗:', corsError.message);
+
+        // CORS無効で再試行
+        try {
+            console.log('CORS無効でのfetch試行中...');
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: headers,
+                body: body,
+                mode: 'no-cors', // CORSを無効化（レスポンスは opaque になる）
+            });
+
+            // no-corsモードでは詳細なレスポンス情報を取得できない
+            console.log('フォールバック fetch完了（no-corsモード）');
+            throw new Error('no-corsモードでは応答内容を確認できません。適切なCORS設定またはOffscreen documentが必要です。');
+
+        } catch (noCorsError) {
+            console.error('フォールバック fetch エラー:', noCorsError);
+
+            // 詳細なエラー情報を提供
+            if (corsError.name === 'TypeError' && corsError.message.includes('Failed to fetch')) {
+                throw new Error(
+                    'ネットワーク接続エラーが発生しました:\n\n' +
+                    '■ 考えられる原因:\n' +
+                    '• インターネット接続の問題\n' +
+                    '• APIエンドポイントURLの間違い\n' +
+                    '• プロキシ設定またはファイアウォールによるブロック\n' +
+                    '• VPNやセキュリティソフトの影響\n' +
+                    '• CORS制限\n\n' +
+                    '■ 対策:\n' +
+                    '• ネットワーク接続を確認\n' +
+                    '• 拡張機能を一度無効化→有効化\n' +
+                    '• ブラウザを再起動\n' +
+                    '• 設定画面でAPIキーとエンドポイントを再確認\n\n' +
+                    `詳細エラー: ${corsError.message}`
+                );
+            }
+
+            throw new Error(`API呼び出しに失敗しました: ${corsError.message}`);
+        }
     }
 }

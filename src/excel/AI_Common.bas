@@ -10,9 +10,9 @@ Option Explicit
 ' =============================================================================
 
 ' Azure OpenAI API 設定
-Public Const OPENAI_API_ENDPOINT As String = "https://your-azure-openai-endpoint.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2024-02-15-preview"
+Public Const OPENAI_API_ENDPOINT As String = "https://your-azure-openai-endpoint.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-15-preview"
 Public Const OPENAI_API_KEY As String = "YOUR_API_KEY_HERE" ' 本番環境では設定から読み込み
-Public Const OPENAI_MODEL As String = "gpt-4"
+Public Const OPENAI_MODEL As String = "gpt-4o-mini"
 
 ' アプリケーション設定
 Public Const APP_NAME As String = "Excel AI Helper"
