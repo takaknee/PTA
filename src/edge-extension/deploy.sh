@@ -6,8 +6,8 @@
 set -e
 
 # 設定
-EXTENSION_DIR="src/edge-extension"
-BUILD_DIR="dist/edge-extension"
+EXTENSION_DIR="."
+BUILD_DIR="../../dist/edge-extension"
 ZIP_NAME="pta-edge-extension-v1.0.0.zip"
 
 echo "🏫 PTA Edge拡張機能デプロイメント開始"
@@ -26,6 +26,7 @@ echo "🧹 不要ファイルのクリーンアップ..."
 find "$BUILD_DIR" -name "*.md" -delete
 find "$BUILD_DIR" -name ".DS_Store" -delete
 find "$BUILD_DIR" -name "Thumbs.db" -delete
+rm -f "$BUILD_DIR/deploy.sh"
 
 # マニフェストファイルの検証
 echo "🔍 マニフェストファイルの検証..."
@@ -67,15 +68,15 @@ zip -r "../$ZIP_NAME" . -x "*.DS_Store" "Thumbs.db"
 cd - > /dev/null
 
 echo "✅ デプロイメント完了!"
-echo "📦 パッケージ: dist/$ZIP_NAME"
+echo "📦 パッケージ: ../../dist/$ZIP_NAME"
 echo ""
 echo "🚀 インストール手順:"
 echo "1. Edgeブラウザで edge://extensions/ を開く"
 echo "2. 開発者モードを有効にする"
 echo "3. '展開して読み込み' をクリック"
-echo "4. $BUILD_DIR フォルダを選択"
+echo "4. ../../dist/edge-extension フォルダを選択"
 echo ""
 echo "📤 Microsoft Edge Add-ons への提出:"
 echo "1. https://partner.microsoft.com/dashboard/microsoftedge にログイン"
-echo "2. 新しい拡張機能として dist/$ZIP_NAME をアップロード"
+echo "2. 新しい拡張機能として ../../dist/$ZIP_NAME をアップロード"
 echo "3. 審査プロセスを完了"

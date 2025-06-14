@@ -19,6 +19,59 @@ chrome.runtime.onInstalled.addListener((details) => {
             }
         });
     }
+    
+    // コンテキストメニューを作成
+    createContextMenus();
+});
+
+/**
+ * コンテキストメニューを作成
+ */
+function createContextMenus() {
+    // 既存のメニューをクリア
+    chrome.contextMenus.removeAll(() => {
+        // 選択テキスト用メニュー
+        chrome.contextMenus.create({
+            id: 'pta-analyze-selection',
+            title: '🏫 選択文をPTA支援ツールで分析',
+            contexts: ['selection']
+        });
+        
+        // ページ全体用メニュー
+        chrome.contextMenus.create({
+            id: 'pta-analyze-page',
+            title: '🏫 このページをPTA支援ツールで要約',
+            contexts: ['page']
+        });
+    });
+}
+
+// コンテキストメニューのクリックハンドラー
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+    switch (info.menuItemId) {
+        case 'pta-analyze-selection':
+            // 選択されたテキストを分析
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'analyzeSelection',
+                data: {
+                    selectedText: info.selectionText,
+                    pageUrl: info.pageUrl,
+                    pageTitle: tab.title
+                }
+            });
+            break;
+            
+        case 'pta-analyze-page':
+            // ページ全体を要約
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'analyzePage',
+                data: {
+                    pageUrl: info.pageUrl,
+                    pageTitle: tab.title
+                }
+            });
+            break;
+    }
 });
 
 // メッセージハンドラー
@@ -26,6 +79,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message.action) {
         case 'analyzeEmail':
             handleEmailAnalysis(message.data, sendResponse);
+            return true; // 非同期レスポンス
+            
+        case 'analyzePage':
+            handlePageAnalysis(message.data, sendResponse);
+            return true; // 非同期レスポンス
+            
+        case 'analyzeSelection':
+            handleSelectionAnalysis(message.data, sendResponse);
             return true; // 非同期レスポンス
             
         case 'composeEmail':
@@ -72,8 +133,67 @@ async function handleEmailAnalysis(data, sendResponse) {
 }
 
 /**
- * メール作成支援処理
+ * ページ解析処理
  */
+async function handlePageAnalysis(data, sendResponse) {
+    try {
+        const settings = await getSettings();
+        
+        if (!settings.apiKey) {
+            sendResponse({ error: 'APIキーが設定されていません' });
+            return;
+        }
+        
+        const prompt = createPageAnalysisPrompt(data);
+        const result = await callAIAPI(prompt, settings);
+        
+        // 履歴に保存
+        await saveToHistory({
+            type: 'page_analysis',
+            timestamp: new Date().toISOString(),
+            pageTitle: data.pageTitle,
+            pageUrl: data.pageUrl,
+            result: result
+        });
+        
+        sendResponse({ success: true, result: result });
+    } catch (error) {
+        console.error('ページ解析エラー:', error);
+        sendResponse({ error: error.message });
+    }
+}
+
+/**
+ * 選択テキスト解析処理
+ */
+async function handleSelectionAnalysis(data, sendResponse) {
+    try {
+        const settings = await getSettings();
+        
+        if (!settings.apiKey) {
+            sendResponse({ error: 'APIキーが設定されていません' });
+            return;
+        }
+        
+        const prompt = createSelectionAnalysisPrompt(data);
+        const result = await callAIAPI(prompt, settings);
+        
+        // 履歴に保存
+        await saveToHistory({
+            type: 'selection_analysis',
+            timestamp: new Date().toISOString(),
+            pageTitle: data.pageTitle,
+            pageUrl: data.pageUrl,
+            selectedText: data.selectedText.substring(0, 100) + '...',
+            result: result
+        });
+        
+        sendResponse({ success: true, result: result });
+    } catch (error) {
+        console.error('選択テキスト解析エラー:', error);
+        sendResponse({ error: error.message });
+    }
+}
 async function handleEmailComposition(data, sendResponse) {
     try {
         const settings = await getSettings();
@@ -245,8 +365,61 @@ async function saveToHistory(entry) {
 }
 
 /**
- * メール解析用プロンプト作成
+ * ページ解析用プロンプト作成
  */
+function createPageAnalysisPrompt(data) {
+    return `
+以下のWebページを要約・分析してください：
+
+ページタイトル: ${data.pageTitle || '（タイトルなし）'}
+URL: ${data.pageUrl || ''}
+ページ内容: ${data.pageContent || '（内容を取得中...）'}
+
+以下の形式で回答してください：
+## 📄 ページ要約
+- このページの主要な内容を3-5行で要約
+
+## 🎯 重要なポイント
+- 特に注目すべき情報やデータ（箇条書き）
+
+## 🏫 PTA活動への関連性
+- PTA活動や学校関連業務に役立つ情報があれば指摘
+- 特に関連がない場合は「直接的な関連性は低い」と記載
+
+## 💡 アクション提案
+- このページの情報を活用するための具体的な提案（あれば）
+`;
+}
+
+/**
+ * 選択テキスト解析用プロンプト作成
+ */
+function createSelectionAnalysisPrompt(data) {
+    return `
+以下の選択されたテキストを分析してください：
+
+ページタイトル: ${data.pageTitle || '（タイトルなし）'}
+URL: ${data.pageUrl || ''}
+選択されたテキスト:
+${data.selectedText || '（テキストなし）'}
+
+以下の形式で回答してください：
+## 📝 選択テキストの要約
+- 選択された内容の要点を2-3行で要約
+
+## 🔍 詳細分析
+- 重要な情報やキーワードの解説
+- 背景情報や補足説明（必要に応じて）
+
+## 🏫 PTA活動への活用
+- この情報がPTA活動にどう役立つか
+- 学校関連業務での活用方法
+- 特に関連がない場合は「直接的な関連性は低い」と記載
+
+## ⚡ 次のアクション
+- この情報を受けて取るべき行動があれば提案
+`;
+}
 function createAnalysisPrompt(emailData) {
     return `
 以下のメールを分析してください：

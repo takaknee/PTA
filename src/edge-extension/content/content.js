@@ -9,10 +9,24 @@ if (window.location.hostname.includes('outlook.office.com') || window.location.h
     currentService = 'outlook';
 } else if (window.location.hostname.includes('mail.google.com')) {
     currentService = 'gmail';
+} else {
+    currentService = 'general'; // 一般的なWebページ
 }
 
 // PTA支援ボタンを追加
 let ptaButton = null;
+
+// バックグラウンドスクリプトからのメッセージを受信
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    switch (message.action) {
+        case 'analyzePage':
+            handlePageAnalysis(message.data);
+            break;
+        case 'analyzeSelection':
+            handleSelectionAnalysis(message.data);
+            break;
+    }
+});
 
 // ページ読み込み完了を待機
 if (document.readyState === 'loading') {
@@ -32,10 +46,21 @@ function initialize() {
         initializeOutlook();
     } else if (currentService === 'gmail') {
         initializeGmail();
+    } else {
+        // 一般的なWebページの場合は常にボタンを表示
+        initializeGeneralPage();
     }
     
     // URLの変更を監視（SPA対応）
     observeUrlChanges();
+}
+
+/**
+ * 一般的なWebページの初期化
+ */
+function initializeGeneralPage() {
+    // フローティングボタンを追加
+    addPTAButton();
 }
 
 /**
@@ -104,10 +129,19 @@ function addPTAButton() {
     ptaButton = document.createElement('div');
     ptaButton.id = 'pta-support-button';
     ptaButton.className = 'pta-support-button';
+    
+    // サービスに応じてボタンテキストを変更
+    let buttonText = 'PTA支援';
+    if (currentService === 'outlook' || currentService === 'gmail') {
+        buttonText = 'メール支援';
+    } else {
+        buttonText = 'ページ分析';
+    }
+    
     ptaButton.innerHTML = `
         <div class="pta-button-content">
             <span class="pta-icon">🏫</span>
-            <span class="pta-text">PTA支援</span>
+            <span class="pta-text">${buttonText}</span>
         </div>
     `;
     
@@ -159,16 +193,73 @@ function insertPTAButton() {
  * PTAダイアログを開く
  */
 function openPTADialog() {
-    // 現在のメール内容を取得
-    const emailData = getCurrentEmailData();
+    // ページの種類に応じてデータを取得
+    let dialogData = {};
     
-    if (!emailData.body) {
-        showNotification('メール内容を取得できませんでした。', 'error');
-        return;
+    if (currentService === 'outlook' || currentService === 'gmail') {
+        // メールサービスの場合は既存のメール取得ロジック
+        dialogData = getCurrentEmailData();
+        if (!dialogData.body) {
+            showNotification('メール内容を取得できませんでした。', 'error');
+            return;
+        }
+    } else {
+        // 一般的なWebページの場合はページ情報を取得
+        dialogData = getCurrentPageData();
     }
     
     // ダイアログを作成
-    createPTADialog(emailData);
+    createPTADialog(dialogData);
+}
+
+/**
+ * 現在のページデータを取得
+ */
+function getCurrentPageData() {
+    return {
+        pageTitle: document.title,
+        pageUrl: window.location.href,
+        pageContent: getPageContent(),
+        service: currentService,
+        selectedText: getSelectedText()
+    };
+}
+
+/**
+ * ページのメインコンテンツを取得
+ */
+function getPageContent() {
+    // より良いコンテンツ抽出のため複数の候補を試す
+    const selectors = [
+        'main',
+        'article', 
+        '.content',
+        '.main-content',
+        '#content',
+        '#main',
+        'body'
+    ];
+    
+    for (const selector of selectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+            const text = element.innerText || element.textContent || '';
+            if (text.length > 100) { // 最小限の内容があることを確認
+                return text.substring(0, 3000); // 3000文字に制限
+            }
+        }
+    }
+    
+    // フォールバック: body全体から取得
+    return (document.body.innerText || document.body.textContent || '').substring(0, 3000);
+}
+
+/**
+ * 選択されたテキストを取得
+ */
+function getSelectedText() {
+    const selection = window.getSelection();
+    return selection.toString().trim();
 }
 
 /**
@@ -207,9 +298,9 @@ function getCurrentEmailData() {
 }
 
 /**
- * PTAダイアログを作成
+ * PTAダイアlogを作成
  */
-function createPTADialog(emailData) {
+function createPTADialog(data) {
     // 既存のダイアログを削除
     const existingDialog = document.getElementById('pta-dialog');
     if (existingDialog) {
@@ -220,6 +311,41 @@ function createPTADialog(emailData) {
     const dialog = document.createElement('div');
     dialog.id = 'pta-dialog';
     dialog.className = 'pta-dialog';
+    
+    let contentHtml = '';
+    let actionsHtml = '';
+    
+    if (currentService === 'outlook' || currentService === 'gmail') {
+        // メールサービスの場合
+        contentHtml = `
+            <div class="pta-email-info">
+                <h3>📧 メール情報</h3>
+                <p><strong>件名:</strong> ${data.subject || '（件名なし）'}</p>
+                <p><strong>送信者:</strong> ${data.sender || '（送信者不明）'}</p>
+                <p><strong>本文:</strong> ${(data.body || '').substring(0, 100)}${(data.body || '').length > 100 ? '...' : ''}</p>
+            </div>
+        `;
+        actionsHtml = `
+            <button class="pta-action-button" onclick="analyzeEmail()">📊 メール解析</button>
+            <button class="pta-action-button" onclick="composeReply()">✍️ 返信作成</button>
+        `;
+    } else {
+        // 一般的なWebページの場合
+        const hasSelection = data.selectedText && data.selectedText.length > 0;
+        contentHtml = `
+            <div class="pta-page-info">
+                <h3>📄 ページ情報</h3>
+                <p><strong>タイトル:</strong> ${data.pageTitle || '（タイトルなし）'}</p>
+                <p><strong>URL:</strong> ${data.pageUrl || ''}</p>
+                ${hasSelection ? `<p><strong>選択テキスト:</strong> ${data.selectedText.substring(0, 100)}${data.selectedText.length > 100 ? '...' : ''}</p>` : ''}
+            </div>
+        `;
+        actionsHtml = `
+            <button class="pta-action-button" onclick="analyzePage()">📄 ページ要約</button>
+            ${hasSelection ? '<button class="pta-action-button" onclick="analyzeSelection()">📝 選択文分析</button>' : ''}
+        `;
+    }
+    
     dialog.innerHTML = `
         <div class="pta-dialog-content">
             <div class="pta-dialog-header">
@@ -227,15 +353,9 @@ function createPTADialog(emailData) {
                 <button class="pta-close-button" onclick="this.closest('.pta-dialog').remove()">×</button>
             </div>
             <div class="pta-dialog-body">
-                <div class="pta-email-info">
-                    <h3>📧 メール情報</h3>
-                    <p><strong>件名:</strong> ${emailData.subject || '（件名なし）'}</p>
-                    <p><strong>送信者:</strong> ${emailData.sender || '（送信者不明）'}</p>
-                    <p><strong>本文:</strong> ${emailData.body.substring(0, 100)}${emailData.body.length > 100 ? '...' : ''}</p>
-                </div>
+                ${contentHtml}
                 <div class="pta-actions">
-                    <button class="pta-action-button" onclick="analyzeEmail()">📊 メール解析</button>
-                    <button class="pta-action-button" onclick="composeReply()">✍️ 返信作成</button>
+                    ${actionsHtml}
                     <button class="pta-action-button" onclick="openSettings()">⚙️ 設定</button>
                 </div>
                 <div class="pta-result" id="pta-result" style="display: none;">
@@ -252,8 +372,8 @@ function createPTADialog(emailData) {
     
     document.body.appendChild(dialog);
     
-    // ダイアログに現在のメールデータを保存
-    dialog.emailData = emailData;
+    // ダイアログに現在のデータを保存
+    dialog.dialogData = data;
 }
 
 /**
@@ -261,7 +381,7 @@ function createPTADialog(emailData) {
  */
 function analyzeEmail() {
     const dialog = document.getElementById('pta-dialog');
-    const emailData = dialog.emailData;
+    const emailData = dialog.dialogData;
     
     showLoading();
     
@@ -281,11 +401,64 @@ function analyzeEmail() {
 }
 
 /**
+ * ページ解析を実行
+ */
+function analyzePage() {
+    const dialog = document.getElementById('pta-dialog');
+    const pageData = dialog.dialogData;
+    
+    showLoading();
+    
+    // バックグラウンドスクリプトにメッセージを送信
+    chrome.runtime.sendMessage({
+        action: 'analyzePage',
+        data: pageData
+    }, (response) => {
+        hideLoading();
+        
+        if (response.success) {
+            showResult(response.result);
+        } else {
+            showResult(`エラー: ${response.error}`, 'error');
+        }
+    });
+}
+
+/**
+ * 選択テキスト解析を実行
+ */
+function analyzeSelection() {
+    const dialog = document.getElementById('pta-dialog');
+    const pageData = dialog.dialogData;
+    
+    if (!pageData.selectedText) {
+        showResult('選択されたテキストがありません。', 'error');
+        return;
+    }
+    
+    showLoading();
+    
+    // バックグラウンドスクリプトにメッセージを送信
+    chrome.runtime.sendMessage({
+        action: 'analyzeSelection',
+        data: pageData
+    }, (response) => {
+        hideLoading();
+        
+        if (response.success) {
+            showResult(response.result);
+        } else {
+            showResult(`エラー: ${response.error}`, 'error');
+        }
+    });
+}
+
+/**
  * 返信作成を実行
  */
 function composeReply() {
     const dialog = document.getElementById('pta-dialog');
-    const emailData = dialog.emailData;
+    const emailData = dialog.dialogData;
     
     showLoading();
     
@@ -362,6 +535,45 @@ function showNotification(message, type = 'info') {
 }
 
 /**
+ * ページ解析ハンドラー（コンテキストメニューから呼び出し）
+ */
+function handlePageAnalysis(data) {
+    const pageData = {
+        pageTitle: data.pageTitle,
+        pageUrl: data.pageUrl,
+        pageContent: getPageContent(),
+        service: currentService
+    };
+    
+    // ダイアログを作成してページ解析を実行
+    createPTADialog(pageData);
+    
+    // 自動的にページ解析を開始
+    setTimeout(() => {
+        analyzePage();
+    }, 500);
+}
+
+/**
+ * 選択テキスト解析ハンドラー（コンテキストメニューから呼び出し）
+ */
+function handleSelectionAnalysis(data) {
+    const pageData = {
+        pageTitle: data.pageTitle,
+        pageUrl: data.pageUrl,
+        selectedText: data.selectedText,
+        service: currentService
+    };
+    
+    // ダイアログを作成して選択テキスト解析を実行
+    createPTADialog(pageData);
+    
+    // 自動的に選択テキスト解析を開始
+    setTimeout(() => {
+        analyzeSelection();
+    }, 500);
+}
+/**
  * URL変更を監視（SPA対応）
  */
 function observeUrlChanges() {
@@ -383,6 +595,8 @@ function observeUrlChanges() {
                     initializeOutlook();
                 } else if (currentService === 'gmail') {
                     initializeGmail();
+                } else {
+                    initializeGeneralPage();
                 }
             }, 1000);
         }
@@ -396,5 +610,7 @@ function observeUrlChanges() {
 
 // グローバル関数として公開（ダイアログから呼び出し可能にするため）
 window.analyzeEmail = analyzeEmail;
+window.analyzePage = analyzePage;
+window.analyzeSelection = analyzeSelection;
 window.composeReply = composeReply;
 window.openSettings = openSettings;

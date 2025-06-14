@@ -106,7 +106,8 @@
     padding: 20px;
 }
 
-.pta-email-info {
+.pta-email-info,
+.pta-page-info {
     margin-bottom: 20px;
     padding: 16px;
     background: #f8f9fa;
@@ -114,20 +115,23 @@
     border-left: 4px solid #2196F3;
 }
 
-.pta-email-info h3 {
+.pta-email-info h3,
+.pta-page-info h3 {
     margin: 0 0 12px 0;
     color: #333;
     font-size: 16px;
 }
 
-.pta-email-info p {
+.pta-email-info p,
+.pta-page-info p {
     margin: 8px 0;
     color: #555;
     font-size: 14px;
     line-height: 1.4;
 }
 
-.pta-email-info strong {
+.pta-email-info strong,
+.pta-page-info strong {
     color: #333;
     font-weight: 600;
 }
@@ -327,20 +331,24 @@
         color: #fff;
     }
     
-    .pta-email-info {
+    .pta-email-info,
+    .pta-page-info {
         background: #3a3a3a;
         color: #fff;
     }
     
-    .pta-email-info h3 {
+    .pta-email-info h3,
+    .pta-page-info h3 {
         color: #fff;
     }
     
-    .pta-email-info p {
+    .pta-email-info p,
+    .pta-page-info p {
         color: #ccc;
     }
     
-    .pta-email-info strong {
+    .pta-email-info strong,
+    .pta-page-info strong {
         color: #fff;
     }
     
