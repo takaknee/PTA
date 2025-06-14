@@ -1,0 +1,446 @@
+/*
+ * PTA Outlook アドイン - スタイルシート
+ * Copyright (c) 2024 PTA Development Team
+ */
+
+/* リセットとベース設定 */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #323130;
+    background-color: #ffffff;
+}
+
+/* Office UI Fabric スタイル調整 */
+.ms-font-su {
+    font-size: 21px;
+    font-weight: 300;
+    color: #323130;
+}
+
+.ms-font-xl {
+    font-size: 18px;
+    font-weight: 300;
+    color: #323130;
+}
+
+.ms-font-l {
+    font-size: 17px;
+    font-weight: 300;
+    color: #323130;
+}
+
+.ms-font-m {
+    font-size: 14px;
+    font-weight: 400;
+    color: #323130;
+}
+
+.ms-bgColor-neutralLighter {
+    background-color: #f3f2f1;
+}
+
+/* ヘッダー */
+.ms-welcome__header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #edebe9;
+    background-color: #f3f2f1;
+}
+
+.ms-welcome__header img {
+    margin-right: 15px;
+    border-radius: 4px;
+}
+
+.ms-welcome__header h1,
+.ms-welcome__header h2 {
+    margin: 0;
+    color: #323130;
+}
+
+/* メインコンテンツ */
+.ms-welcome__main {
+    padding: 20px;
+}
+
+.ms-welcome__content {
+    max-width: 600px;
+}
+
+/* 通知エリア */
+.notification-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f3f2f1;
+    border-radius: 4px;
+    border-left: 4px solid #0078d4;
+}
+
+.error-message {
+    background-color: #fef7f7;
+    border-left-color: #d13438;
+    color: #d13438;
+}
+
+.success-message {
+    background-color: #f3f9f1;
+    border-left-color: #107c10;
+    color: #107c10;
+}
+
+/* コントロールエリア */
+.controls-container {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #323130;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #8a8886;
+    border-radius: 2px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #323130;
+    background-color: #ffffff;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #0078d4;
+    box-shadow: 0 0 0 1px #0078d4;
+}
+
+.form-control:disabled {
+    background-color: #f3f2f1;
+    color: #a19f9d;
+}
+
+/* ボタン */
+.ms-welcome__action {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 5px;
+    background-color: #0078d4;
+    color: #ffffff;
+    border: none;
+    border-radius: 2px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.ms-welcome__action:hover {
+    background-color: #106ebe;
+}
+
+.ms-welcome__action:active {
+    background-color: #005a9e;
+}
+
+.ms-welcome__action:disabled {
+    background-color: #a19f9d;
+    cursor: not-allowed;
+}
+
+.ms-welcome__action.secondary {
+    background-color: #edebe9;
+    color: #323130;
+}
+
+.ms-welcome__action.secondary:hover {
+    background-color: #e1dfdd;
+}
+
+/* 結果表示エリア */
+.result-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.result-container h3 {
+    margin: 0 0 15px 0;
+    color: #323130;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.analysis-result,
+.generated-text {
+    background-color: #ffffff;
+    padding: 15px;
+    border: 1px solid #edebe9;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    font-family: "Segoe UI", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.analysis-result-item {
+    margin-bottom: 15px;
+}
+
+.analysis-result-item h4 {
+    margin: 0 0 10px 0;
+    color: #0078d4;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.result-content {
+    background-color: #ffffff;
+    padding: 12px;
+    border: 1px solid #edebe9;
+    border-radius: 4px;
+}
+
+/* ローディング */
+.loading-container {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.ms-Spinner {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border: 2px solid #f3f2f1;
+    border-top: 2px solid #0078d4;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+.ms-Spinner--large {
+    width: 36px;
+    height: 36px;
+    border-width: 3px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* タブ（タスクペイン用） */
+.tabs-container {
+    width: 100%;
+}
+
+.tab-headers {
+    display: flex;
+    border-bottom: 1px solid #edebe9;
+    margin-bottom: 20px;
+}
+
+.tab-header {
+    flex: 1;
+    padding: 12px 8px;
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 14px;
+    font-weight: 400;
+    color: #605e5c;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.tab-header:hover {
+    color: #323130;
+    background-color: #f3f2f1;
+}
+
+.tab-header.active {
+    color: #0078d4;
+    border-bottom-color: #0078d4;
+    font-weight: 600;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.section {
+    margin-bottom: 30px;
+}
+
+.section h3 {
+    margin: 0 0 15px 0;
+    color: #323130;
+    font-size: 16px;
+    font-weight: 600;
+    border-bottom: 1px solid #edebe9;
+    padding-bottom: 8px;
+}
+
+/* 履歴表示 */
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-item {
+    padding: 12px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.history-item:hover {
+    background-color: #e9ecef;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.history-type {
+    background-color: #0078d4;
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.history-timestamp {
+    color: #605e5c;
+    font-size: 12px;
+}
+
+.history-subject {
+    font-weight: 600;
+    color: #323130;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.history-preview {
+    color: #605e5c;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 400px) {
+    .ms-welcome__header {
+        padding: 15px;
+    }
+    
+    .ms-welcome__header img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .ms-welcome__main {
+        padding: 15px;
+    }
+    
+    .ms-welcome__action {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
+        text-align: center;
+    }
+    
+    .tab-header {
+        font-size: 12px;
+        padding: 10px 4px;
+    }
+}
+
+/* アクセシビリティ改善 */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* フォーカス表示の改善 */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid #0078d4;
+    outline-offset: 2px;
+}
+
+/* エラーハンドリング表示 */
+.error-boundary {
+    padding: 20px;
+    text-align: center;
+    background-color: #fef7f7;
+    border: 1px solid #d13438;
+    border-radius: 4px;
+    color: #d13438;
+}
+
+.error-boundary h3 {
+    margin: 0 0 10px 0;
+    color: #d13438;
+}
+
+/* プリント用スタイル */
+@media print {
+    .ms-welcome__header,
+    .controls-container,
+    .loading-container {
+        display: none;
+    }
+    
+    .result-container {
+        border: none;
+        box-shadow: none;
+    }
+    
+    .analysis-result,
+    .generated-text {
+        max-height: none;
+        overflow: visible;
+    }
+}

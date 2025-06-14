@@ -7,13 +7,20 @@
     "lint": "eslint 'src/**/*.{js,gs}' --ext .js,.gs",
     "lint:fix": "eslint 'src/**/*.{js,gs}' --ext .js,.gs --fix",
     "security": "npm audit",
-    "test": "echo \"テスト実行: Apps Scriptプロジェクトで個別に実行してください\" && exit 0"
+    "test": "echo \"テスト実行: Apps Scriptプロジェクトで個別に実行してください\" && exit 0",
+    "addin:install": "cd src/outlook-addin && npm install",
+    "addin:start": "cd src/outlook-addin && npm start",
+    "addin:validate": "cd src/outlook-addin && npm run validate",
+    "addin:sideload": "cd src/outlook-addin && npm run sideload"
   },
   "keywords": [
     "pta",
     "google-apps-script",
     "outlook-vba",
+    "outlook-addin",
+    "office-addin",
     "email-automation",
+    "ai-assistant",
     "japanese"
   ],
   "author": "PTA Development Team",
