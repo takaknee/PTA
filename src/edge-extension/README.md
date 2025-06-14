@@ -1,0 +1,185 @@
+# PTA Edge拡張機能
+
+PTA情報配信システムのEdgeブラウザ拡張機能版です。Outlook add-inがポリシーによりインストールできない環境での代替案として開発されています。
+
+## 概要
+
+この拡張機能は、Web版OutlookやGmailでメールの解析・作成支援を行うAI対応ツールです。Azure OpenAI APIを活用して、PTA活動に特化したメール処理機能を提供します。
+
+## 機能
+
+### 🔍 メール解析
+- 現在表示されているメールの内容をAIで自動解析
+- PTA活動の観点から重要度とアクション項目を抽出
+- 日本語での詳細な解析結果を表示
+
+### ✍️ メール作成支援
+- お知らせ、リマインダー、アンケート依頼など用途別のメール作成
+- AIによる自然で丁寧なPTA向け文面生成
+- 複数の作成パターンに対応
+
+### ⚡ クイック機能
+- 返信作成の自動支援
+- メール内容の要約作成
+- 必要なアクションの提案
+
+### 📊 履歴管理
+- AI処理結果の履歴保存
+- 過去の解析・作成結果の再確認
+- エクスポート機能による外部保存
+
+## 対応サービス
+
+- Web版Outlook (https://outlook.office.com/)
+- Outlook.com (https://outlook.live.com/)
+- Gmail (https://mail.google.com/)
+
+## インストール方法
+
+### 開発者モード（テスト用）
+
+1. Edgeブラウザを開く
+2. `edge://extensions/` にアクセス
+3. 「開発者モード」を有効にする
+4. 「展開して読み込み」をクリック
+5. このフォルダ (`src/edge-extension`) を選択
+
+### Microsoft Edge Add-ons（本格運用時）
+
+本格運用時はMicrosoft Edge Add-onsストアでの配信を予定しています。
+
+## 初期設定
+
+1. 拡張機能をインストール後、ツールバーのPTAアイコンをクリック
+2. 「⚙️ 設定」ボタンから設定画面を開く
+3. AIプロバイダーを選択（Azure OpenAI推奨）
+4. APIキーとエンドポイントを設定
+5. 「🔧 接続テスト」で動作確認
+
+### Azure OpenAI設定例
+
+```
+プロバイダー: Azure OpenAI
+エンドポイント: https://your-resource-name.openai.azure.com
+APIキー: your-api-key-here
+モデル: gpt-4
+```
+
+## 使用方法
+
+### Web版Outlookでの使用
+
+1. Web版Outlookでメールを開く
+2. 画面右上に表示される「🏫 PTA支援」ボタンをクリック
+3. ダイアログから希望する機能を選択
+4. AI処理結果を確認・活用
+
+### Gmailでの使用
+
+1. Gmailでメールを開く
+2. 「🏫 PTA支援」ボタンをクリック
+3. 解析または作成機能を選択
+4. 結果をコピーして活用
+
+### ポップアップからの直接利用
+
+1. ツールバーのPTAアイコンをクリック
+2. クイック機能またはメール作成機能を選択
+3. 必要な情報を入力して実行
+
+## セキュリティと制限事項
+
+### データの取り扱い
+- メール内容は処理時のみAI APIに送信
+- ローカルストレージに履歴を保存（任意設定）
+- APIキーは暗号化してブラウザに保存
+
+### 制限事項
+- Webメールサービスのみ対応（デスクトップOutlookは未対応）
+- AI API呼び出し制限に準拠
+- ブラウザのセキュリティポリシーに依存
+
+## トラブルシューティング
+
+### メール内容が取得できない
+- ページが完全に読み込まれているか確認
+- ブラウザをリフレッシュしてPTA支援ボタンを再表示
+- 対応サービス（Outlook、Gmail）であることを確認
+
+### API接続エラー
+- APIキーとエンドポイントの設定を確認
+- ネットワーク接続を確認
+- Azure OpenAIサービスの状態を確認
+
+### 機能が動作しない
+- 拡張機能が有効になっているか確認
+- ブラウザを再起動
+- 拡張機能を再インストール
+
+## ファイル構成
+
+```
+src/edge-extension/
+├── manifest.json          # 拡張機能マニフェスト
+├── background/
+│   └── background.js       # バックグラウンドスクリプト
+├── content/
+│   ├── content.js          # コンテンツスクリプト
+│   └── content.css         # スタイルシート
+├── popup/
+│   ├── popup.html          # ポップアップUI
+│   ├── popup.js            # ポップアップ機能
+│   └── popup.css           # ポップアップスタイル
+├── options/
+│   ├── options.html        # 設定画面
+│   ├── options.js          # 設定機能
+│   └── options.css         # 設定スタイル
+└── assets/
+    └── icons/              # アイコン類
+```
+
+## 技術仕様
+
+- **Manifest Version**: 3
+- **対応ブラウザ**: Microsoft Edge (Chromium)
+- **権限**: activeTab, storage, scripting
+- **API**: Azure OpenAI / OpenAI
+- **フレームワーク**: Vanilla JavaScript
+- **ストレージ**: Chrome Storage API
+
+## 開発・カスタマイズ
+
+### 開発環境
+- Node.js 18以上
+- Microsoft Edge (最新版)
+
+### ローカル開発
+```bash
+# ルートディレクトリで
+npm run lint  # コード品質チェック
+
+# 拡張機能フォルダで開発者モードで読み込み
+```
+
+### 機能追加
+- `background/background.js`: AI処理ロジック
+- `content/content.js`: Webページ連携
+- `popup/popup.js`: UI機能
+
+## ライセンス
+
+MIT License - 詳細はプロジェクトルートのLICENSEファイルを参照
+
+## サポート
+
+- GitHub Issues: [takaknee/PTA](https://github.com/takaknee/PTA/issues)
+- 問い合わせ: PTA Development Team
+
+## 更新履歴
+
+### v1.0.0 (2024-12-xx)
+- 初回リリース
+- Azure OpenAI API対応
+- Web版Outlook/Gmail対応
+- 基本的なメール解析・作成機能
+- 設定画面・履歴機能

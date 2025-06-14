@@ -1,0 +1,653 @@
+/*
+ * PTA Edge拡張機能 - ポップアップ用CSS
+ * Copyright (c) 2024 PTA Development Team
+ */
+
+/* 基本設定 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #333;
+    background: #f8f9fa;
+}
+
+.popup-container {
+    width: 380px;
+    max-height: 600px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* ヘッダー */
+.popup-header {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+    padding: 16px 20px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo {
+    font-size: 20px;
+}
+
+.popup-header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* メイン */
+.popup-main {
+    padding: 0;
+    max-height: 460px;
+    overflow-y: auto;
+}
+
+/* タブナビゲーション */
+.tab-navigation {
+    display: flex;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-button:hover {
+    background: #eeeeee;
+    color: #333;
+}
+
+.tab-button.active {
+    color: #2196F3;
+    background: white;
+    border-bottom-color: #2196F3;
+}
+
+/* タブコンテンツ */
+.tab-content {
+    display: none;
+    padding: 20px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* セクション */
+.section {
+    margin-bottom: 24px;
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+.section h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.section-description {
+    font-size: 13px;
+    color: #666;
+    margin: 0 0 12px 0;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* ボタン */
+.action-button {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.action-button.primary {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+}
+
+.action-button.primary:hover {
+    background: linear-gradient(135deg, #1976D2, #1565C0);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.action-button.secondary {
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.action-button.secondary:hover {
+    background: #eeeeee;
+}
+
+.button-icon {
+    font-size: 16px;
+}
+
+/* クイックアクション */
+.quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.quick-button {
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.quick-button:hover {
+    background: #e3f2fd;
+    border-color: #2196F3;
+    color: #1976D2;
+    transform: translateY(-1px);
+}
+
+.quick-button .button-icon {
+    font-size: 18px;
+}
+
+/* フォーム */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+}
+
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    max-height: 120px;
+}
+
+/* 履歴 */
+.history-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.history-item {
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: white;
+}
+
+.history-item:hover {
+    background: #f8f9fa;
+    border-color: #2196F3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.history-type {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2196F3;
+}
+
+.history-date {
+    font-size: 11px;
+    color: #999;
+}
+
+.history-content {
+    font-size: 13px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 空の状態 */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.empty-icon {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+/* フッター */
+.popup-footer {
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+}
+
+.footer-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.footer-button {
+    flex: 1;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #666;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.footer-button:hover {
+    background: #f0f0f0;
+    border-color: #bbb;
+    color: #333;
+}
+
+/* 結果オーバーレイ */
+.result-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.result-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 340px;
+    max-height: 80%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #f8f9fa;
+}
+
+.result-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.close-result {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-result:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.result-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.result-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0;
+    color: #333;
+}
+
+.result-text.error {
+    color: #d32f2f;
+}
+
+.result-text.success {
+    color: #2e7d32;
+}
+
+.result-actions {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid #e0e0e0;
+    background: #f8f9fa;
+}
+
+/* ローディングオーバーレイ */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.loading-content {
+    text-align: center;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #2196F3;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 12px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-content p {
+    color: #666;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* API警告 */
+.api-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 16px 20px;
+    text-align: center;
+}
+
+.api-warning p {
+    margin: 0 0 8px 0;
+    color: #856404;
+    font-size: 13px;
+}
+
+.api-warning button {
+    background: #ffc107;
+    color: #333;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.api-warning button:hover {
+    background: #e0a800;
+}
+
+/* スクロールバー */
+.popup-main::-webkit-scrollbar,
+.history-list::-webkit-scrollbar,
+.result-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.popup-main::-webkit-scrollbar-track,
+.history-list::-webkit-scrollbar-track,
+.result-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.popup-main::-webkit-scrollbar-thumb,
+.history-list::-webkit-scrollbar-thumb,
+.result-body::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.popup-main::-webkit-scrollbar-thumb:hover,
+.history-list::-webkit-scrollbar-thumb:hover,
+.result-body::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* レスポンシブ対応（小さな画面） */
+@media (max-width: 400px) {
+    .popup-container {
+        width: 320px;
+    }
+    
+    .quick-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #1e1e1e;
+        color: #e0e0e0;
+    }
+    
+    .popup-container {
+        background: #2d2d2d;
+    }
+    
+    .tab-navigation {
+        background: #3a3a3a;
+        border-bottom-color: #555;
+    }
+    
+    .tab-button {
+        color: #ccc;
+    }
+    
+    .tab-button:hover {
+        background: #444;
+        color: #fff;
+    }
+    
+    .tab-button.active {
+        background: #2d2d2d;
+        color: #2196F3;
+    }
+    
+    .tab-content {
+        background: #2d2d2d;
+    }
+    
+    .section h2 {
+        color: #e0e0e0;
+    }
+    
+    .section-description {
+        color: #aaa;
+    }
+    
+    .quick-button {
+        background: #3a3a3a;
+        border-color: #555;
+        color: #ccc;
+    }
+    
+    .quick-button:hover {
+        background: #404040;
+        border-color: #2196F3;
+        color: #2196F3;
+    }
+    
+    .form-group label {
+        color: #e0e0e0;
+    }
+    
+    .form-group select,
+    .form-group textarea {
+        background: #3a3a3a;
+        border-color: #555;
+        color: #e0e0e0;
+    }
+    
+    .history-item {
+        background: #3a3a3a;
+        border-color: #555;
+    }
+    
+    .history-item:hover {
+        background: #404040;
+    }
+    
+    .history-content {
+        color: #aaa;
+    }
+    
+    .popup-footer {
+        background: #3a3a3a;
+        border-top-color: #555;
+    }
+    
+    .footer-button {
+        background: #404040;
+        border-color: #555;
+        color: #ccc;
+    }
+    
+    .footer-button:hover {
+        background: #4a4a4a;
+        color: #fff;
+    }
+    
+    .result-content {
+        background: #2d2d2d;
+    }
+    
+    .result-header {
+        background: #3a3a3a;
+        border-bottom-color: #555;
+    }
+    
+    .result-header h3 {
+        color: #e0e0e0;
+    }
+    
+    .result-text {
+        color: #e0e0e0;
+    }
+    
+    .result-actions {
+        background: #3a3a3a;
+        border-top-color: #555;
+    }
+}

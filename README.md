@@ -13,6 +13,12 @@ PTA関連の情報配信を自動化するシステムです。Google Workspace�
 - **Outlook AI Helper (Office Add-in)** (`src/outlook-addin/`): 最新のOffice Add-ins技術による軽量版（推奨）
 - **Outlook VSTO アドイン** (`src/outlook-vsto/`): C#による高機能版（レガシー）
 
+### Edge拡張機能（NEW!）
+- **PTA Edge拡張機能** (`src/edge-extension/`): Outlookアドインの代替案としてのEdgeブラウザ拡張機能
+  - Web版Outlook・Gmail対応
+  - Azure OpenAI API統合
+  - ポリシー制限回避ソリューション
+
 ## CI/CD・品質管理
 
 このプロジェクトでは、コード品質とセキュリティを自動的にチェックするGitHub Actionsを導入しています：
@@ -48,6 +54,7 @@ npm run security
 - **PTA情報配信システム**: [セットアップガイド](src/gsuite/pta/SETUP.md)
 - **Gmail整理スクリプト**: [使用方法](src/gsuite/gmail/README.md)  
 - **Outlook AI Helper (VBA)**: [クイックスタートガイド](docs/outlook/quickstart.md)
+- **Edge拡張機能**: [インストール・設定ガイド](src/edge-extension/README.md)
 - **Outlook Add-in (推奨)**: [セットアップガイド](src/outlook-addin/README.md)
 
 ## ✨ 最新情報：Office Add-ins 移行完了
