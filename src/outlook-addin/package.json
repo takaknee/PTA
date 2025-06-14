@@ -2,10 +2,9 @@
   "name": "pta-outlook-addin",
   "version": "1.0.0",
   "description": "PTA Outlook Add-in - AI supported email processing",
-  "main": "src/taskpane.html",
-  "scripts": {
-    "start": "office-addin-dev-certs install && office-addin-dev-server --source ./src",
-    "start:web": "office-addin-dev-server --source ./src --port 3000",
+  "main": "src/taskpane.html",  "scripts": {
+    "start": "office-addin-dev-certs install && npx http-server ./src -p 3000 -c-1 --cors",
+    "start:web": "npx http-server ./src -p 3000 -c-1 --cors",
     "build": "echo 'Build process for Office Add-in'",
     "lint": "eslint 'src/**/*.js'",
     "lint:fix": "eslint 'src/**/*.js' --fix",
@@ -25,15 +24,14 @@
   "license": "MIT",
   "dependencies": {
     "@microsoft/office-js": "^1.1.88"
-  },
-  "devDependencies": {
+  },  "devDependencies": {
     "@types/office-js": "^1.0.366",
     "eslint": "^8.57.0",
-    "office-addin-cli": "^1.6.0",
-    "office-addin-debugging": "^5.1.0",
-    "office-addin-dev-certs": "^1.13.0",
-    "office-addin-dev-server": "^2.1.0",
-    "office-addin-manifest": "^1.13.0"
+    "http-server": "^14.1.1",
+    "office-addin-cli": "^2.0.3",
+    "office-addin-debugging": "^6.0.3",
+    "office-addin-dev-certs": "^2.0.3",
+    "office-addin-manifest": "^2.0.3"
   },
   "engines": {
     "node": ">=18.0.0"
