@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PTA Edge拡張機能テストページ</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #2196f3;
+        border-bottom: 3px solid #2196f3;
+        padding-bottom: 10px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-left: 4px solid #2196f3;
+      }
+      .highlight {
+        background-color: yellow;
+        padding: 2px 4px;
+      }
+      .important {
+        color: #d32f2f;
+        font-weight: bold;
+      }
+      .success {
+        color: #388e3c;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🏫 PTA Edge拡張機能テストページ</h1>
+
+      <div class="test-section">
+        <h2>📝 テスト内容</h2>
+        <p>
+          このページは<span class="highlight">PTA Edge拡張機能</span
+          >の動作をテストするために作成されました。
+        </p>
+        <p>
+          右上の<span class="important">AI支援ボタン</span
+          >をクリックして、ページ解析機能をテストしてください。
+        </p>
+      </div>
+
+      <div class="test-section">
+        <h2>🔍 期待される動作</h2>
+        <ul>
+          <li>AI支援ボタンが表示されること</li>
+          <li>ボタンクリックでダイアログが表示されること</li>
+          <li>
+            <span class="success">「このページを要約」</span
+            >ボタンが正常に動作すること
+          </li>
+          <li>
+            ページコンテンツが<span class="important">undefined</span
+            >にならないこと
+          </li>
+        </ul>
+      </div>
+
+      <div class="test-section">
+        <h2>📋 テスト用コンテンツ</h2>
+        <p>
+          これはテスト用のサンプルコンテンツです。PTA（Parent-Teacher
+          Association）は、保護者と教師の会という意味で、学校と家庭が連携して子どもたちの教育環境を向上させることを目的としています。
+        </p>
+
+        <h3>PTAの主な活動</h3>
+        <ul>
+          <li>学校行事の支援</li>
+          <li>安全パトロール活動</li>
+          <li>教育環境の改善提案</li>
+          <li>保護者間の情報共有</li>
+          <li>地域との連携活動</li>
+        </ul>
+
+        <h3>情報配信システムの重要性</h3>
+        <p>
+          現代のPTA活動において、効率的な情報配信システムは欠かせません。メールやWebサイトを通じて、迅速かつ正確な情報を保護者に伝達することで、活動への参加促進と透明性の確保を図ることができます。
+        </p>
+      </div>
+
+      <div class="test-section">
+        <h2>🚀 AI支援機能のテスト</h2>
+        <p>
+          以下のテキストを選択して、選択テキスト解析機能もテストしてください：
+        </p>
+        <blockquote
+          style="
+            border-left: 4px solid #2196f3;
+            padding-left: 15px;
+            font-style: italic;
+          "
+        >
+          「PTAの活動は、子どもたちの成長を支えるための重要な取り組みです。保護者、教師、地域が一体となって協力することで、より良い教育環境を作り上げることができます。」
+        </blockquote>
+      </div>
+
+      <div class="test-section">
+        <h2>⚙️ デバッグ情報</h2>
+        <p>開発者ツールのコンソールで以下のメッセージを確認してください：</p>
+        <ul>
+          <li>✅ コンテンツ抽出成功メッセージ</li>
+          <li>✅ pageContent が正常に設定されているメッセージ</li>
+          <li>❌ undefined や空文字列のエラーメッセージがないこと</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      // ページロード時にテスト情報をコンソールに出力
+      console.log("🧪 PTA Edge拡張機能テストページが読み込まれました");
+      console.log("📄 ページタイトル:", document.title);
+      console.log("🌐 ページURL:", window.location.href);
+      console.log("📝 ページコンテンツ長:", document.body.innerText.length);
+
+      // ページの主要な要素をチェック
+      setTimeout(() => {
+        const mainContent = document.querySelector(".container");
+        if (mainContent) {
+          console.log("✅ メインコンテンツが検出されました");
+          console.log("📊 メインコンテンツ長:", mainContent.innerText.length);
+        }
+      }, 1000);
+    </script>
+  </body>
+</html>

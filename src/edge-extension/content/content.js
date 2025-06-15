@@ -178,9 +178,12 @@ function addAISupportButton() {
  */
 function showAiDialog() {
     const selectedText = getSelectedText();
+    const pageContent = extractPageContent();
+
     const dialogData = {
         pageTitle: document.title,
         pageUrl: window.location.href,
+        pageContent: pageContent,
         selectedText: selectedText,
         currentService: currentService
     };
@@ -634,6 +637,17 @@ function analyzePage() {
     const pageData = dialog.dialogData;
     console.log('ページデータ:', pageData);
 
+    // pageContentの値を詳細にチェック
+    if (!pageData.pageContent) {
+        console.error('⚠️ pageContent が未定義です!');
+    } else if (pageData.pageContent === 'undefined') {
+        console.error('⚠️ pageContent が文字列の "undefined" です!');
+    } else if (pageData.pageContent.trim() === '') {
+        console.error('⚠️ pageContent が空文字列です!');
+    } else {
+        console.log('✅ pageContent が正常に設定されています:', pageData.pageContent.substring(0, 200) + '...');
+    }
+
     showLoading();
 
     // バックグラウンドスクリプトにメッセージを送信
@@ -719,10 +733,12 @@ function openSettings() {
  * ページ解析ハンドラー
  */
 function handlePageAnalysis(data) {
+    const pageContent = extractPageContent();
+
     const pageData = {
         pageTitle: document.title,
         pageUrl: window.location.href,
-        pageContent: document.body.innerText.substring(0, 5000) // 最初の5000字
+        pageContent: pageContent
     };
 
     createAiDialog(pageData);
@@ -799,3 +815,91 @@ console.log('公開されたグローバル関数:', {
     openSettings: typeof window.openSettings,
     closeAiDialog: typeof window.closeAiDialog
 });
+
+/**
+ * ページコンテンツを安全に抽出する共通関数
+ * 複数の方法でフォールバックして確実にコンテンツを取得
+ */
+function extractPageContent() {
+    let pageContent = '';
+
+    try {
+        // 方法1: メインコンテンツエリアを探す
+        const mainSelectors = [
+            'main',
+            'article',
+            '.content',
+            '#content',
+            '.main-content',
+            '.post-content',
+            '.entry-content',
+            '[data-testid="article-body"]', // Qiita等の記事サイト
+            '.markdown-body'  // GitHub等
+        ];
+
+        for (const selector of mainSelectors) {
+            const element = document.querySelector(selector);
+            if (element && element.innerText && element.innerText.trim()) {
+                pageContent = element.innerText.trim();
+                console.log(`コンテンツ抽出成功: ${selector}`);
+                break;
+            }
+        }
+
+        // 方法2: body全体から抽出（スクリプトやスタイルを除外）
+        if (!pageContent.trim()) {
+            const bodyClone = document.body.cloneNode(true);
+
+            // 不要な要素を削除
+            const unwantedSelectors = [
+                'script', 'style', 'noscript',
+                'nav', 'header', 'footer',
+                '.menu', '.sidebar', '.advertisement', '.ad',
+                '.social-share', '.comments', '.related-posts',
+                '[class*="menu"]', '[class*="nav"]', '[class*="sidebar"]'
+            ];
+
+            unwantedSelectors.forEach(selector => {
+                try {
+                    const elements = bodyClone.querySelectorAll(selector);
+                    elements.forEach(el => el.remove());
+                } catch (e) {
+                    // セレクタエラーを無視
+                }
+            });
+
+            pageContent = bodyClone.innerText || bodyClone.textContent || '';
+            console.log('body全体からコンテンツ抽出');
+        }
+
+        // 方法3: 空の場合のフォールバック
+        if (!pageContent.trim()) {
+            pageContent = document.body.innerText || document.body.textContent || '';
+            console.log('フォールバックでコンテンツ抽出');
+        }
+
+        // 長すぎる場合は切り詰め（最初の8000文字）
+        if (pageContent.length > 8000) {
+            pageContent = pageContent.substring(0, 8000).trim();
+            console.log('コンテンツを8000文字に切り詰め');
+        }
+
+        // 最終チェック
+        if (!pageContent.trim()) {
+            pageContent = '（ページコンテンツを取得できませんでした）';
+            console.warn('ページコンテンツが空です');
+        }
+
+    } catch (error) {
+        console.error('ページコンテンツ抽出エラー:', error);
+        // エラーの場合は最低限の情報を返す
+        try {
+            pageContent = document.body.innerText || document.body.textContent || 'コンテンツを取得できませんでした';
+        } catch (e) {
+            pageContent = 'コンテンツ取得中にエラーが発生しました';
+        }
+    }
+
+    console.log(`最終的に抽出されたコンテンツ（最初の200文字）:`, pageContent.substring(0, 200));
+    return pageContent;
+}

@@ -240,6 +240,22 @@ async function handleAnalyzeEmail(data, sendResponse) {
  */
 async function handleAnalyzePage(data, sendResponse) {
     try {
+        console.log('🔍 handleAnalyzePage開始:', data);
+
+        // pageContentの詳細チェック
+        if (!data.pageContent) {
+            console.error('❌ data.pageContent が未定義です!');
+            throw new Error('ページコンテンツが取得できませんでした');
+        } else if (data.pageContent === 'undefined') {
+            console.error('❌ data.pageContent が文字列の "undefined" です!');
+            throw new Error('ページコンテンツの値が不正です（undefined）');
+        } else if (data.pageContent.trim() === '') {
+            console.error('❌ data.pageContent が空文字列です!');
+            throw new Error('ページコンテンツが空です');
+        } else {
+            console.log('✅ data.pageContent が正常:', data.pageContent.substring(0, 200) + '...');
+        }
+
         // 設定を取得
         const settings = await getSettings();
 
@@ -249,6 +265,7 @@ async function handleAnalyzePage(data, sendResponse) {
 
         sendResponse({ success: true, result: result });
     } catch (error) {
+        console.error('handleAnalyzePage エラー:', error);
         sendResponse({ success: false, error: error.message });
     }
 }
