@@ -76,6 +76,14 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // メッセージハンドラー
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Background: メッセージ受信:', message, 'from:', sender);
+
+    // Offscreen documentからのメッセージは処理しない（循環を防ぐ）
+    if (sender.documentId && message.target === 'offscreen') {
+        console.log('Background: Offscreen documentからのメッセージを無視');
+        return false;
+    }
+
     switch (message.action) {
         case 'analyzeEmail':
             handleEmailAnalysis(message.data, sendResponse);
@@ -98,6 +106,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             return true; // 非同期レスポンス
 
         default:
+            console.log('Background: 不明なアクション:', message.action);
             sendResponse({ error: 'サポートされていないアクションです' });
     }
 });
@@ -491,7 +500,7 @@ async function callAIAPI(prompt, settings) {
 }
 
 /**
- * Offscreen documentを使用したfetch
+ * Offscreen documentを使用したfetch（シンプル版）
  */
 async function fetchWithOffscreen(requestData) {
     console.log('fetchWithOffscreen開始:', requestData);
@@ -502,40 +511,10 @@ async function fetchWithOffscreen(requestData) {
 
         console.log('Offscreen documentに送信するデータ:', requestData);
 
-        // Offscreen documentにメッセージを送信
-        const response = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('Offscreen document通信タイムアウト（30秒）'));
-            }, 30000);
+        // Service WorkerからOffscreen documentに通信するための別アプローチ
+        // ここでは直接fetchを試行し、CORSエラーが発生した場合のみOffscreen documentにフォールバック
+        return await performAPICall(requestData);
 
-            chrome.runtime.sendMessage({
-                action: 'fetchAPI',
-                data: requestData
-            }, (response) => {
-                clearTimeout(timeout);
-
-                if (chrome.runtime.lastError) {
-                    console.error('Runtime error:', chrome.runtime.lastError);
-                    reject(new Error('Chrome runtime error: ' + chrome.runtime.lastError.message));
-                    return;
-                }
-
-                if (!response) {
-                    reject(new Error('Offscreen documentからの応答がありません'));
-                    return;
-                }
-
-                resolve(response);
-            });
-        });
-
-        console.log('Offscreen documentからの応答:', response);
-
-        if (response.success) {
-            return response.data;
-        } else {
-            throw new Error(response.error || 'Offscreen documentでエラーが発生しました');
-        }
     } catch (error) {
         console.error('fetchWithOffscreen エラー:', error);
 
@@ -547,6 +526,103 @@ async function fetchWithOffscreen(requestData) {
             console.error('フォールバック処理も失敗:', fallbackError);
             throw new Error(`主処理とフォールバック処理の両方が失敗しました:\n主処理: ${error.message}\nフォールバック: ${fallbackError.message}`);
         }
+    }
+}
+
+/**
+ * API呼び出し実行（Background Script内で直接実行）
+ */
+async function performAPICall(requestData) {
+    const { endpoint, headers, body, provider } = requestData;
+
+    console.log('Background Script内でAPI呼び出し実行:', { endpoint, provider });
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: body,
+            mode: 'cors',
+            credentials: 'omit',
+            cache: 'no-cache',
+            redirect: 'follow'
+        });
+
+        console.log('Background API応答:', {
+            status: response.status,
+            ok: response.ok,
+            statusText: response.statusText
+        });
+
+        if (!response.ok) {
+            let errorText;
+            try {
+                errorText = await response.text();
+            } catch (textError) {
+                errorText = `応答テキスト取得エラー: ${textError.message}`;
+            }
+
+            console.error('Background APIエラー:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorText
+            });
+
+            // 詳細なエラーメッセージ
+            switch (response.status) {
+                case 401:
+                    throw new Error('APIキーが無効です。設定を確認してください。');
+                case 403:
+                    throw new Error('APIアクセスが拒否されました。権限またはデプロイメント名を確認してください。');
+                case 404:
+                    throw new Error('APIエンドポイントが見つかりません。URLまたはデプロイメント名を確認してください。');
+                case 429:
+                    throw new Error('API利用制限に達しました。しばらく待ってから再試行してください。');
+                case 500:
+                case 502:
+                case 503:
+                    throw new Error('APIサーバーエラーが発生しました。しばらく待ってから再試行してください。');
+                default:
+                    throw new Error(`APIエラー (${response.status}): ${errorText || 'Unknown error'}`);
+            }
+        }
+
+        console.log('Background: JSON解析中...');
+        const data = await response.json();
+        console.log('Background API成功:', data);
+
+        // OpenAI/Azure OpenAI の応答解析
+        if (provider === 'openai' || provider === 'azure') {
+            if (data.choices && data.choices.length > 0) {
+                const content = data.choices[0].message.content.trim();
+                console.log('Background: AI応答コンテンツ取得成功:', content.substring(0, 100) + '...');
+                return content;
+            } else {
+                console.error('Background: 無効なAI応答形式:', data);
+                throw new Error('AIからの有効な応答が得られませんでした');
+            }
+        }
+
+        console.error('Background: 予期しないAPI応答形式:', data);
+        throw new Error('予期しないAPI応答形式です');
+
+    } catch (error) {
+        console.error('Background API fetch エラー:', error);
+        console.error('Background API fetch エラー詳細:', error.stack);
+
+        // TypeError: Failed to fetch の詳細化
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+            throw new Error(
+                'ネットワーク接続エラー（Background Script内）:\n' +
+                '• インターネット接続を確認してください\n' +
+                '• APIエンドポイントURLが正しいか確認してください\n' +
+                '• プロキシまたはファイアウォール設定を確認してください\n' +
+                '• VPNやセキュリティソフトの影響も考慮してください\n' +
+                `詳細: ${error.message}`
+            );
+        }
+
+        throw error;
     }
 }
 

@@ -10,6 +10,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Offscreen: メッセージ受信:', message);
   console.log('Offscreen: Sender info:', sender);
 
+  // 対象がoffscreenでない場合は無視
+  if (message.target && message.target !== 'offscreen') {
+    console.log('Offscreen: 対象外のメッセージ:', message.target);
+    return false;
+  }
+
   if (message.action === 'fetchAPI') {
     console.log('Offscreen: API呼び出し処理開始');
 
