@@ -123,6 +123,64 @@
           <li>❌ undefined や空文字列のエラーメッセージがないこと</li>
         </ul>
       </div>
+
+      <div class="test-section">
+        <h2>🎨 テーマテスト</h2>
+        <p>
+          システムのテーマ設定に応じて、拡張機能のUIが自動的に変わることを確認してください：
+        </p>
+        <ul>
+          <li>
+            <strong>ライトテーマ</strong>:
+            白背景、黒文字でダイアログが表示される
+          </li>
+          <li>
+            <strong>ダークテーマ</strong>:
+            暗背景、白文字でダイアログが表示される
+          </li>
+          <li>
+            <strong>ハイコントラスト</strong>:
+            高コントラストでアクセシビリティが向上
+          </li>
+        </ul>
+        <div style="display: flex; gap: 10px; margin-top: 12px">
+          <button
+            onclick="testThemeSwitch('light')"
+            style="
+              padding: 8px 16px;
+              border-radius: 4px;
+              border: 1px solid #ddd;
+              background: #f9f9f9;
+            "
+          >
+            ライトテーマ模擬
+          </button>
+          <button
+            onclick="testThemeSwitch('dark')"
+            style="
+              padding: 8px 16px;
+              border-radius: 4px;
+              border: 1px solid #ddd;
+              background: #333;
+              color: white;
+            "
+          >
+            ダークテーマ模擬
+          </button>
+          <button
+            onclick="testThemeSwitch('reset')"
+            style="
+              padding: 8px 16px;
+              border-radius: 4px;
+              border: 1px solid #2196f3;
+              background: #2196f3;
+              color: white;
+            "
+          >
+            リセット
+          </button>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -140,6 +198,21 @@
           console.log("📊 メインコンテンツ長:", mainContent.innerText.length);
         }
       }, 1000);
+
+      function testThemeSwitch(theme) {
+        // テーマに応じてスタイルを変更
+        const body = document.body;
+        if (theme === "light") {
+          body.style.backgroundColor = "#f5f5f5";
+          body.style.color = "#333";
+        } else if (theme === "dark") {
+          body.style.backgroundColor = "#121212";
+          body.style.color = "#e0e0e0";
+        } else {
+          body.style.backgroundColor = "";
+          body.style.color = "";
+        }
+      }
     </script>
   </body>
 </html>

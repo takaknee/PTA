@@ -41,6 +41,9 @@ if (document.readyState === 'loading') {
 function initialize() {
     console.log('AI支援ツール初期化開始:', currentService);
 
+    // テーマ検出と適用（最初に実行）
+    detectAndApplyTheme();
+
     // サービスに応じた初期化
     if (currentService === 'outlook') {
         initializeOutlook();
@@ -225,12 +228,55 @@ function createAiDialog(dialogData) {
         align-items: center !important;
         justify-content: center !important;
         font-family: 'Segoe UI', sans-serif !important;
-    `;
+    `;    // テーマを検出
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+
+    console.log('🎨 ダイアログテーマ検出:', { prefersDark, prefersHighContrast });
+
+    // テーマに応じた色設定
+    let dialogBg, dialogText, headerBg, borderColor;
+
+    if (prefersHighContrast && prefersDark) {
+        dialogBg = '#000000';
+        dialogText = '#ffffff';
+        headerBg = '#000000';
+        borderColor = '#ffffff';
+    } else if (prefersHighContrast) {
+        dialogBg = '#ffffff';
+        dialogText = '#000000';
+        headerBg = '#ffffff';
+        borderColor = '#000000';
+    } else if (prefersDark) {
+        dialogBg = '#2d2d2d';
+        dialogText = '#ffffff';
+        headerBg = 'linear-gradient(135deg, #3a3a3a, #2d2d2d)';
+        borderColor = '#555555';
+    } else {
+        dialogBg = '#ffffff';
+        dialogText = '#333333';
+        headerBg = 'linear-gradient(135deg, #2196F3, #1976D2)';
+        borderColor = '#e0e0e0';
+    }
+
+    // テーマに応じた追加色設定
+    let textMuted, infoBg, headerTextColor;
+
+    if (prefersDark) {
+        textMuted = '#cccccc';
+        infoBg = '#404040';
+        headerTextColor = '#ffffff';
+    } else {
+        textMuted = '#666666';
+        infoBg = '#f0f8ff';
+        headerTextColor = '#ffffff';
+    }
 
     // ダイアログコンテンツを作成
     const content = document.createElement('div');
     content.style.cssText = `
-        background: white !important;
+        background: ${dialogBg} !important;
+        color: ${dialogText} !important;
         border-radius: 12px !important;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
         max-width: 600px !important;
@@ -244,17 +290,15 @@ function createAiDialog(dialogData) {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #e0e0e0;
-            background: linear-gradient(135deg, #2196F3, #1976D2);
+            padding: 20px;            border-bottom: 1px solid ${borderColor};
+            background: ${headerBg};
             color: white;
             border-radius: 12px 12px 0 0;
-        ">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">🏫 AI支援ツール</h3>
+        ">            <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: ${headerTextColor};">🏫 AI支援ツール</h3>
             <button class="ai-close-btn" style="
                 background: none;
                 border: none;
-                color: white;
+                color: ${headerTextColor};
                 font-size: 24px;
                 cursor: pointer;
                 width: 32px;
@@ -266,10 +310,9 @@ function createAiDialog(dialogData) {
             ">×</button>
         </div>
         <div style="padding: 20px;">
-            <div style="margin-bottom: 20px;">
-                <h4 style="margin: 0 0 8px 0; color: #333;">📄 ${dialogData.pageTitle || 'ページ情報'}</h4>
-                <p style="margin: 0 0 16px 0; color: #666; font-size: 12px; word-break: break-all;">${dialogData.pageUrl || ''}</p>
-                ${dialogData.selectedText ? `<div style="background: #f0f8ff; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px;"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
+            <div style="margin-bottom: 20px;">                <h4 style="margin: 0 0 8px 0; color: ${dialogText};">📄 ${dialogData.pageTitle || 'ページ情報'}</h4>
+                <p style="margin: 0 0 16px 0; color: ${textMuted}; font-size: 12px; word-break: break-all;">${dialogData.pageUrl || ''}</p>
+                ${dialogData.selectedText ? `<div style="background: ${infoBg}; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px; color: ${dialogText};"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
             </div>
             
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
@@ -317,11 +360,10 @@ function createAiDialog(dialogData) {
                         font-size: 14px;
                         font-weight: 500;
                     ">🔍 選択テキスト分析</button>
-                ` : ''}
-                <button class="ai-open-settings-btn" style="
-                    background: #f5f5f5;
-                    color: #666;
-                    border: 1px solid #ddd;
+                ` : ''}                <button class="ai-open-settings-btn" style="
+                    background: ${prefersDark ? '#555555' : '#f5f5f5'};
+                    color: ${prefersDark ? '#cccccc' : '#666666'};
+                    border: 1px solid ${prefersDark ? '#777777' : '#dddddd'};
                     border-radius: 6px;
                     padding: 12px 16px;
                     cursor: pointer;
@@ -330,10 +372,9 @@ function createAiDialog(dialogData) {
                 ">⚙️ 設定</button>
             </div>
             
-            <div>
-                <div id="ai-loading" style="display: none; text-align: center; padding: 20px; color: #666;">
+            <div>                <div id="ai-loading" style="display: none; text-align: center; padding: 20px; color: ${textMuted};">
                     <div style="
-                        border: 4px solid #f3f3f3;
+                        border: 4px solid ${prefersDark ? '#555555' : '#f3f3f3'};
                         border-top: 4px solid #2196F3;
                         border-radius: 50%;
                         width: 40px;
@@ -343,7 +384,7 @@ function createAiDialog(dialogData) {
                     "></div>
                     <span>AI処理中...</span>
                 </div>
-                <div id="ai-result" style="display: none; background: #f9f9f9; padding: 16px; border-radius: 8px; border-left: 4px solid #2196F3;"></div>
+                <div id="ai-result" style="display: none; background: ${prefersDark ? '#404040' : '#f9f9f9'}; padding: 16px; border-radius: 8px; border-left: 4px solid #2196F3; color: ${dialogText};"></div>
             </div>
         </div>
     `;
@@ -381,7 +422,32 @@ function createAiDialog(dialogData) {
     // ESCキーで閉じる
     document.addEventListener('keydown', handleEscapeKey);
 
+    // ダイアログにテーマクラスを適用
+    applyThemeToDialog(dialog);
+
     console.log('AIダイアログを作成しました（モーダル表示）');
+}
+
+/**
+ * ダイアログにテーマクラスを適用
+ */
+function applyThemeToDialog(dialogElement) {
+    // 現在のテーマを検出
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+
+    // テーマクラスを追加
+    dialogElement.classList.remove('ai-theme-light', 'ai-theme-dark', 'ai-theme-high-contrast');
+
+    if (prefersHighContrast) {
+        dialogElement.classList.add('ai-theme-high-contrast');
+    } else if (prefersDark) {
+        dialogElement.classList.add('ai-theme-dark');
+    } else {
+        dialogElement.classList.add('ai-theme-light');
+    }
+
+    console.log('ダイアログテーマ適用:', { prefersDark, prefersHighContrast });
 }
 
 /**
@@ -796,6 +862,35 @@ function observeUrlChanges() {
         childList: true,
         subtree: true
     });
+}
+
+/**
+ * テーマ検出とクラス設定
+ */
+function detectAndApplyTheme() {
+    // システムのテーマ設定を検出
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+
+    console.log('テーマ検出:', { prefersDark, prefersHighContrast });
+
+    // body要素にテーマクラスを追加
+    document.body.classList.remove('ai-theme-light', 'ai-theme-dark', 'ai-theme-high-contrast');
+
+    if (prefersHighContrast) {
+        document.body.classList.add('ai-theme-high-contrast');
+    } else if (prefersDark) {
+        document.body.classList.add('ai-theme-dark');
+    } else {
+        document.body.classList.add('ai-theme-light');
+    }
+
+    // テーマ変更を監視
+    const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const highContrastQuery = window.matchMedia('(prefers-contrast: high)');
+
+    darkModeQuery.addEventListener('change', detectAndApplyTheme);
+    highContrastQuery.addEventListener('change', detectAndApplyTheme);
 }
 
 // グローバル関数として公開（ダイアログから呼び出し可能にするため）

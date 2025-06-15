@@ -1,3 +1,4 @@
+/* AI支援ボタン - テーマ対応 */
 .ai-support-button {
     background: linear-gradient(135deg, #2196F3, #1976D2);
     color: white;
@@ -16,6 +17,19 @@
     background: linear-gradient(135deg, #1976D2, #1565C0);
     box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
     transform: translateY(-1px);
+}
+
+/* ダークテーマでのボタン調整 */
+@media (prefers-color-scheme: dark) {
+    .ai-support-button {
+        background: linear-gradient(135deg, #1976D2, #1565C0);
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+    }
+    
+    .ai-support-button:hover {
+        background: linear-gradient(135deg, #2196F3, #1976D2);
+        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.6);
+    }
 }
 
 .ai-button-content {
@@ -61,7 +75,8 @@
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
-    background: white !important;
+    background: var(--ai-dialog-bg, #ffffff) !important;
+    color: var(--ai-dialog-text, #333333) !important;
     border-radius: 12px !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
     max-width: 600px !important;
@@ -78,14 +93,14 @@
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    border-bottom: 1px solid #e0e0e0;
-    background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+    border-bottom: 1px solid var(--ai-border-color, #e0e0e0);
+    background: var(--ai-header-bg, linear-gradient(135deg, #f5f5f5, #e8e8e8));
     border-radius: 12px 12px 0 0;
 }
 
 .ai-dialog-header h2 {
     margin: 0;
-    color: #333;
+    color: var(--ai-header-text, #333333);
     font-size: 18px;
     font-weight: 600;
 }
@@ -95,7 +110,7 @@
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #666;
+    color: var(--ai-close-btn-color, #666666);
     padding: 0;
     width: 32px;
     height: 32px;
@@ -107,8 +122,8 @@
 }
 
 .ai-close-button:hover {
-    background: #f0f0f0;
-    color: #333;
+    background: var(--ai-close-btn-hover-bg, #f0f0f0);
+    color: var(--ai-close-btn-hover-text, #333333);
 }
 
 .ai-dialog-body {
@@ -118,26 +133,27 @@
 .ai-content-info {
     margin-bottom: 20px;
     padding: 16px;
-    background: #f8f9fa;
+    background: var(--ai-info-bg, #f8f9fa);
+    color: var(--ai-info-text, #555555);
     border-radius: 8px;
     border-left: 4px solid #2196F3;
 }
 
 .ai-content-info h3 {
     margin: 0 0 12px 0;
-    color: #333;
+    color: var(--ai-info-title, #333333);
     font-size: 16px;
 }
 
 .ai-content-info p {
     margin: 8px 0;
-    color: #555;
+    color: var(--ai-info-text, #555555);
     font-size: 14px;
     line-height: 1.4;
 }
 
 .ai-content-info strong {
-    color: #333;
+    color: var(--ai-info-strong, #333333);
     font-weight: 600;
 }
 
@@ -190,22 +206,23 @@
     margin-top: 20px;
     padding: 16px;
     border-radius: 8px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--ai-border-color, #e0e0e0);
+    background: var(--ai-result-bg, #ffffff);
 }
 
 .ai-result.success {
-    background: #f1f8e9;
+    background: var(--ai-success-bg, #f1f8e9);
     border-color: #4CAF50;
 }
 
 .ai-result.error {
-    background: #ffebee;
+    background: var(--ai-error-bg, #ffebee);
     border-color: #f44336;
 }
 
 .ai-result h3 {
     margin: 0 0 12px 0;
-    color: #333;
+    color: var(--ai-result-title, #333333);
     font-size: 16px;
 }
 
@@ -216,7 +233,7 @@
     font-size: 14px;
     line-height: 1.5;
     margin: 0;
-    color: #333;
+    color: var(--ai-result-text, #333333);
 }
 
 .ai-result-actions {
@@ -245,7 +262,7 @@
 }
 
 .ai-loading p {
-    color: #666;
+    color: var(--ai-loading-text, #666666);
     font-size: 14px;
     margin: 0;
 }
@@ -350,6 +367,151 @@
     .ai-dialog-content {
         border: 2px solid #000;
     }
+}
+
+/* テーマ対応 - CSS変数とメディアクエリ */
+
+/* ライトテーマのデフォルト値 */
+:root {
+    --ai-dialog-bg: #ffffff;
+    --ai-dialog-text: #333333;
+    --ai-border-color: #e0e0e0;
+    --ai-header-bg: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+    --ai-header-text: #333333;
+    --ai-close-btn-color: #666666;
+    --ai-close-btn-hover-bg: #f0f0f0;
+    --ai-close-btn-hover-text: #333333;
+    --ai-info-bg: #f8f9fa;
+    --ai-info-text: #555555;
+    --ai-info-title: #333333;
+    --ai-info-strong: #333333;
+    --ai-result-bg: #ffffff;
+    --ai-result-title: #333333;
+    --ai-result-text: #333333;
+    --ai-success-bg: #f1f8e9;
+    --ai-error-bg: #ffebee;
+    --ai-loading-text: #666666;
+    --ai-spinner-color: #f3f3f3;
+    --ai-spinner-active: #2196F3;
+}
+
+/* ダークテーマの設定 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --ai-dialog-bg: #2d2d2d;
+        --ai-dialog-text: #ffffff;
+        --ai-border-color: #555555;
+        --ai-header-bg: linear-gradient(135deg, #3a3a3a, #2d2d2d);
+        --ai-header-text: #ffffff;
+        --ai-close-btn-color: #cccccc;
+        --ai-close-btn-hover-bg: #404040;
+        --ai-close-btn-hover-text: #ffffff;
+        --ai-info-bg: #3a3a3a;
+        --ai-info-text: #cccccc;
+        --ai-info-title: #ffffff;
+        --ai-info-strong: #ffffff;
+        --ai-result-bg: #3a3a3a;
+        --ai-result-title: #ffffff;
+        --ai-result-text: #ffffff;
+        --ai-success-bg: #1b5e20;
+        --ai-error-bg: #b71c1c;
+        --ai-loading-text: #cccccc;
+        --ai-spinner-color: #555555;
+        --ai-spinner-active: #64b5f6;
+    }
+    
+    .ai-dialog-overlay {
+        background: rgba(0, 0, 0, 0.85) !important;
+    }
+    
+    .ai-spinner {
+        border-color: var(--ai-spinner-color);
+        border-top-color: var(--ai-spinner-active);
+    }
+    
+    /* ダークテーマでのボタンスタイル調整 */
+    .ai-action-button {
+        filter: brightness(0.9);
+    }
+    
+    .ai-action-button:hover {
+        filter: brightness(1.1);
+    }
+}
+
+/* ハイコントラストモード対応 */
+@media (prefers-contrast: high) {
+    :root {
+        --ai-dialog-bg: #ffffff;
+        --ai-dialog-text: #000000;
+        --ai-border-color: #000000;
+        --ai-header-bg: #ffffff;
+        --ai-header-text: #000000;
+        --ai-close-btn-color: #000000;
+        --ai-close-btn-hover-bg: #000000;
+        --ai-close-btn-hover-text: #ffffff;
+        --ai-info-bg: #ffffff;
+        --ai-info-text: #000000;
+        --ai-info-title: #000000;
+        --ai-info-strong: #000000;
+        --ai-result-bg: #ffffff;
+        --ai-result-title: #000000;
+        --ai-result-text: #000000;
+    }
+    
+    .ai-support-button {
+        background: #000000 !important;
+        color: #ffffff !important;
+        border: 2px solid #ffffff !important;
+    }
+    
+    .ai-dialog-content {
+        border: 2px solid #000000 !important;
+    }
+}
+
+/* ダイアログ特有のテーマクラス対応 */
+.ai-dialog.ai-theme-dark .ai-dialog-content,
+.ai-dialog.ai-theme-dark .ai-dialog-overlay ~ * {
+    --ai-dialog-bg: #2d2d2d !important;
+    --ai-dialog-text: #ffffff !important;
+    --ai-border-color: #555555 !important;
+    --ai-header-bg: linear-gradient(135deg, #3a3a3a, #2d2d2d) !important;
+    --ai-header-text: #ffffff !important;
+}
+
+.ai-dialog.ai-theme-high-contrast .ai-dialog-content,
+.ai-dialog.ai-theme-high-contrast .ai-dialog-overlay ~ * {
+    --ai-dialog-bg: #ffffff !important;
+    --ai-dialog-text: #000000 !important;
+    --ai-border-color: #000000 !important;
+    --ai-header-bg: #ffffff !important;
+    --ai-header-text: #000000 !important;
+}
+
+.ai-dialog.ai-theme-high-contrast.ai-theme-dark .ai-dialog-content,
+.ai-dialog.ai-theme-high-contrast.ai-theme-dark .ai-dialog-overlay ~ * {
+    --ai-dialog-bg: #000000 !important;
+    --ai-dialog-text: #ffffff !important;
+    --ai-border-color: #ffffff !important;
+    --ai-header-bg: #000000 !important;
+    --ai-header-text: #ffffff !important;
+}
+
+/* テーマクラス用の詳細なスタイリング */
+.ai-theme-dark .ai-spinner {
+    border-color: #555555 !important;
+    border-top-color: #64b5f6 !important;
+}
+
+.ai-theme-high-contrast .ai-spinner {
+    border-color: #000000 !important;
+    border-top-color: #000000 !important;
+}
+
+.ai-theme-high-contrast.ai-theme-dark .ai-spinner {
+    border-color: #ffffff !important;
+    border-top-color: #ffffff !important;
 }
 
 @media (prefers-color-scheme: dark) {
