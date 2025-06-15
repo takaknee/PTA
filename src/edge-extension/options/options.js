@@ -177,61 +177,60 @@ function loadStatistics() {
  * 接続テスト
  */
 async function testConnection() {
-    const settings = getCurrentSettings();
-    const testResult = document.getElementById('test-result');
     const testButton = document.getElementById('test-connection');
+    const testResult = document.getElementById('test-result');
 
-    if (!settings.apiKey) {
-        showTestResult('APIキーを入力してください', 'error');
-        return;
-    } if (settings.provider === 'azure' && !settings.azureEndpoint) {
-        showTestResult('Azureエンドポイントを入力してください', 'error');
-        return;
-    }
-
-    // Azure エンドポイントの詳細バリデーション
-    if (settings.provider === 'azure') {
-        const isValidEndpoint = validateAzureEndpoint(settings.azureEndpoint);
-        if (!isValidEndpoint) {
-            showTestResult('Azure エンドポイントの形式が正しくありません。正しい形式: https://your-resource-name.openai.azure.com', 'error');
-            return;
-        }
-    }
-
+    // ボタンを無効化
     testButton.disabled = true;
-    testButton.textContent = '🔄 接続テスト中...';
-    testResult.style.display = 'none';
+    testButton.textContent = '🔄 テスト中...';
 
-    // 詳細なテストログ用の要素を作成
-    const detailsElement = document.getElementById('test-details') || createTestDetailsElement();
-    detailsElement.innerHTML = '';
-    detailsElement.style.display = 'block';
+    // テスト結果表示エリアを表示
+    testResult.style.display = 'block';
+    testResult.innerHTML = '<div class="test-loading">接続テストを実行中です...</div>';
 
     try {
-        // テスト開始のログ
-        appendTestLog(detailsElement, '🔄 接続テストを開始します...', 'info');
-        appendTestLog(detailsElement, `プロバイダー: ${settings.provider}`, 'info');
-        appendTestLog(detailsElement, `モデル: ${settings.model}`, 'info');
+        // 現在の設定を取得
+        const settings = getCurrentSettings();
 
-        if (settings.provider === 'azure') {
-            const endpointUrl = new URL(settings.azureEndpoint);
-            appendTestLog(detailsElement, `エンドポイント: ${endpointUrl.hostname}`, 'info');
+        // 必須項目のチェック
+        if (!settings.apiKey) {
+            throw new Error('APIキーが設定されていません');
         }
 
-        // バックグラウンドスクリプトに接続テストを依頼
-        const response = await new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                reject(new Error('接続テストがタイムアウトしました（30秒）'));
-            }, 30000);
+        if (settings.provider === 'azure' && !settings.azureEndpoint) {
+            throw new Error('Azureエンドポイントが設定されていません');
+        }
 
+        if (!settings.model) {
+            throw new Error('モデルが設定されていません');
+        }
+
+        // バリデーション
+        if (settings.provider === 'azure') {
+            const isValidEndpoint = validateAzureEndpoint(settings.azureEndpoint);
+            if (!isValidEndpoint) {
+                throw new Error('Azureエンドポイントの形式が正しくありません');
+            }
+        }
+
+        const isValidApiKey = validateApiKey(settings.apiKey);
+        if (!isValidApiKey) {
+            throw new Error('APIキーの形式が正しくありません');
+        }
+
+        // Background scriptにテスト要求を送信
+        const response = await new Promise((resolve, reject) => {
             chrome.runtime.sendMessage({
-                action: 'testApiConnection',
+                action: 'testConnection',
                 data: settings
             }, (response) => {
-                clearTimeout(timeout);
-
                 if (chrome.runtime.lastError) {
-                    reject(new Error('拡張機能の通信エラー: ' + chrome.runtime.lastError.message));
+                    reject(new Error(chrome.runtime.lastError.message));
+                    return;
+                }
+
+                if (!response) {
+                    reject(new Error('レスポンスがありません'));
                     return;
                 }
 
@@ -239,40 +238,46 @@ async function testConnection() {
             });
         });
 
-        testButton.disabled = false;
-        testButton.textContent = '🔧 接続テスト'; if (response.success) {
-            appendTestLog(detailsElement, '✅ 接続テストが成功しました', 'success');
-            appendTestLog(detailsElement, `応答: ${response.result || '正常に応答を受信'}`, 'success');
-
-            // 診断情報を表示
-            if (response.diagnostics) {
-                displayDiagnostics(response.diagnostics, detailsElement);
-            }
-
-            showTestResult('✅ 接続テストが成功しました', 'success');
+        if (response.success) {
+            testResult.innerHTML = `
+                <div class="test-success">
+                    <div class="test-status">✅ 接続テスト成功</div>
+                    <div class="test-details">
+                        <p><strong>プロバイダー:</strong> ${settings.provider === 'azure' ? 'Azure OpenAI' : 'OpenAI'}</p>
+                        <p><strong>モデル:</strong> ${settings.model}</p>
+                        ${settings.provider === 'azure' ? `<p><strong>エンドポイント:</strong> ${settings.azureEndpoint}</p>` : ''}
+                        <p><strong>レスポンス時間:</strong> ${response.responseTime || 'N/A'}ms</p>
+                        <p><strong>テスト応答:</strong> ${response.testResponse || 'API接続が正常に動作しています'}</p>
+                    </div>
+                </div>
+            `;
         } else {
-            appendTestLog(detailsElement, '❌ 接続テストに失敗しました', 'error');
-            appendTestLog(detailsElement, `エラー: ${response.error}`, 'error');
-
-            // 診断情報を表示
-            if (response.diagnostics) {
-                displayDiagnostics(response.diagnostics, detailsElement);
-            }
-
-            // エラーの種類に応じた対策情報を追加
-            addTroubleshootingInfo(detailsElement, response.error);
-
-            showTestResult(`❌ 接続テストに失敗しました: ${response.error}`, 'error');
+            throw new Error(response.error || '接続テストに失敗しました');
         }
 
     } catch (error) {
+        console.error('接続テストエラー:', error);
+        testResult.innerHTML = `
+            <div class="test-error">
+                <div class="test-status">❌ 接続テスト失敗</div>
+                <div class="test-details">
+                    <p><strong>エラー:</strong> ${error.message}</p>
+                    <div class="test-troubleshoot">
+                        <p><strong>トラブルシューティング:</strong></p>
+                        <ul>
+                            <li>APIキーが正しく設定されているか確認してください</li>
+                            <li>Azure OpenAIの場合、エンドポイントURLが正しいか確認してください</li>
+                            <li>選択したモデルがデプロイされているか確認してください</li>
+                            <li>ネットワーク接続を確認してください</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    } finally {
+        // ボタンを元に戻す
         testButton.disabled = false;
         testButton.textContent = '🔧 接続テスト';
-
-        appendTestLog(detailsElement, '❌ テスト実行中にエラーが発生しました', 'error');
-        appendTestLog(detailsElement, `エラー: ${error.message}`, 'error');
-
-        showTestResult(`❌ テスト実行エラー: ${error.message}`, 'error');
     }
 }
 
@@ -660,23 +665,41 @@ function clearAllData() {
 }
 
 /**
+ * 通知表示
+ */
+function showNotification(message, type = 'info') {
+    const notification = document.getElementById('notification');
+
+    // クラスをリセット
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.display = 'block';
+
+    // 3秒後に自動的に非表示
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+}
+
+/**
  * 確認ダイアログ表示
  */
-function showConfirmDialog(message, callback) {
+function showConfirmDialog(message, onConfirm) {
     const modal = document.getElementById('confirm-modal');
     const messageElement = document.getElementById('confirm-message');
-    const okButton = document.getElementById('confirm-ok');
+    const confirmButton = document.getElementById('confirm-ok');
 
     messageElement.textContent = message;
     modal.style.display = 'flex';
 
     // 既存のイベントリスナーを削除
-    okButton.replaceWith(okButton.cloneNode(true));
-    const newOkButton = document.getElementById('confirm-ok');
+    const newConfirmButton = confirmButton.cloneNode(true);
+    confirmButton.parentNode.replaceChild(newConfirmButton, confirmButton);
 
-    newOkButton.addEventListener('click', () => {
+    // 新しいイベントリスナーを追加
+    newConfirmButton.addEventListener('click', () => {
         closeConfirmModal();
-        callback();
+        onConfirm();
     });
 }
 
@@ -702,8 +725,6 @@ function togglePassword() {
 function closeConfirmModal() {
     document.getElementById('confirm-modal').style.display = 'none';
 }
-
-// ...existing code...
 
 /**
  * Azure エンドポイント入力時の処理

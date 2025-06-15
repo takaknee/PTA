@@ -223,6 +223,10 @@ async function handleMessage(request, sender, sendResponse) {
                 await handleComposeEmail(request.data, sendResponse);
                 break;
 
+            case 'testConnection':
+                await handleConnectionTest(request.data, sendResponse);
+                break;
+
             default:
                 sendResponse({ success: false, error: '不明なアクション: ' + request.action });
         }
@@ -358,8 +362,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse({ error: 'サポートされていないアクションです' });
     }
 });
-
-// ...existing code...
 
 /**
  * システム診断機能
@@ -548,6 +550,61 @@ async function handleApiTest(data, sendResponse) {
             success: false,
             error: errorMessage,
             diagnostics: diagnostics
+        });
+    }
+}
+
+/**
+ * 接続テスト処理
+ */
+async function handleConnectionTest(data, sendResponse) {
+    const startTime = Date.now();
+
+    try {
+        console.log('接続テスト開始:', data);
+
+        // 設定の検証
+        if (!data.apiKey) {
+            throw new Error('APIキーが設定されていません');
+        }
+
+        if (data.provider === 'azure' && !data.azureEndpoint) {
+            throw new Error('Azureエンドポイントが設定されていません');
+        }
+
+        if (!data.model) {
+            throw new Error('モデルが設定されていません');
+        }
+
+        // テスト用のシンプルなプロンプト
+        const testPrompt = 'このメッセージは接続テストです。「接続正常」と日本語で応答してください。';
+
+        // AI API を呼び出し
+        const result = await callAIAPI(testPrompt, data);
+
+        const endTime = Date.now();
+        const responseTime = endTime - startTime;
+
+        console.log('接続テスト成功:', result);
+
+        sendResponse({
+            success: true,
+            testResponse: result,
+            responseTime: responseTime,
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        const endTime = Date.now();
+        const responseTime = endTime - startTime;
+
+        console.error('接続テストエラー:', error);
+
+        sendResponse({
+            success: false,
+            error: error.message,
+            responseTime: responseTime,
+            timestamp: new Date().toISOString()
         });
     }
 }
