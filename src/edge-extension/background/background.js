@@ -1,16 +1,16 @@
 /*
- * PTA Edge拡張機能 - バックグラウンドサービスワーカー
- * Copyright (c) 2024 PTA Development Team
+ * AI業務支援ツール Edge拡張機能 - バックグラウンドサービスワーカー
+ * Copyright (c) 2024 AI Business Support Team
  */
 
 // 拡張機能のインストール時
 chrome.runtime.onInstalled.addListener((details) => {
-    console.log('PTA支援ツールがインストールされました');
+    console.log('AI業務支援ツールがインストールされました');
 
     // 初期設定を保存
     if (details.reason === 'install') {
         chrome.storage.local.set({
-            'pta_settings': {
+            'ai_settings': {
                 provider: 'azure',
                 model: 'gpt-4',
                 apiKey: '',
@@ -32,15 +32,37 @@ function createContextMenus() {
     chrome.contextMenus.removeAll(() => {
         // 選択テキスト用メニュー
         chrome.contextMenus.create({
-            id: 'pta-analyze-selection',
-            title: '🏫 選択文をPTA支援ツールで分析',
+            id: 'ai-analyze-selection',
+            title: '🤖 選択文を要約・分析',
+            contexts: ['selection']
+        });
+
+        chrome.contextMenus.create({
+            id: 'ai-translate-selection',
+            title: '🌐 選択文を翻訳',
             contexts: ['selection']
         });
 
         // ページ全体用メニュー
         chrome.contextMenus.create({
-            id: 'pta-analyze-page',
-            title: '🏫 このページをPTA支援ツールで要約',
+            id: 'ai-analyze-page',
+            title: '📄 このページを要約',
+            contexts: ['page']
+        }); chrome.contextMenus.create({
+            id: 'ai-translate-page',
+            title: '🌐 このページを翻訳',
+            contexts: ['page']
+        });
+
+        chrome.contextMenus.create({
+            id: 'ai-extract-urls',
+            title: '🔗 URLを抽出してコピー',
+            contexts: ['page']
+        });
+
+        chrome.contextMenus.create({
+            id: 'ai-copy-page-info',
+            title: '📋 ページ情報をコピー',
             contexts: ['page']
         });
     });
@@ -49,7 +71,7 @@ function createContextMenus() {
 // コンテキストメニューのクリックハンドラー
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     switch (info.menuItemId) {
-        case 'pta-analyze-selection':
+        case 'ai-analyze-selection':
             // 選択されたテキストを分析
             chrome.tabs.sendMessage(tab.id, {
                 action: 'analyzeSelection',
@@ -61,10 +83,55 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             });
             break;
 
-        case 'pta-analyze-page':
+        case 'ai-translate-selection':
+            // 選択されたテキストを翻訳
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'translateSelection',
+                data: {
+                    selectedText: info.selectionText,
+                    pageUrl: info.pageUrl,
+                    pageTitle: tab.title
+                }
+            });
+            break;
+
+        case 'ai-analyze-page':
             // ページ全体を要約
             chrome.tabs.sendMessage(tab.id, {
                 action: 'analyzePage',
+                data: {
+                    pageUrl: info.pageUrl,
+                    pageTitle: tab.title
+                }
+            });
+            break;
+
+        case 'ai-translate-page':
+            // ページ全体を翻訳
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'translatePage',
+                data: {
+                    pageUrl: info.pageUrl,
+                    pageTitle: tab.title
+                }
+            });
+            break;
+
+        case 'ai-extract-urls':
+            // URLを抽出してコピー
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'extractUrls',
+                data: {
+                    pageUrl: info.pageUrl,
+                    pageTitle: tab.title
+                }
+            });
+            break;
+
+        case 'ai-copy-page-info':
+            // ページ情報をコピー
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'copyPageInfo',
                 data: {
                     pageUrl: info.pageUrl,
                     pageTitle: tab.title
@@ -82,9 +149,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (sender.documentId && message.target === 'offscreen') {
         console.log('Background: Offscreen documentからのメッセージを無視');
         return false;
-    }
-
-    switch (message.action) {
+    } switch (message.action) {
         case 'analyzeEmail':
             handleEmailAnalysis(message.data, sendResponse);
             return true; // 非同期レスポンス
@@ -95,6 +160,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         case 'analyzeSelection':
             handleSelectionAnalysis(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'translateSelection':
+            handleTranslateSelection(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'translatePage':
+            handleTranslatePage(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'extractUrls':
+            handleExtractUrls(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'copyPageInfo':
+            handleCopyPageInfo(message.data, sendResponse);
             return true; // 非同期レスポンス
 
         case 'composeEmail':
@@ -447,7 +528,7 @@ async function callAIAPI(prompt, settings) {
                 messages: [
                     {
                         role: 'system',
-                        content: 'あなたはPTA活動を支援するAIアシスタントです。日本語で丁寧に回答してください。'
+                        content: 'あなたは業務を支援するAIアシスタントです。日本語で丁寧に回答してください。'
                     },
                     {
                         role: 'user',
@@ -473,7 +554,7 @@ async function callAIAPI(prompt, settings) {
                 messages: [
                     {
                         role: 'system',
-                        content: 'あなたはPTA活動を支援するAIアシスタントです。日本語で丁寧に回答してください。'
+                        content: 'あなたは業務を支援するAIアシスタントです。日本語で丁寧に回答してください。'
                     },
                     {
                         role: 'user',
@@ -673,8 +754,8 @@ async function ensureOffscreenDocument() {
  */
 async function getSettings() {
     return new Promise((resolve) => {
-        chrome.storage.local.get(['pta_settings'], (result) => {
-            resolve(result.pta_settings || {});
+        chrome.storage.local.get(['ai_settings'], (result) => {
+            resolve(result.ai_settings || {});
         });
     });
 }
@@ -684,8 +765,8 @@ async function getSettings() {
  */
 async function saveToHistory(entry) {
     return new Promise((resolve) => {
-        chrome.storage.local.get(['pta_history'], (result) => {
-            let history = result.pta_history || [];
+        chrome.storage.local.get(['ai_history'], (result) => {
+            let history = result.ai_history || [];
 
             // 新しいエントリを先頭に追加
             history.unshift({
@@ -698,7 +779,7 @@ async function saveToHistory(entry) {
                 history = history.slice(0, 50);
             }
 
-            chrome.storage.local.set({ 'pta_history': history }, resolve);
+            chrome.storage.local.set({ 'ai_history': history }, resolve);
         });
     });
 }
@@ -721,8 +802,8 @@ URL: ${data.pageUrl || ''}
 ## 🎯 重要なポイント
 - 特に注目すべき情報やデータ（箇条書き）
 
-## 🏫 PTA活動への関連性
-- PTA活動や学校関連業務に役立つ情報があれば指摘
+## 🏫 ソフトウェア開発業務への関連性
+- ソフトウェア開発業務に役立つ情報があれば指摘
 - 特に関連がない場合は「直接的な関連性は低い」と記載
 
 ## 💡 アクション提案
@@ -750,9 +831,9 @@ ${data.selectedText || '（テキストなし）'}
 - 重要な情報やキーワードの解説
 - 背景情報や補足説明（必要に応じて）
 
-## 🏫 PTA活動への活用
-- この情報がPTA活動にどう役立つか
-- 学校関連業務での活用方法
+## 🏫 ソフトウェア開発業務への活用
+- この情報がソフトウェア開発業務にどう役立つか
+- ソフトウェア開発関連業務での活用方法
 - 特に関連がない場合は「直接的な関連性は低い」と記載
 
 ## ⚡ 次のアクション
@@ -778,8 +859,8 @@ ${emailData.body || '（本文なし）'}
 ## 📋 必要なアクション
 - アクション項目（あれば）
 
-## 💡 PTA観点でのコメント
-- PTA活動に関連する重要な情報や注意点
+## 💡 ソフトウェア開発者観点でのコメント
+- ソフトウェア開発に関連する重要な情報や注意点
 `;
 }
 
@@ -787,14 +868,14 @@ ${emailData.body || '（本文なし）'}
  * メール作成用プロンプト作成
  */
 function createCompositionPrompt(requestData) {
-    const basePrompt = 'PTA活動に関するメールを作成してください。';
+    const basePrompt = 'ソフトウェア開発活動に関するメールを作成してください。';
 
     switch (requestData.type) {
         case 'notice':
             return `${basePrompt}
 内容: ${requestData.content}
 種類: お知らせメール
-要件: 丁寧で分かりやすい文面で、PTA会員向けのお知らせを作成してください。`;
+要件: 丁寧で分かりやすい文面で、ソフトウェア開発者向けのお知らせを作成してください。`;
 
         case 'reminder':
             return `${basePrompt}
@@ -811,7 +892,7 @@ function createCompositionPrompt(requestData) {
         default:
             return `${basePrompt}
 内容: ${requestData.content}
-要件: PTA活動に適した丁寧な文面で作成してください。`;
+要件: ソフトウェア開発活動に適した丁寧な文面で作成してください。`;
     }
 }
 
@@ -896,5 +977,145 @@ async function fallbackDirectFetch(requestData) {
 
             throw new Error(`API呼び出しに失敗しました: ${corsError.message}`);
         }
+    }
+}
+
+/**
+ * 新機能: 選択テキスト翻訳処理
+ */
+async function handleTranslateSelection(data, sendResponse) {
+    try {
+        console.log('Background: 選択テキスト翻訳開始:', data);
+
+        if (!data.selectedText) {
+            throw new Error('翻訳するテキストが選択されていません');
+        }
+
+        // 翻訳用のプロンプト
+        const prompt = `以下のテキストを日本語に翻訳してください。既に日本語の場合は英語に翻訳してください。
+
+原文:
+${data.selectedText}
+
+翻訳:`;
+
+        // AI APIを呼び出し
+        const result = await callAIAPI(prompt);
+
+        sendResponse({
+            success: true,
+            result: result,
+            originalText: data.selectedText,
+            type: 'translation'
+        });
+
+    } catch (error) {
+        console.error('Background: 選択テキスト翻訳エラー:', error);
+        sendResponse({
+            success: false,
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 新機能: ページ翻訳処理
+ */
+async function handleTranslatePage(data, sendResponse) {
+    try {
+        console.log('Background: ページ翻訳開始:', data);
+
+        if (!data.content) {
+            throw new Error('翻訳するコンテンツが見つかりません');
+        }
+
+        // コンテンツが長すぎる場合は最初の2000文字に制限
+        const content = data.content.length > 2000 ?
+            data.content.substring(0, 2000) + '...' :
+            data.content;
+
+        // 翻訳用のプロンプト
+        const prompt = `以下のWebページのコンテンツを日本語に翻訳してください。既に日本語の場合は英語に翻訳してください。
+
+元のページ: ${data.title}
+URL: ${data.url}
+
+コンテンツ:
+${content}
+
+翻訳:`;
+
+        // AI APIを呼び出し
+        const result = await callAIAPI(prompt);
+
+        sendResponse({
+            success: true,
+            result: result,
+            originalContent: content,
+            type: 'pageTranslation'
+        });
+
+    } catch (error) {
+        console.error('Background: ページ翻訳エラー:', error);
+        sendResponse({
+            success: false,
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 新機能: URL抽出処理
+ */
+async function handleExtractUrls(data, sendResponse) {
+    try {
+        console.log('Background: URL抽出開始:', data);
+
+        // content scriptからURLリストを取得するためのメッセージ送信は不要
+        // 実際の抽出処理はcontent scriptで行われる
+
+        sendResponse({
+            success: true,
+            message: 'URL抽出処理を開始しました'
+        });
+
+    } catch (error) {
+        console.error('Background: URL抽出エラー:', error);
+        sendResponse({
+            success: false,
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 新機能: ページ情報コピー処理
+ */
+async function handleCopyPageInfo(data, sendResponse) {
+    try {
+        console.log('Background: ページ情報コピー開始:', data);
+
+        // ページの要約をAIで生成
+        const prompt = `以下のWebページの内容を簡潔に要約してください（200文字以内）:
+
+ページタイトル: ${data.title}
+URL: ${data.url}
+
+要約:`;
+
+        // AI APIを呼び出し（オプション）
+        // content scriptで簡単な要約を作成するため、ここではスキップ
+
+        sendResponse({
+            success: true,
+            message: 'ページ情報コピー処理を開始しました'
+        });
+
+    } catch (error) {
+        console.error('Background: ページ情報コピーエラー:', error);
+        sendResponse({
+            success: false,
+            error: error.message
+        });
     }
 }

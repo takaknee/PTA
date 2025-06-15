@@ -60,7 +60,7 @@ function initialize() {
  */
 function initializeGeneralPage() {
     // フローティングボタンを追加
-    addPTAButton();
+    addAISupportButton();
 }
 
 /**
@@ -71,7 +71,7 @@ function initializeOutlook() {
     const observer = new MutationObserver(() => {
         const emailContent = document.querySelector('[role="main"] [role="document"]');
         if (emailContent && !ptaButton) {
-            addPTAButton();
+            addAISupportButton();
         }
     });
     
@@ -84,7 +84,7 @@ function initializeOutlook() {
     setTimeout(() => {
         const emailContent = document.querySelector('[role="main"] [role="document"]');
         if (emailContent && !ptaButton) {
-            addPTAButton();
+            addAISupportButton();
         }
     }, 2000);
 }
@@ -97,7 +97,7 @@ function initializeGmail() {
     const observer = new MutationObserver(() => {
         const emailContent = document.querySelector('.ii.gt .a3s.aiL');
         if (emailContent && !ptaButton) {
-            addPTAButton();
+            addAISupportButton();
         }
     });
     
@@ -110,7 +110,7 @@ function initializeGmail() {
     setTimeout(() => {
         const emailContent = document.querySelector('.ii.gt .a3s.aiL');
         if (emailContent && !ptaButton) {
-            addPTAButton();
+            addAISupportButton();
         }
     }, 2000);
 }
@@ -118,7 +118,7 @@ function initializeGmail() {
 /**
  * PTA支援ボタンを追加
  */
-function addPTAButton() {
+function addAISupportButton() {
     // 既存のボタンを削除
     const existingButton = document.getElementById('pta-support-button');
     if (existingButton) {

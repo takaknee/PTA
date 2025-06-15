@@ -1,6 +1,6 @@
 /*
- * PTA Edge拡張機能 - 設定スクリプト
- * Copyright (c) 2024 PTA Development Team
+ * Shima Edge拡張機能 - 設定スクリプト
+ * Copyright (c) 2024 Shima Development Team
  */
 
 // DOM読み込み完了時の初期化
@@ -57,8 +57,8 @@ function handleProviderChange() {
  * 設定を読み込み
  */
 function loadSettings() {
-    chrome.storage.local.get(['pta_settings'], (result) => {
-        const settings = result.pta_settings || {
+    chrome.storage.local.get(['ai_settings'], (result) => {
+        const settings = result.ai_settings || {
             provider: 'azure',
             model: 'gpt-4o-mini',
             apiKey: '',
@@ -85,8 +85,8 @@ function loadSettings() {
  * 統計情報を読み込み
  */
 function loadStatistics() {
-    chrome.storage.local.get(['pta_history', 'pta_statistics'], (result) => {
-        const history = result.pta_history || [];
+    chrome.storage.local.get(['ai_history', 'ai_statistics'], (result) => {
+        const history = result.ai_history || [];
 
         // 解析・作成回数の集計
         const analyses = history.filter(item => item.type === 'analysis').length;
@@ -413,10 +413,8 @@ function saveSettings() {
             showNotification('Azure エンドポイントの形式が正しくありません。正しい形式で入力してください。', 'error');
             return;
         }
-    }
-
-    // 保存実行
-    chrome.storage.local.set({ 'pta_settings': settings }, () => {
+    }    // 保存実行
+    chrome.storage.local.set({ 'ai_settings': settings }, () => {
         showNotification('✅ 設定を保存しました', 'success');
     });
 }
@@ -434,9 +432,7 @@ function resetSettings() {
             autoDetect: true,
             showNotifications: true,
             saveHistory: true
-        };
-
-        chrome.storage.local.set({ 'pta_settings': defaultSettings }, () => {
+        }; chrome.storage.local.set({ 'ai_settings': defaultSettings }, () => {
             loadSettings();
             showNotification('設定をリセットしました', 'info');
         });
@@ -447,8 +443,8 @@ function resetSettings() {
  * 設定をエクスポート
  */
 function exportSettings() {
-    chrome.storage.local.get(['pta_settings'], (result) => {
-        const settings = result.pta_settings || {};
+    chrome.storage.local.get(['ai_settings'], (result) => {
+        const settings = result.ai_settings || {};
 
         // APIキーを除外
         const exportData = { ...settings };
@@ -461,7 +457,7 @@ function exportSettings() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'pta-settings.json';
+        a.download = 'ai-settings.json';
         a.click();
 
         URL.revokeObjectURL(url);
@@ -486,17 +482,15 @@ function handleImportFile(event) {
     const reader = new FileReader();
     reader.onload = function (e) {
         try {
-            const importedSettings = JSON.parse(e.target.result);
-
-            // 現在の設定とマージ（APIキーは保持）
-            chrome.storage.local.get(['pta_settings'], (result) => {
-                const currentSettings = result.pta_settings || {};
+            const importedSettings = JSON.parse(e.target.result);            // 現在の設定とマージ（APIキーは保持）
+            chrome.storage.local.get(['ai_settings'], (result) => {
+                const currentSettings = result.ai_settings || {};
                 const mergedSettings = {
                     ...importedSettings,
                     apiKey: currentSettings.apiKey // APIキーは保持
                 };
 
-                chrome.storage.local.set({ 'pta_settings': mergedSettings }, () => {
+                chrome.storage.local.set({ 'ai_settings': mergedSettings }, () => {
                     loadSettings();
                     showNotification('設定をインポートしました', 'success');
                 });
@@ -517,8 +511,8 @@ function handleImportFile(event) {
  * 履歴をエクスポート
  */
 function exportHistory() {
-    chrome.storage.local.get(['pta_history'], (result) => {
-        const history = result.pta_history || [];
+    chrome.storage.local.get(['ai_history'], (result) => {
+        const history = result.ai_history || [];
 
         if (history.length === 0) {
             showNotification('エクスポートする履歴がありません', 'info');
@@ -532,7 +526,7 @@ function exportHistory() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'pta-history.json';
+        a.download = 'ai-history.json';
         a.click();
 
         URL.revokeObjectURL(url);

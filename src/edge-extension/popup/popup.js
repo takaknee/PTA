@@ -1,6 +1,6 @@
 /*
- * PTA Edge拡張機能 - ポップアップスクリプト
- * Copyright (c) 2024 PTA Development Team
+ * Shima Edge拡張機能 - ポップアップスクリプト
+ * Copyright (c) 2024 Shima Development Team
  */
 
 // DOM読み込み完了時の初期化

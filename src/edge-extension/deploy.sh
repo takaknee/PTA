@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# PTA Edge拡張機能デプロイメントスクリプト
-# Copyright (c) 2024 PTA Development Team
+# Shima Edge拡張機能デプロイメントスクリプト
+# Copyright (c) 2024 Shima Development Team
 
 set -e
 

@@ -1,6 +1,6 @@
 /*
- * PTA Edge拡張機能 - Offscreen API処理
- * Copyright (c) 2024 PTA Development Team
+ * Shima Edge拡張機能 - Offscreen API処理
+ * Copyright (c) 2024 Shima Development Team
  * 
  * Service WorkerからのCORS制限を回避するためのOffscreen Document
  */

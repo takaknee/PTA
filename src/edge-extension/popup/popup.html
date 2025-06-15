@@ -1,141 +1,150 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PTA情報配信支援ツール</title>
-    <link rel="stylesheet" href="popup.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI業務支援ツール</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
     <div class="popup-container">
-        <header class="popup-header">
-            <div class="header-content">
-                <span class="logo">🏫</span>
-                <h1>PTA支援ツール</h1>
-            </div>
-        </header>
-        
-        <main class="popup-main">
-            <div class="tab-navigation">
-                <button class="tab-button active" data-tab="quick">クイック</button>
-                <button class="tab-button" data-tab="compose">作成</button>
-                <button class="tab-button" data-tab="history">履歴</button>
-            </div>
-            
-            <!-- クイック解析タブ -->
-            <div class="tab-content active" id="quick-tab">
-                <div class="section">
-                    <h2>📊 メール解析</h2>
-                    <p class="section-description">現在表示されているメールをAIで解析します</p>
-                    <button class="action-button primary" id="analyze-current-email">
-                        <span class="button-icon">🔍</span>
-                        現在のメールを解析
-                    </button>
-                </div>
-                
-                <div class="section">
-                    <h2>⚡ クイック機能</h2>
-                    <div class="quick-actions">
-                        <button class="quick-button" id="quick-reply">
-                            <span class="button-icon">💬</span>
-                            返信作成
-                        </button>
-                        <button class="quick-button" id="quick-summary">
-                            <span class="button-icon">📝</span>
-                            要約作成
-                        </button>
-                        <button class="quick-button" id="quick-action">
-                            <span class="button-icon">✅</span>
-                            アクション提案
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- メール作成タブ -->
-            <div class="tab-content" id="compose-tab">
-                <div class="section">
-                    <h2>✍️ メール作成支援</h2>
-                    <div class="form-group">
-                        <label for="compose-type">メール種類</label>
-                        <select id="compose-type">
-                            <option value="notice">お知らせ</option>
-                            <option value="reminder">リマインダー</option>
-                            <option value="survey">アンケート依頼</option>
-                            <option value="meeting">会議案内</option>
-                            <option value="other">その他</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="compose-content">内容・要望</label>
-                        <textarea id="compose-content" 
-                                  placeholder="作成したいメールの内容や要望を入力してください&#10;例: 来月の運動会の開催について保護者にお知らせするメール"></textarea>
-                    </div>
-                    
-                    <button class="action-button primary" id="compose-email">
-                        <span class="button-icon">📧</span>
-                        メール作成
-                    </button>
-                </div>
-            </div>
-            
-            <!-- 履歴タブ -->
-            <div class="tab-content" id="history-tab">
-                <div class="section">
-                    <div class="section-header">
-                        <h2>📋 履歴</h2>
-                        <button class="clear-button" id="clear-history">クリア</button>
-                    </div>
-                    <div id="history-list" class="history-list">
-                        <div class="empty-state">
-                            <span class="empty-icon">📭</span>
-                            <p>まだ履歴がありません</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-        
-        <footer class="popup-footer">
-            <div class="footer-actions">
-                <button class="footer-button" id="open-settings">
-                    <span class="button-icon">⚙️</span>
-                    設定
-                </button>
-                <button class="footer-button" id="test-api">
-                    <span class="button-icon">🔧</span>
-                    API テスト
-                </button>
-            </div>
-        </footer>
-        
-        <!-- 結果表示エリア -->
-        <div class="result-overlay" id="result-overlay" style="display: none;">
-            <div class="result-content">
-                <div class="result-header">
-                    <h3>結果</h3>
-                    <button class="close-result" onclick="closeResult()">×</button>
-                </div>
-                <div class="result-body" id="result-body">
-                    <!-- 結果がここに表示されます -->
-                </div>
-                <div class="result-actions">
-                    <button class="action-button secondary" onclick="copyResult()">📋 コピー</button>
-                    <button class="action-button primary" onclick="closeResult()">閉じる</button>
-                </div>
-            </div>
+      <header class="popup-header">
+        <div class="header-content">
+          <span class="logo">🤖</span>
+          <h1>AI業務支援ツール</h1>
         </div>
-        
-        <!-- ローディング表示 -->
-        <div class="loading-overlay" id="loading-overlay" style="display: none;">
-            <div class="loading-content">
-                <div class="spinner"></div>
-                <p>AI処理中...</p>
-            </div>
+      </header>
+
+      <main class="popup-main">
+        <div class="tab-navigation">
+          <button class="tab-button active" data-tab="quick">クイック</button>
+          <button class="tab-button" data-tab="compose">作成</button>
+          <button class="tab-button" data-tab="history">履歴</button>
         </div>
+
+        <!-- クイック解析タブ -->
+        <div class="tab-content active" id="quick-tab">
+          <div class="section">
+            <h2>📊 コンテンツ解析</h2>
+            <p class="section-description">
+              現在表示されているページやコンテンツをAIで解析します
+            </p>
+            <button class="action-button primary" id="analyze-current-email">
+              <span class="button-icon">🔍</span>
+              現在のページを解析
+            </button>
+          </div>
+
+          <div class="section">
+            <h2>⚡ クイック機能</h2>
+            <div class="quick-actions">
+              <button class="quick-button" id="quick-reply">
+                <span class="button-icon">💬</span>
+                文書作成
+              </button>
+              <button class="quick-button" id="quick-summary">
+                <span class="button-icon">📝</span>
+                要約作成
+              </button>
+              <button class="quick-button" id="quick-action">
+                <span class="button-icon">✅</span>
+                アクション提案
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- 文書作成タブ -->
+        <div class="tab-content" id="compose-tab">
+          <div class="section">
+            <h2>✍️ 文書作成支援</h2>
+            <div class="form-group">
+              <label for="compose-type">文書種類</label>
+              <select id="compose-type">
+                <option value="notice">お知らせ</option>
+                <option value="reminder">リマインダー</option>
+                <option value="survey">アンケート依頼</option>
+                <option value="meeting">会議案内</option>
+                <option value="report">報告書</option>
+                <option value="proposal">提案書</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="compose-content">内容・要望</label>
+              <textarea
+                id="compose-content"
+                placeholder="作成したい文書の内容や要望を入力してください&#10;例: 来月のイベントについて関係者にお知らせする案内文"
+              ></textarea>
+            </div>
+
+            <button class="action-button primary" id="compose-email">
+              <span class="button-icon">📧</span>
+              文書作成
+            </button>
+          </div>
+        </div>
+
+        <!-- 履歴タブ -->
+        <div class="tab-content" id="history-tab">
+          <div class="section">
+            <div class="section-header">
+              <h2>📋 履歴</h2>
+              <button class="clear-button" id="clear-history">クリア</button>
+            </div>
+            <div id="history-list" class="history-list">
+              <div class="empty-state">
+                <span class="empty-icon">📭</span>
+                <p>まだ履歴がありません</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer class="popup-footer">
+        <div class="footer-actions">
+          <button class="footer-button" id="open-settings">
+            <span class="button-icon">⚙️</span>
+            設定
+          </button>
+          <button class="footer-button" id="test-api">
+            <span class="button-icon">🔧</span>
+            API テスト
+          </button>
+        </div>
+      </footer>
+
+      <!-- 結果表示エリア -->
+      <div class="result-overlay" id="result-overlay" style="display: none">
+        <div class="result-content">
+          <div class="result-header">
+            <h3>結果</h3>
+            <button class="close-result" onclick="closeResult()">×</button>
+          </div>
+          <div class="result-body" id="result-body">
+            <!-- 結果がここに表示されます -->
+          </div>
+          <div class="result-actions">
+            <button class="action-button secondary" onclick="copyResult()">
+              📋 コピー
+            </button>
+            <button class="action-button primary" onclick="closeResult()">
+              閉じる
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ローディング表示 -->
+      <div class="loading-overlay" id="loading-overlay" style="display: none">
+        <div class="loading-content">
+          <div class="spinner"></div>
+          <p>AI処理中...</p>
+        </div>
+      </div>
     </div>
-    
+
     <script src="popup.js"></script>
-</body>
+  </body>
 </html>
