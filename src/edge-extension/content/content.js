@@ -134,14 +134,14 @@ function addAISupportButton() {
         <div class="ai-button-content">
             <span class="ai-icon">🏫</span>
             <span class="ai-text">AI支援</span>
+            <span class="ai-drag-handle">⋮⋮</span>
         </div>
-    `;
-
-    // 基本スタイルを設定
+    `;    // 保存された位置を取得、なければデフォルト位置
+    const savedPosition = getSavedButtonPositionSync();    // 基本スタイルを設定
     aiButton.style.cssText = `
         position: fixed !important;
-        top: 20px !important;
-        right: 20px !important;
+        top: ${savedPosition.top}px !important;
+        right: ${savedPosition.right}px !important;
         z-index: 2147483647 !important;
         background: linear-gradient(135deg, #2196F3, #1976D2) !important;
         color: white !important;
@@ -154,26 +154,59 @@ function addAISupportButton() {
         font-weight: 500 !important;
         box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3) !important;
         transition: all 0.3s ease !important;
+        user-select: none !important;
     `;
+
+    // ドラッグハンドルのスタイル
+    const dragHandle = aiButton.querySelector('.ai-drag-handle');
+    if (dragHandle) {
+        dragHandle.style.cssText = `
+            margin-left: 8px !important;
+            opacity: 0.7 !important;
+            font-size: 12px !important;
+            cursor: move !important;
+            padding: 2px !important;
+            border-radius: 2px !important;
+            display: inline-block !important;
+        `;
+    }
 
     // ホバー効果
     aiButton.addEventListener('mouseenter', () => {
-        aiButton.style.transform = 'translateY(-2px)';
-        aiButton.style.boxShadow = '0 6px 16px rgba(33, 150, 243, 0.4)';
+        if (!aiButton.isDragging) {
+            aiButton.style.transform = 'translateY(-2px)';
+            aiButton.style.boxShadow = '0 6px 16px rgba(33, 150, 243, 0.4)';
+        }
     });
 
     aiButton.addEventListener('mouseleave', () => {
-        aiButton.style.transform = 'translateY(0)';
-        aiButton.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.3)';
-    });
+        if (!aiButton.isDragging) {
+            aiButton.style.transform = 'translateY(0)';
+            aiButton.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.3)';
+        }
+    });    // ドラッグ機能をハンドル部分のみに追加
+    if (dragHandle) {
+        makeDraggable(aiButton, dragHandle);
+    }
 
-    // クリックイベント
-    aiButton.addEventListener('click', showAiDialog);
+    // クリックイベント（ドラッグ中でない場合のみ）
+    aiButton.addEventListener('click', (e) => {
+        // ドラッグハンドルがクリックされた場合は何もしない
+        if (e.target.classList.contains('ai-drag-handle') || e.target.closest('.ai-drag-handle')) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+
+        if (!aiButton.isDragging) {
+            showAiDialog();
+        }
+    });
 
     // ページに追加
     document.body.appendChild(aiButton);
 
-    console.log('AI支援ボタンを追加しました');
+    console.log('AI支援ボタンを追加しました（移動可能版）');
 }
 
 /**
@@ -1694,4 +1727,185 @@ function sanitizeAIResponse(response) {
     });
 
     return sanitized;
+}
+
+/**
+ * 要素をドラッグ可能にする
+ * @param {HTMLElement} element - ドラッグ可能にする要素
+ * @param {HTMLElement} handle - ドラッグハンドル要素
+ */
+function makeDraggable(element, handle) {
+    let isDragging = false;
+    let startX, startY, startRight, startTop;
+
+    // ハンドル要素にマウスダウンイベントを追加
+    handle.addEventListener('mousedown', (e) => {
+        // 左クリックのみ対応
+        if (e.button !== 0) return;
+
+        isDragging = true;
+        element.isDragging = true;
+
+        // ドラッグ開始時の位置を記録
+        startX = e.clientX;
+        startY = e.clientY;
+
+        // 現在の位置を取得（right基準で保存しているため）
+        const rect = element.getBoundingClientRect();
+        startRight = window.innerWidth - rect.right;
+        startTop = rect.top;
+
+        // ドラッグ中のスタイル変更
+        element.classList.add('dragging');
+        handle.style.cursor = 'grabbing';
+        element.style.opacity = '0.8';
+        element.style.transform = 'scale(1.05)';
+        element.style.transition = 'none';
+
+        // ハンドルのホバー効果を強調
+        handle.style.opacity = '1';
+        handle.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+
+        // ドキュメント全体でマウスイベントを監視
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+
+        // テキスト選択を防止
+        e.preventDefault();        // テキスト選択を防止
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    function onMouseMove(e) {
+        if (!isDragging) return;
+
+        // マウスの移動量を計算
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        // 新しい位置を計算（画面の境界を考慮）
+        const newTop = Math.max(0, Math.min(window.innerHeight - element.offsetHeight, startTop + deltaY));
+        const newRight = Math.max(0, Math.min(window.innerWidth - element.offsetWidth, startRight - deltaX));
+
+        // 位置を更新
+        element.style.top = newTop + 'px';
+        element.style.right = newRight + 'px';
+    } function onMouseUp() {
+        if (!isDragging) return;
+
+        isDragging = false;
+
+        // ドラッグ終了後のスタイル復元
+        element.classList.remove('dragging');
+        handle.style.cursor = 'move';
+        element.style.opacity = '1';
+        element.style.transform = 'scale(1)';
+        element.style.transition = 'all 0.3s ease';
+
+        // ハンドルのスタイルを元に戻す
+        handle.style.opacity = '0.7';
+        handle.style.backgroundColor = '';
+
+        // 現在の位置を保存
+        const rect = element.getBoundingClientRect();
+        const position = {
+            top: rect.top,
+            right: window.innerWidth - rect.right
+        };
+        saveButtonPosition(position);
+
+        // イベントリスナーを削除
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        // 少し遅れてドラッグフラグをクリア（クリックイベントとの競合回避）
+        setTimeout(() => {
+            element.isDragging = false;
+        }, 100);
+    }
+}
+
+/**
+ * ボタンの位置を保存
+ * @param {Object} position - 位置情報 {top, right}
+ */
+function saveButtonPosition(position) {
+    try {
+        chrome.storage.local.set({
+            'aiButtonPosition': position
+        }, () => {
+            console.log('ボタン位置を保存しました:', position);
+        });
+    } catch (error) {
+        console.error('ボタン位置の保存に失敗:', error);
+        // フォールバック: localStorageを使用
+        try {
+            localStorage.setItem('aiButtonPosition', JSON.stringify(position));
+        } catch (e) {
+            console.error('localStorageでの保存も失敗:', e);
+        }
+    }
+}
+
+/**
+ * 保存されたボタンの位置を取得
+ * @returns {Object} 位置情報 {top, right}
+ */
+function getSavedButtonPosition() {
+    const defaultPosition = { top: 20, right: 20 };
+
+    return new Promise((resolve) => {
+        try {
+            chrome.storage.local.get(['aiButtonPosition'], (result) => {
+                if (result.aiButtonPosition) {
+                    // 画面サイズが変わった場合の調整
+                    const position = result.aiButtonPosition;
+                    position.top = Math.max(0, Math.min(window.innerHeight - 60, position.top));
+                    position.right = Math.max(0, Math.min(window.innerWidth - 100, position.right));
+                    resolve(position);
+                } else {
+                    resolve(defaultPosition);
+                }
+            });
+        } catch (error) {
+            console.error('ボタン位置の取得に失敗:', error);
+            // フォールバック: localStorageから取得
+            try {
+                const saved = localStorage.getItem('aiButtonPosition');
+                if (saved) {
+                    const position = JSON.parse(saved);
+                    resolve(position);
+                } else {
+                    resolve(defaultPosition);
+                }
+            } catch (e) {
+                console.error('localStorageからの取得も失敗:', e);
+                resolve(defaultPosition);
+            }
+        }
+    });
+}
+
+/**
+ * 保存されたボタンの位置を同期的に取得（初期化用）
+ * @returns {Object} 位置情報 {top, right}
+ */
+function getSavedButtonPositionSync() {
+    const defaultPosition = { top: 20, right: 20 };
+
+    try {
+        // まずlocalStorageから取得を試行
+        const saved = localStorage.getItem('aiButtonPosition');
+        if (saved) {
+            const position = JSON.parse(saved);
+            // 画面サイズが変わった場合の調整
+            position.top = Math.max(0, Math.min(window.innerHeight - 60, position.top));
+            position.right = Math.max(0, Math.min(window.innerWidth - 100, position.right));
+            return position;
+        }
+    } catch (error) {
+        console.error('同期的な位置取得に失敗:', error);
+    }
+
+    return defaultPosition;
 }
