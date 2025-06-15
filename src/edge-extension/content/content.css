@@ -567,3 +567,179 @@
         color: #ccc;
     }
 }
+
+/* 拡大表示モーダル */
+.ai-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2147483647; /* 最高z-index */
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.ai-expand-dialog {
+    background: var(--ai-bg-color, #ffffff);
+    border: 2px solid var(--ai-border-color, #e0e0e0);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    animation: slideInScale 0.3s ease-out;
+}
+
+/* ダークテーマでの拡大表示モーダル */
+@media (prefers-color-scheme: dark) {
+    .ai-modal-overlay {
+        background: rgba(0, 0, 0, 0.8);
+    }
+    
+    .ai-expand-dialog {
+        background: var(--ai-bg-color, #2d2d2d);
+        border-color: var(--ai-border-color, #555555);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+}
+
+/* ハイコントラストテーマでの拡大表示モーダル */
+@media (prefers-contrast: high) {
+    .ai-modal-overlay {
+        background: rgba(0, 0, 0, 0.9);
+    }
+    
+    .ai-expand-dialog {
+        background: var(--ai-bg-color, #000000);
+        border: 3px solid var(--ai-border-color, #ffffff);
+        box-shadow: 0 0 0 2px var(--ai-border-color, #ffffff);
+    }
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* 結果表示のボタンスタイル */
+.ai-result-button {
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+}
+
+.ai-result-button.copy-btn {
+    background: #2196F3;
+}
+
+.ai-result-button.save-btn {
+    background: #4CAF50;
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+
+.ai-result-button.expand-btn {
+    background: #FF9800;
+    box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+}
+
+.ai-result-button:hover {
+    transform: translateY(-1px);
+}
+
+.ai-result-button.copy-btn:hover {
+    background: #1976D2;
+    box-shadow: 0 4px 8px rgba(33, 150, 243, 0.4);
+}
+
+.ai-result-button.save-btn:hover {
+    background: #388E3C;
+    box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+}
+
+.ai-result-button.expand-btn:hover {
+    background: #F57C00;
+    box-shadow: 0 4px 8px rgba(255, 152, 0, 0.4);
+}
+
+/* ダークテーマでのボタン調整 */
+@media (prefers-color-scheme: dark) {
+    .ai-result-button {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+    
+    .ai-result-button:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+    }
+}
+
+/* 結果コンテナのスクロールバースタイル */
+.ai-content {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ai-border-color, #e0e0e0) transparent;
+}
+
+.ai-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.ai-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ai-content::-webkit-scrollbar-thumb {
+    background: var(--ai-border-color, #e0e0e0);
+    border-radius: 4px;
+}
+
+.ai-content::-webkit-scrollbar-thumb:hover {
+    background: var(--ai-text-color, #333333);
+}
+
+/* ダークテーマでのスクロールバー */
+@media (prefers-color-scheme: dark) {
+    .ai-content {
+        scrollbar-color: var(--ai-border-color, #555555) transparent;
+    }
+    
+    .ai-content::-webkit-scrollbar-thumb {
+        background: var(--ai-border-color, #555555);
+    }
+    
+    .ai-content::-webkit-scrollbar-thumb:hover {
+        background: var(--ai-text-color, #ffffff);
+    }
+}

@@ -223,10 +223,20 @@ async function handleUnifiedMessage(message, sender, sendResponse) {
 async function handleAnalyzeEmail(data, sendResponse) {
     try {
         // 設定を取得
-        const settings = await getSettings();
+        const settings = await getSettings();        // AI API を呼び出し
+        const prompt = `
+以下のメールを分析してください：
 
-        // AI API を呼び出し
-        const prompt = `件名: ${data.subject}\n\n本文:\n${data.body}\n\nこのメールの内容を要約し、重要なポイントや必要なアクションがあれば教えてください。`;
+件名: ${data.subject}
+本文: ${data.body}
+
+【重要】回答の際は以下を厳守してください：
+- HTMLタグやCSSコードを一切含めないでください
+- プレーンテキストとMarkdown形式のみで回答してください
+- コードブロックや技術的なマークアップは除外してください
+- 読みやすい日本語の文章で回答してください
+
+このメールの内容を要約し、重要なポイントや必要なアクションがあれば教えてください。`;
         const result = await callAIAPI(prompt, settings);
 
         sendResponse({ success: true, result: result });
@@ -257,10 +267,21 @@ async function handleAnalyzePage(data, sendResponse) {
         }
 
         // 設定を取得
-        const settings = await getSettings();
+        const settings = await getSettings();        // AI API を呼び出し
+        const prompt = `
+以下のWebページの内容を分析してください：
 
-        // AI API を呼び出し
-        const prompt = `ページタイトル: ${data.pageTitle}\nURL: ${data.pageUrl}\n\n内容:\n${data.pageContent}\n\nこのWebページの内容を要約し、重要なポイントを教えてください。`;
+ページタイトル: ${data.pageTitle}
+URL: ${data.pageUrl}
+内容: ${data.pageContent}
+
+【重要】回答の際は以下を厳守してください：
+- HTMLタグやCSSコードを一切含めないでください
+- プレーンテキストとMarkdown形式のみで回答してください
+- コードブロックや技術的なマークアップは除外してください
+- 読みやすい日本語の文章で回答してください
+
+このWebページの内容を要約し、重要なポイントを教えてください。`;
         const result = await callAIAPI(prompt, settings);
 
         sendResponse({ success: true, result: result });
@@ -280,10 +301,19 @@ async function handleAnalyzeSelection(data, sendResponse) {
         }
 
         // 設定を取得
-        const settings = await getSettings();
+        const settings = await getSettings();        // AI API を呼び出し
+        const prompt = `
+以下の選択されたテキストを分析してください：
 
-        // AI API を呼び出し
-        const prompt = `選択されたテキスト:\n${data.selectedText}\n\n選択されたテキストを要約し、重要なポイントを教えてください。`;
+選択されたテキスト: ${data.selectedText}
+
+【重要】回答の際は以下を厳守してください：
+- HTMLタグやCSSコードを一切含めないでください
+- プレーンテキストとMarkdown形式のみで回答してください
+- コードブロックや技術的なマークアップは除外してください
+- 読みやすい日本語の文章で回答してください
+
+選択されたテキストを要約し、重要なポイントを教えてください。`;
         const result = await callAIAPI(prompt, settings);
 
         sendResponse({ success: true, result: result });
@@ -843,25 +873,36 @@ async function saveToHistory(entry) {
  */
 function createPageAnalysisPrompt(data) {
     return `
+あなたは日本語で回答するAIアシスタントです。以下の指示に従って回答してください。
+
+【絶対に守るべきルール】
+- HTMLタグを一切使用しないでください
+- CSSコードを一切含めないでください
+- JavaScriptコードを含めないでください
+- プレーンテキストとMarkdown記法のみを使用してください
+- コードブロックや技術的なマークアップは使用しないでください
+- 日本語の自然な文章で回答してください
+- スタイル情報は絶対に含めないでください
+
 以下のWebページを要約・分析してください：
 
-ページタイトル: ${data.pageTitle || '（タイトルなし）'}
+ページタイトル: ${data.pageTitle || '(タイトルなし)'}
 URL: ${data.pageUrl || ''}
-ページ内容: ${data.pageContent || '（内容を取得中...）'}
+ページ内容: ${data.pageContent || '(内容を取得中...)'}
 
 以下の形式で回答してください：
-## 📄 ページ要約
+## ページ要約
 - このページの主要な内容を3-5行で要約
 
-## 🎯 重要なポイント
-- 特に注目すべき情報やデータ（箇条書き）
+## 重要なポイント
+- 特に注目すべき情報やデータ(箇条書き)
 
-## 🏫 ソフトウェア開発業務への関連性
+## ソフトウェア開発業務への関連性
 - ソフトウェア開発業務に役立つ情報があれば指摘
 - 特に関連がない場合は「直接的な関連性は低い」と記載
 
-## 💡 アクション提案
-- このページの情報を活用するための具体的な提案（あれば）
+## アクション提案
+- このページの情報を活用するための具体的な提案(あれば)
 `;
 }
 
@@ -870,50 +911,72 @@ URL: ${data.pageUrl || ''}
  */
 function createSelectionAnalysisPrompt(data) {
     return `
+あなたは日本語で回答するAIアシスタントです。以下の指示に従って回答してください。
+
+【絶対に守るべきルール】
+- HTMLタグを一切使用しないでください
+- CSSコードを一切含めないでください
+- JavaScriptコードを含めないでください
+- プレーンテキストとMarkdown記法のみを使用してください
+- コードブロックや技術的なマークアップは使用しないでください
+- 日本語の自然な文章で回答してください
+- スタイル情報は絶対に含めないでください
+
 以下の選択されたテキストを分析してください：
 
-ページタイトル: ${data.pageTitle || '（タイトルなし）'}
+ページタイトル: ${data.pageTitle || '(タイトルなし)'}
 URL: ${data.pageUrl || ''}
 選択されたテキスト:
-${data.selectedText || '（テキストなし）'}
+${data.selectedText || '(テキストなし)'}
 
 以下の形式で回答してください：
-## 📝 選択テキストの要約
+## 選択テキストの要約
 - 選択された内容の要点を2-3行で要約
 
-## 🔍 詳細分析
+## 詳細分析
 - 重要な情報やキーワードの解説
-- 背景情報や補足説明（必要に応じて）
+- 背景情報や補足説明(必要に応じて)
 
-## 🏫 ソフトウェア開発業務への活用
+## ソフトウェア開発業務への活用
 - この情報がソフトウェア開発業務にどう役立つか
 - ソフトウェア開発関連業務での活用方法
 - 特に関連がない場合は「直接的な関連性は低い」と記載
 
-## ⚡ 次のアクション
+## 次のアクション
 - この情報を受けて取るべき行動があれば提案
 `;
 }
 function createAnalysisPrompt(emailData) {
     return `
+あなたは日本語で回答するAIアシスタントです。以下の指示に従って回答してください。
+
+【絶対に守るべきルール】
+- HTMLタグを一切使用しないでください
+- CSSコードを一切含めないでください
+- JavaScriptコードを含めないでください
+- プレーンテキストとMarkdown記法のみを使用してください
+- コードブロックや技術的なマークアップは使用しないでください
+- 日本語の自然な文章で回答してください
+- スタイル情報は絶対に含めないでください
+
 以下のメールを分析してください：
 
-件名: ${emailData.subject || '（件名なし）'}
-送信者: ${emailData.sender || '（送信者不明）'}
+件名: ${emailData.subject || '(件名なし)'}
+送信者: ${emailData.sender || '(送信者不明)'}
 本文:
-${emailData.body || '（本文なし）'}
+${emailData.body || '(本文なし)'}
 
 以下の形式で回答してください：
-## 📧 メール要約
-- 主要な内容（2-3行）
+## メール要約
+- 主要な内容(2-3行)
 
-## ⚠️ 重要度
+## 重要度
 重要度: 高/中/低
 
-## 📋 必要なアクション
-- アクション項目（あれば）
+## 必要なアクション
+- アクション項目(あれば)
 
-## 💡 ソフトウェア開発者観点でのコメント
+## ソフトウェア開発者観点でのコメント
 - ソフトウェア開発に関連する重要な情報や注意点
 `;
 }
@@ -1043,10 +1106,14 @@ async function handleTranslateSelection(data, sendResponse) {
 
         if (!data.selectedText) {
             throw new Error('翻訳するテキストが選択されていません');
-        }
-
-        // 翻訳用のプロンプト
+        }        // 翻訳用のプロンプト
         const prompt = `以下のテキストを日本語に翻訳してください。既に日本語の場合は英語に翻訳してください。
+
+【重要】回答の際は以下を厳守してください：
+- HTMLタグやCSSコードを一切含めないでください
+- プレーンテキストのみで回答してください
+- 翻訳された文章のみを回答してください
+- 説明や補足は不要です
 
 原文:
 ${data.selectedText}
@@ -1086,10 +1153,14 @@ async function handleTranslatePage(data, sendResponse) {
         // コンテンツが長すぎる場合は最初の2000文字に制限
         const content = data.content.length > 2000 ?
             data.content.substring(0, 2000) + '...' :
-            data.content;
-
-        // 翻訳用のプロンプト
+            data.content;        // 翻訳用のプロンプト
         const prompt = `以下のWebページのコンテンツを日本語に翻訳してください。既に日本語の場合は英語に翻訳してください。
+
+【重要】回答の際は以下を厳守してください：
+- HTMLタグやCSSコードを一切含めないでください
+- プレーンテキストのみで回答してください
+- 翻訳された文章のみを回答してください
+- 説明や補足は不要です
 
 元のページ: ${data.title}
 URL: ${data.url}

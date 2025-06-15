@@ -652,13 +652,637 @@ function hideLoading() {
 /**
  * 結果を表示
  */
+/**
+ * AI応答を構造化して表示
+ */
 function showResult(result) {
     const resultElement = document.getElementById('ai-result');
 
     if (resultElement) {
-        resultElement.innerHTML = result;
+        // テーマに応じた色設定を取得
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const textColor = prefersDark ? '#ffffff' : '#333333';
+        const bgColor = prefersDark ? '#404040' : '#f9f9f9';
+        const borderColor = prefersDark ? '#555555' : '#e0e0e0';
+        const headingColor = prefersDark ? '#ffffff' : '#2196F3';
+
+        // 構造化された結果をHTMLに変換
+        const formattedResult = formatAIResponse(result, {
+            textColor,
+            bgColor,
+            borderColor,
+            headingColor
+        });
+
+        resultElement.innerHTML = formattedResult;
         resultElement.style.display = 'block';
     }
+}
+
+/**
+ * AI応答を構造化されたHTMLにフォーマット
+ */
+function formatAIResponse(response, colors) {
+    // エラーメッセージの場合はそのまま返す
+    if (typeof response === 'string' && response.includes('❌ エラー:')) {
+        return response;
+    }
+
+    // HTMLタグやCSSコードを除去・サニタイズ
+    let content = sanitizeAIResponse(response);
+
+    // マークダウン風の構造を検出して変換
+    content = content
+        // 見出し（## または # で始まる行）
+        .replace(/^(#{1,3})\s*(.+)$/gm, (match, hashes, title) => {
+            const level = hashes.length;
+            const fontSize = level === 1 ? '18px' : level === 2 ? '16px' : '14px';
+            const marginTop = level === 1 ? '20px' : '16px';
+            const fontWeight = level === 1 ? '700' : '600';
+            return `<h${level + 2} style="
+                color: ${colors.headingColor}; 
+                font-size: ${fontSize}; 
+                margin: ${marginTop} 0 8px 0; 
+                font-weight: ${fontWeight}; 
+                border-bottom: ${level <= 2 ? `2px solid ${colors.borderColor}` : 'none'}; 
+                padding-bottom: ${level <= 2 ? '6px' : '0'};
+                letter-spacing: 0.5px;
+            ">${title}</h${level + 2}>`;
+        })        // 箇条書き（- または * で始まる行、ただしCSSではない）
+        .replace(/^[-*]\s+(.+)$/gm, (match, content) => {
+            // CSSプロパティ形式（例：margin: 6px 0;）ではないことを確認
+            if (content.includes(':') && content.includes(';')) {
+                return match; // CSSの可能性があるのでそのまま残す
+            }
+            return `<li style="
+                margin: 6px 0; 
+                line-height: 1.6; 
+                padding-left: 8px;
+                position: relative;
+            ">
+                <span style="
+                    position: absolute; 
+                    left: -16px; 
+                    color: ${colors.headingColor};
+                    font-weight: bold;
+                ">•</span>
+                ${content}
+            </li>`;
+        })
+
+        // 番号付きリスト（1. で始まる行、ただしCSSではない）
+        .replace(/^(\d+)\.\s+(.+)$/gm, (match, number, content) => {
+            // CSSプロパティ形式ではないことを確認
+            if (content.includes(':') && content.includes(';')) {
+                return match; // CSSの可能性があるのでそのまま残す
+            }
+            return `<li style="
+                margin: 6px 0; 
+                line-height: 1.6; 
+                counter-increment: list-counter;
+            " data-number="${number}">${content}</li>`;
+        })
+
+        // 太字（**text** または __text__）
+        .replace(/\*\*(.*?)\*\*/g, `<strong style="
+            color: ${colors.headingColor}; 
+            font-weight: 600;
+            background: ${colors.borderColor}20;
+            padding: 2px 4px;
+            border-radius: 3px;
+        ">$1</strong>`)
+        .replace(/__(.*?)__/g, `<strong style="
+            color: ${colors.headingColor}; 
+            font-weight: 600;
+            background: ${colors.borderColor}20;
+            padding: 2px 4px;
+            border-radius: 3px;
+        ">$1</strong>`)
+
+        // コードブロック（```で囲まれた部分）
+        .replace(/```([\s\S]*?)```/g, `<pre style="
+            background: ${colors.borderColor}30;
+            border: 1px solid ${colors.borderColor};
+            border-radius: 4px;
+            padding: 12px;
+            margin: 8px 0;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        "><code>$1</code></pre>`)
+
+        // インラインコード（`code`）
+        .replace(/`([^`]+)`/g, `<code style="
+            background: ${colors.borderColor}30;
+            border: 1px solid ${colors.borderColor};
+            border-radius: 3px;
+            padding: 2px 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            color: ${colors.headingColor};
+        ">$1</code>`)
+
+        // 改行を段落に変換
+        .split('\n\n')
+        .filter(para => para.trim())
+        .map((para, index) => {
+            // リストアイテムが含まれている場合
+            if (para.includes('<li')) {
+                const listItems = para.split('\n').filter(line => line.includes('<li'));
+                const otherContent = para.split('\n').filter(line => !line.includes('<li') && line.trim());
+
+                let result = '';
+                if (otherContent.length > 0) {
+                    result += `<p style="
+                        margin: 12px 0; 
+                        line-height: 1.6; 
+                        color: ${colors.textColor};
+                        text-align: justify;
+                    ">${otherContent.join('<br>')}</p>`;
+                }
+
+                // 番号付きリストか通常のリストかを判定
+                const isNumberedList = listItems.some(item => item.includes('data-number'));
+                const listTag = isNumberedList ? 'ol' : 'ul';
+                const listStyle = isNumberedList ?
+                    `counter-reset: list-counter; list-style: none; padding-left: 24px;` :
+                    `list-style: none; padding-left: 24px;`;
+
+                result += `<${listTag} style="
+                    margin: 12px 0; 
+                    ${listStyle}
+                    color: ${colors.textColor};
+                ">${listItems.join('')}</${listTag}>`;
+                return result;
+            } else if (para.includes('<pre>')) {
+                // コードブロックの場合はそのまま
+                return para;
+            } else {
+                // 通常の段落
+                return `<p style="
+                    margin: 12px 0; 
+                    line-height: 1.6; 
+                    color: ${colors.textColor};
+                    text-align: justify;
+                    text-indent: ${index > 0 ? '1em' : '0'};
+                ">${para.replace(/\n/g, '<br>')}</p>`;
+            }
+        })
+        .join('');
+
+    // ユニークIDを生成
+    const containerId = `ai-result-container-${Date.now()}`;
+
+    // 全体を囲むコンテナ
+    const containerHTML = `
+        <div id="${containerId}" style="
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: ${colors.textColor};
+            background: ${colors.bgColor};
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid ${colors.borderColor};
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px ${colors.borderColor}40;
+        ">
+            <div style="
+                margin-bottom: 16px;
+                padding-bottom: 12px;
+                border-bottom: 2px solid ${colors.borderColor};
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            ">
+                <span style="
+                    font-size: 18px;
+                    color: ${colors.headingColor};
+                ">🤖</span>
+                <h3 style="
+                    margin: 0;
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: ${colors.headingColor};
+                ">AI 解析結果</h3>
+            </div>
+            
+            <div class="ai-content" style="margin-bottom: 16px;">
+                ${content}
+            </div>
+            
+            <div style="
+                margin-top: 20px;
+                padding-top: 16px;
+                border-top: 1px solid ${colors.borderColor};
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            ">
+                <button class="copy-btn" data-container="${containerId}" style="
+                    background: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+                ">
+                    <span>📋</span>
+                    <span>結果をコピー</span>
+                </button>
+                <button class="save-btn" data-container="${containerId}" style="
+                    background: #4CAF50;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+                ">
+                    <span>💾</span>
+                    <span>履歴に保存</span>
+                </button>
+                <button class="expand-btn" data-container="${containerId}" style="
+                    background: #FF9800;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+                ">
+                    <span>�</span>
+                    <span>拡大表示</span>
+                </button>
+            </div>
+        </div>
+    `;
+
+    // イベントリスナーを後で追加するために、イベントハンドラーを設定
+    setTimeout(() => {
+        setupResultActionButtons(containerId, content, colors);
+    }, 100);
+
+    return containerHTML;
+}
+
+/**
+ * 結果表示のアクションボタンのイベントハンドラーを設定
+ */
+function setupResultActionButtons(containerId, content, colors) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // コピーボタン
+    const copyBtn = container.querySelector('.copy-btn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            copyResultToClipboard(container, content);
+        });
+
+        // ホバー効果
+        copyBtn.addEventListener('mouseenter', () => {
+            copyBtn.style.background = '#1976D2';
+            copyBtn.style.transform = 'translateY(-1px)';
+            copyBtn.style.boxShadow = '0 4px 8px rgba(33, 150, 243, 0.4)';
+        });
+
+        copyBtn.addEventListener('mouseleave', () => {
+            copyBtn.style.background = '#2196F3';
+            copyBtn.style.transform = 'translateY(0)';
+            copyBtn.style.boxShadow = '0 2px 4px rgba(33, 150, 243, 0.3)';
+        });
+    }
+
+    // 保存ボタン
+    const saveBtn = container.querySelector('.save-btn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            saveResultToHistory(content);
+        });
+
+        // ホバー効果
+        saveBtn.addEventListener('mouseenter', () => {
+            saveBtn.style.background = '#388E3C';
+            saveBtn.style.transform = 'translateY(-1px)';
+            saveBtn.style.boxShadow = '0 4px 8px rgba(76, 175, 80, 0.4)';
+        });
+
+        saveBtn.addEventListener('mouseleave', () => {
+            saveBtn.style.background = '#4CAF50';
+            saveBtn.style.transform = 'translateY(0)';
+            saveBtn.style.boxShadow = '0 2px 4px rgba(76, 175, 80, 0.3)';
+        });
+    }
+
+    // 拡大表示ボタン
+    const expandBtn = container.querySelector('.expand-btn');
+    if (expandBtn) {
+        expandBtn.addEventListener('click', () => {
+            expandResultView(content, colors);
+        });
+
+        // ホバー効果
+        expandBtn.addEventListener('mouseenter', () => {
+            expandBtn.style.background = '#F57C00';
+            expandBtn.style.transform = 'translateY(-1px)';
+            expandBtn.style.boxShadow = '0 4px 8px rgba(255, 152, 0, 0.4)';
+        });
+
+        expandBtn.addEventListener('mouseleave', () => {
+            expandBtn.style.background = '#FF9800';
+            expandBtn.style.transform = 'translateY(0)';
+            expandBtn.style.boxShadow = '0 2px 4px rgba(255, 152, 0, 0.3)';
+        });
+    }
+}
+
+/**
+ * 結果をクリップボードにコピー
+ */
+function copyResultToClipboard(container, content) {
+    try {        // HTMLタグを削除してプレーンテキストに変換
+        const textContent = content
+            .replace(/<[^>]*>/g, '') // HTMLタグを削除
+            .replace(/&nbsp;/g, ' ') // 非改行スペースを通常のスペースに
+            .replace(/&lt;/g, '<')   // HTML エンティティをデコード
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&')
+            .replace(/\s+/g, ' ')    // 複数の空白を単一のスペースに
+            .trim();
+
+        navigator.clipboard.writeText(textContent).then(() => {
+            showNotification('結果をクリップボードにコピーしました', 'success');
+
+            // ボタンのテキストを一時的に変更
+            const copyBtn = container.querySelector('.copy-btn span:last-child');
+            if (copyBtn) {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'コピー完了!';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }
+        }).catch(err => {
+            console.error('クリップボードコピーエラー:', err);
+            showNotification('クリップボードコピーに失敗しました', 'error');
+        });
+    } catch (error) {
+        console.error('クリップボードコピーエラー:', error);
+        showNotification('クリップボードコピーに失敗しました', 'error');
+    }
+}
+
+/**
+ * 結果を履歴に保存
+ */
+function saveResultToHistory(content) {
+    try {
+        const timestamp = new Date().toISOString();
+        const historyItem = {
+            timestamp,
+            content,
+            url: window.location.href,
+            title: document.title
+        };
+
+        // 履歴を取得（ローカルストレージから）
+        let history = [];
+        try {
+            const savedHistory = localStorage.getItem('ptaAiAnalysisHistory');
+            if (savedHistory) {
+                history = JSON.parse(savedHistory);
+            }
+        } catch (e) {
+            console.warn('履歴の読み込みに失敗:', e);
+        }
+
+        // 新しいアイテムを追加（最新を先頭に）
+        history.unshift(historyItem);
+
+        // 履歴の上限を設定（最大50件）
+        if (history.length > 50) {
+            history = history.slice(0, 50);
+        }
+
+        // 履歴を保存
+        localStorage.setItem('ptaAiAnalysisHistory', JSON.stringify(history));
+
+        showNotification('結果を履歴に保存しました', 'success');
+
+    } catch (error) {
+        console.error('履歴保存エラー:', error);
+        showNotification('履歴保存に失敗しました', 'error');
+    }
+}
+
+/**
+ * 結果を拡大表示
+ */
+function expandResultView(content, colors) {
+    // 拡大表示用のモーダルダイアログを作成
+    const expandModal = document.createElement('div');
+    expandModal.id = 'ai-expand-modal';
+    expandModal.className = 'ai-modal-overlay';
+
+    expandModal.innerHTML = `
+        <div class="ai-expand-dialog" style="
+            background: ${colors.bgColor};
+            border: 2px solid ${colors.borderColor};
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        ">
+            <div style="
+                display: flex;
+                justify-content: between;
+                align-items: center;
+                padding: 16px 24px;
+                border-bottom: 2px solid ${colors.borderColor};
+                background: ${colors.headingColor}10;
+            ">
+                <h2 style="
+                    margin: 0;
+                    color: ${colors.headingColor};
+                    font-size: 18px;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                ">
+                    <span>🔍</span>
+                    <span>AI解析結果 - 拡大表示</span>
+                </h2>
+                <button class="expand-close-btn" style="
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    cursor: pointer;
+                    color: ${colors.textColor};
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    transition: background 0.2s;
+                " title="閉じる">
+                    ×
+                </button>
+            </div>
+            
+            <div style="
+                flex: 1;
+                overflow-y: auto;
+                padding: 24px;
+                font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+                font-size: 15px;
+                line-height: 1.7;
+                color: ${colors.textColor};
+            ">
+                ${content}
+            </div>
+            
+            <div style="
+                padding: 16px 24px;
+                border-top: 1px solid ${colors.borderColor};
+                background: ${colors.headingColor}05;
+                display: flex;
+                gap: 12px;
+                justify-content: flex-end;
+            ">
+                <button class="expand-copy-btn" style="
+                    background: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">
+                    📋 コピー
+                </button>
+                <button class="expand-close-action-btn" style="
+                    background: #757575;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                ">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(expandModal);
+
+    // 拡大表示モーダルのイベントハンドラーを設定
+    setupExpandModalHandlers(expandModal, content, colors);
+
+    // フォーカスを拡大表示モーダルに移動
+    const dialog = expandModal.querySelector('.ai-expand-dialog');
+    if (dialog) {
+        dialog.focus();
+    }
+}
+
+/**
+ * 拡大表示モーダルのイベントハンドラーを設定
+ */
+function setupExpandModalHandlers(modal, content, colors) {
+    // 閉じるボタンのイベント
+    const closeBtn = modal.querySelector('.expand-close-btn');
+    const closeActionBtn = modal.querySelector('.expand-close-action-btn');
+
+    const closeModal = () => {
+        modal.remove();
+    };
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+
+        // ホバー効果
+        closeBtn.addEventListener('mouseenter', () => {
+            closeBtn.style.background = colors.borderColor + '40';
+        });
+        closeBtn.addEventListener('mouseleave', () => {
+            closeBtn.style.background = 'none';
+        });
+    }
+
+    if (closeActionBtn) {
+        closeActionBtn.addEventListener('click', closeModal);
+
+        // ホバー効果
+        closeActionBtn.addEventListener('mouseenter', () => {
+            closeActionBtn.style.background = '#616161';
+        });
+        closeActionBtn.addEventListener('mouseleave', () => {
+            closeActionBtn.style.background = '#757575';
+        });
+    }
+
+    // コピーボタンのイベント
+    const copyBtn = modal.querySelector('.expand-copy-btn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            copyResultToClipboard(modal, content);
+        });
+
+        // ホバー効果
+        copyBtn.addEventListener('mouseenter', () => {
+            copyBtn.style.background = '#1976D2';
+        });
+        copyBtn.addEventListener('mouseleave', () => {
+            copyBtn.style.background = '#2196F3';
+        });
+    }
+
+    // ESCキーで閉じる
+    const escHandler = (event) => {
+        if (event.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    // オーバーレイクリックで閉じる
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
 }
 
 /**
@@ -997,4 +1621,67 @@ function extractPageContent() {
 
     console.log(`最終的に抽出されたコンテンツ（最初の200文字）:`, pageContent.substring(0, 200));
     return pageContent;
+}
+
+/**
+ * AIの応答からCSSやHTMLコードを除去・サニタイズする
+ * @param {string} response - AIの生の応答
+ * @returns {string} - サニタイズされた応答
+ */
+function sanitizeAIResponse(response) {
+    if (!response || typeof response !== 'string') {
+        return response;
+    }
+
+    let sanitized = response;
+
+    // CSSプロパティのパターンを除去（例：margin: 6px 0; や line-height: 1.6; など）
+    sanitized = sanitized.replace(/[a-zA-Z-]+\s*:\s*[^;]+;/g, '');
+
+    // CSS値のパターンを除去（例：counter-increment: list-counter;）
+    sanitized = sanitized.replace(/counter-increment:\s*[^;]+;/g, '');
+
+    // data-*属性を除去（例：data-number="1"）
+    sanitized = sanitized.replace(/data-[a-zA-Z-]+\s*=\s*"[^"]*"/g, '');
+
+    // CSS値の単体パターンを除去（例：margin: 6px 0;）
+    sanitized = sanitized.replace(/\b(margin|padding|line-height|font-size|font-weight|color|background|border|display|position|width|height|top|left|right|bottom|float|clear|text-align|vertical-align|z-index|opacity|transform|transition|animation|box-shadow|border-radius|overflow|cursor|text-decoration|text-transform|letter-spacing|word-spacing|white-space|font-family|list-style|counter-increment|counter-reset)\s*:\s*[^;]+;?/gi, '');
+
+    // CSSのプロパティ値だけが残ってしまった行を除去
+    sanitized = sanitized.replace(/^\s*[0-9.]+px\s*$/gm, '');
+    sanitized = sanitized.replace(/^\s*[0-9.]+\s*$/gm, '');
+    sanitized = sanitized.replace(/^\s*(left|right|center|bold|normal|none|auto|inherit|initial|unset)\s*$/gm, '');
+
+    // styleタグとその内容を除去
+    sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+
+    // scriptタグとその内容を除去
+    sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+
+    // HTMLタグを除去（ただし、改行は保持）
+    sanitized = sanitized.replace(/<[^>]+>/g, '');
+
+    // CSSのコメントを除去
+    sanitized = sanitized.replace(/\/\*[\s\S]*?\*\//g, '');
+
+    // 単独で残ったCSS記号や値を除去
+    sanitized = sanitized.replace(/^[\s]*[{}();,]+[\s]*$/gm, '');
+
+    // 複数の連続する空白行を1つにまとめる
+    sanitized = sanitized.replace(/\n\s*\n\s*\n/g, '\n\n');
+
+    // 行頭の余分な空白を除去
+    sanitized = sanitized.replace(/^\s+/gm, '');
+
+    // 文字列の前後の空白を除去
+    sanitized = sanitized.trim();
+    console.log('🧼 AIレスポンスサニタイズ完了:', {
+        originalLength: response.length,
+        sanitizedLength: sanitized.length,
+        originalPreview: response.substring(0, 300) + '...',
+        sanitizedPreview: sanitized.substring(0, 300) + '...',
+        removedCSSCount: (response.match(/[a-zA-Z-]+\s*:\s*[^;]+;/g) || []).length
+    });
+
+    return sanitized;
 }
