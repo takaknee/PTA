@@ -19,7 +19,7 @@
 #### 2. background.js
 
 - PTA → AI 業務支援ツールへのコメント・メッセージ変更
-- 設定キー: 'pta_settings' → 'ai_settings'
+- 設定キー: 'ai_settings' → 'ai_settings'
 - 右クリックメニュー刷新:
   - 🤖 選択文を要約・分析
   - 🌐 選択文を翻訳
@@ -70,8 +70,8 @@
 
 - ヘッダーコメント更新
 - ストレージキー修正:
-  - `pta_settings` → `ai_settings`
-  - `pta_history` → `ai_history`
+  - `ai_settings` → `ai_settings`
+  - `ai_history` → `ai_history`
   - `pta_statistics` → `ai_statistics`
 - エクスポートファイル名変更:
   - `pta-settings.json` → `ai-settings.json`
@@ -91,7 +91,7 @@
 
 ### 右クリックメニューのウィンドウが閉じられない問題
 
-**原因**: `onclick="this.closest('.pta-dialog').remove()"` の使用
+**原因**: `onclick="this.closest('.ai-dialog').remove()"` の使用
 **修正**: イベントリスナー方式に変更
 
 ```javascript

@@ -4,7 +4,7 @@
  */
 
 // DOM読み込み完了時の初期化
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializePopup();
 });
 
@@ -17,23 +17,23 @@ function initializePopup() {
     tabButtons.forEach(button => {
         button.addEventListener('click', switchTab);
     });
-    
+
     // クイック解析イベント
     document.getElementById('analyze-current-email').addEventListener('click', analyzeCurrentEmail);
-    
+
     // クイック機能イベント
     document.getElementById('quick-reply').addEventListener('click', () => quickAction('reply'));
     document.getElementById('quick-summary').addEventListener('click', () => quickAction('summary'));
     document.getElementById('quick-action').addEventListener('click', () => quickAction('action'));
-    
+
     // メール作成イベント
     document.getElementById('compose-email').addEventListener('click', composeEmail);
-    
+
     // 履歴・設定イベント
     document.getElementById('clear-history').addEventListener('click', clearHistory);
     document.getElementById('open-settings').addEventListener('click', openSettings);
     document.getElementById('test-api').addEventListener('click', testAPI);
-    
+
     // 初期データ読み込み
     loadHistory();
     checkAPISettings();
@@ -44,15 +44,15 @@ function initializePopup() {
  */
 function switchTab(event) {
     const targetTab = event.target.getAttribute('data-tab');
-    
+
     // すべてのタブボタンとコンテンツを非アクティブに
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    
+
     // 選択されたタブをアクティブに
     event.target.classList.add('active');
     document.getElementById(`${targetTab}-tab`).classList.add('active');
-    
+
     // 履歴タブの場合は履歴を再読み込み
     if (targetTab === 'history') {
         loadHistory();
@@ -65,36 +65,36 @@ function switchTab(event) {
 async function analyzeCurrentEmail() {
     try {
         showLoading();
-        
+
         // アクティブなタブから現在のメール情報を取得
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        
+
         // コンテンツスクリプトからメールデータを取得
         const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             function: getCurrentEmailData
         });
-        
+
         const emailData = results[0].result;
-        
+
         if (!emailData || !emailData.body) {
             throw new Error('メール内容を取得できませんでした。メールが表示されていることを確認してください。');
         }
-        
+
         // バックグラウンドスクリプトに解析を依頼
         chrome.runtime.sendMessage({
             action: 'analyzeEmail',
             data: emailData
         }, (response) => {
             hideLoading();
-            
+
             if (response.success) {
                 showResult(response.result);
             } else {
                 showResult(`エラー: ${response.error}`, 'error');
             }
         });
-        
+
     } catch (error) {
         hideLoading();
         showResult(`エラー: ${error.message}`, 'error');
@@ -107,23 +107,23 @@ async function analyzeCurrentEmail() {
 async function quickAction(actionType) {
     try {
         showLoading();
-        
+
         // アクティブなタブから現在のメール情報を取得
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        
+
         const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             function: getCurrentEmailData
         });
-        
+
         const emailData = results[0].result;
-        
+
         if (!emailData || !emailData.body) {
             throw new Error('メール内容を取得できませんでした。');
         }
-        
+
         let requestData;
-        
+
         switch (actionType) {
             case 'reply':
                 requestData = {
@@ -132,7 +132,7 @@ async function quickAction(actionType) {
                     originalEmail: emailData
                 };
                 break;
-                
+
             case 'summary':
                 requestData = {
                     type: 'summary',
@@ -140,7 +140,7 @@ async function quickAction(actionType) {
                     originalEmail: emailData
                 };
                 break;
-                
+
             case 'action':
                 requestData = {
                     type: 'action',
@@ -149,21 +149,21 @@ async function quickAction(actionType) {
                 };
                 break;
         }
-        
+
         // バックグラウンドスクリプトに作成を依頼
         chrome.runtime.sendMessage({
             action: 'composeEmail',
             data: requestData
         }, (response) => {
             hideLoading();
-            
+
             if (response.success) {
                 showResult(response.result);
             } else {
                 showResult(`エラー: ${response.error}`, 'error');
             }
         });
-        
+
     } catch (error) {
         hideLoading();
         showResult(`エラー: ${error.message}`, 'error');
@@ -176,26 +176,26 @@ async function quickAction(actionType) {
 function composeEmail() {
     const type = document.getElementById('compose-type').value;
     const content = document.getElementById('compose-content').value.trim();
-    
+
     if (!content) {
         showResult('内容を入力してください。', 'error');
         return;
     }
-    
+
     showLoading();
-    
+
     const requestData = {
         type: type,
         content: content
     };
-    
+
     // バックグラウンドスクリプトに作成を依頼
     chrome.runtime.sendMessage({
         action: 'composeEmail',
         data: requestData
     }, (response) => {
         hideLoading();
-        
+
         if (response.success) {
             showResult(response.result);
             // 成功したら入力フィールドをクリア
@@ -210,10 +210,10 @@ function composeEmail() {
  * 履歴読み込み
  */
 function loadHistory() {
-    chrome.storage.local.get(['pta_history'], (result) => {
-        const history = result.pta_history || [];
+    chrome.storage.local.get(['ai_history'], (result) => {
+        const history = result.ai_history || [];
         const historyList = document.getElementById('history-list');
-        
+
         if (history.length === 0) {
             historyList.innerHTML = `
                 <div class="empty-state">
@@ -223,7 +223,7 @@ function loadHistory() {
             `;
             return;
         }
-        
+
         historyList.innerHTML = history.map(item => `
             <div class="history-item" onclick="showHistoryDetail(${item.id})">
                 <div class="history-header">
@@ -242,10 +242,10 @@ function loadHistory() {
  * 履歴詳細表示
  */
 function showHistoryDetail(itemId) {
-    chrome.storage.local.get(['pta_history'], (result) => {
-        const history = result.pta_history || [];
+    chrome.storage.local.get(['ai_history'], (result) => {
+        const history = result.ai_history || [];
         const item = history.find(h => h.id === itemId);
-        
+
         if (item) {
             showResult(item.result);
         }
@@ -257,7 +257,7 @@ function showHistoryDetail(itemId) {
  */
 function clearHistory() {
     if (confirm('履歴をすべて削除しますか？')) {
-        chrome.storage.local.set({ 'pta_history': [] }, () => {
+        chrome.storage.local.set({ 'ai_history': [] }, () => {
             loadHistory();
         });
     }
@@ -275,16 +275,16 @@ function openSettings() {
  */
 function testAPI() {
     showLoading();
-    
-    chrome.storage.local.get(['pta_settings'], (result) => {
-        const settings = result.pta_settings || {};
-        
+
+    chrome.storage.local.get(['ai_settings'], (result) => {
+        const settings = result.ai_settings || {};
+
         chrome.runtime.sendMessage({
             action: 'testApiConnection',
             data: settings
         }, (response) => {
             hideLoading();
-            
+
             if (response.success) {
                 showResult('API接続テストが成功しました！', 'success');
             } else {
@@ -298,9 +298,9 @@ function testAPI() {
  * API設定チェック
  */
 function checkAPISettings() {
-    chrome.storage.local.get(['pta_settings'], (result) => {
-        const settings = result.pta_settings || {};
-        
+    chrome.storage.local.get(['ai_settings'], (result) => {
+        const settings = result.ai_settings || {};
+
         if (!settings.apiKey) {
             const warning = document.createElement('div');
             warning.className = 'api-warning';
@@ -308,9 +308,9 @@ function checkAPISettings() {
                 <p>⚠️ APIキーが設定されていません</p>
                 <button onclick="openSettings()">設定画面を開く</button>
             `;
-            
+
             document.querySelector('.popup-main').insertBefore(
-                warning, 
+                warning,
                 document.querySelector('.tab-navigation')
             );
         }
@@ -337,10 +337,10 @@ function hideLoading() {
 function showResult(content, type = 'success') {
     const resultBody = document.getElementById('result-body');
     const resultOverlay = document.getElementById('result-overlay');
-    
+
     resultBody.innerHTML = `<pre class="result-text ${type}">${content}</pre>`;
     resultOverlay.style.display = 'flex';
-    
+
     // 結果を記録用のグローバル変数に保存
     window.currentResult = content;
 }
@@ -362,7 +362,7 @@ function copyResult() {
             const copyBtn = document.querySelector('.result-actions .secondary');
             const originalText = copyBtn.innerHTML;
             copyBtn.innerHTML = '✅ コピー完了';
-            
+
             setTimeout(() => {
                 copyBtn.innerHTML = originalText;
             }, 1000);
@@ -409,35 +409,35 @@ function getCurrentEmailData() {
     } else if (window.location.hostname.includes('mail.google.com')) {
         currentService = 'gmail';
     }
-    
+
     let emailData = {
         subject: '',
         sender: '',
         body: '',
         service: currentService
     };
-    
+
     if (currentService === 'outlook') {
         // Outlookからメールデータを取得
         const subjectElement = document.querySelector('[role="main"] h1');
         const senderElement = document.querySelector('[role="main"] [data-testid="sender-name"]');
         const bodyElement = document.querySelector('[role="main"] [role="document"]');
-        
+
         emailData.subject = subjectElement ? subjectElement.textContent.trim() : '';
         emailData.sender = senderElement ? senderElement.textContent.trim() : '';
         emailData.body = bodyElement ? bodyElement.textContent.trim() : '';
-        
+
     } else if (currentService === 'gmail') {
         // Gmailからメールデータを取得
         const subjectElement = document.querySelector('.hP');
         const senderElement = document.querySelector('.go .g2 .gD');
         const bodyElement = document.querySelector('.ii.gt .a3s.aiL');
-        
+
         emailData.subject = subjectElement ? subjectElement.textContent.trim() : '';
         emailData.sender = senderElement ? senderElement.textContent.trim() : '';
         emailData.body = bodyElement ? bodyElement.textContent.trim() : '';
     }
-    
+
     return emailData;
 }
 

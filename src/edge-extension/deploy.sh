@@ -8,9 +8,9 @@ set -e
 # 設定
 EXTENSION_DIR="."
 BUILD_DIR="../../dist/edge-extension"
-ZIP_NAME="pta-edge-extension-v1.0.0.zip"
+ZIP_NAME="ai-edge-extension-v1.0.0.zip"
 
-echo "🏫 PTA Edge拡張機能デプロイメント開始"
+echo "🏫 AI Edge拡張機能デプロイメント開始"
 
 # ビルドディレクトリの作成
 echo "📁 ビルドディレクトリの準備..."

@@ -1,6 +1,6 @@
 /*
- * PTA Edge拡張機能 - コンテンツスクリプト（修正版）
- * Copyright (c) 2024 PTA Development Team
+ * Shima Edge拡張機能 - コンテンツスクリプト（修正版）
+ * Copyright (c) 2024 Shima Development Team
  */
 
 // 現在のメールサービスを判定
@@ -13,8 +13,8 @@ if (window.location.hostname.includes('outlook.office.com') || window.location.h
   currentService = 'general'; // 一般的なWebページ
 }
 
-// PTA支援ボタンを追加
-let ptaButton = null;
+// AI支援ボタンを追加
+let aiSupportButton = null;
 
 // バックグラウンドスクリプトからのメッセージを受信
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -39,7 +39,7 @@ if (document.readyState === 'loading') {
  * 初期化処理
  */
 function initialize() {
-  console.log('PTA支援ツール初期化開始:', currentService);
+  console.log('AI支援ツール初期化開始:', currentService);
 
   // サービスに応じた初期化
   if (currentService === 'outlook') {
@@ -70,7 +70,7 @@ function initializeOutlook() {
   // Outlookのメール読み込み完了を待機
   const observer = new MutationObserver(() => {
     const emailContent = document.querySelector('[role="main"] [role="document"]');
-    if (emailContent && !ptaButton) {
+    if (emailContent && !aiButton) {
       addAISupportButton();
     }
   });
@@ -83,7 +83,7 @@ function initializeOutlook() {
   // 初回チェック
   setTimeout(() => {
     const emailContent = document.querySelector('[role="main"] [role="document"]');
-    if (emailContent && !ptaButton) {
+    if (emailContent && !aiButton) {
       addAISupportButton();
     }
   }, 2000);
@@ -96,7 +96,7 @@ function initializeGmail() {
   // Gmailのメール読み込み完了を待機
   const observer = new MutationObserver(() => {
     const emailContent = document.querySelector('.ii.gt .a3s.aiL');
-    if (emailContent && !ptaButton) {
+    if (emailContent && !aiButton) {
       addAISupportButton();
     }
   });
@@ -109,7 +109,7 @@ function initializeGmail() {
   // 初回チェック
   setTimeout(() => {
     const emailContent = document.querySelector('.ii.gt .a3s.aiL');
-    if (emailContent && !ptaButton) {
+    if (emailContent && !aiButton) {
       addAISupportButton();
     }
   }, 2000);
@@ -120,22 +120,22 @@ function initializeGmail() {
  */
 function addAISupportButton() {
   // 既存のボタンがあれば削除
-  if (ptaButton) {
-    ptaButton.remove();
+  if (aiButton) {
+    aiButton.remove();
   }
 
   // ボタンを作成
-  ptaButton = document.createElement('button');
-  ptaButton.className = 'ai-support-button';
-  ptaButton.innerHTML = `
+  aiButton = document.createElement('button');
+  aiButton.className = 'ai-support-button';
+  aiButton.innerHTML = `
         <div class="ai-button-content">
             <span class="ai-icon">🏫</span>
-            <span class="ai-text">PTA支援</span>
+            <span class="ai-text">AI支援</span>
         </div>
     `;
 
   // 基本スタイルを設定
-  ptaButton.style.cssText = `
+  aiButton.style.cssText = `
         position: fixed !important;
         top: 20px !important;
         right: 20px !important;
@@ -154,29 +154,29 @@ function addAISupportButton() {
     `;
 
   // ホバー効果
-  ptaButton.addEventListener('mouseenter', () => {
-    ptaButton.style.transform = 'translateY(-2px)';
-    ptaButton.style.boxShadow = '0 6px 16px rgba(33, 150, 243, 0.4)';
+  aiButton.addEventListener('mouseenter', () => {
+    aiButton.style.transform = 'translateY(-2px)';
+    aiButton.style.boxShadow = '0 6px 16px rgba(33, 150, 243, 0.4)';
   });
 
-  ptaButton.addEventListener('mouseleave', () => {
-    ptaButton.style.transform = 'translateY(0)';
-    ptaButton.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.3)';
+  aiButton.addEventListener('mouseleave', () => {
+    aiButton.style.transform = 'translateY(0)';
+    aiButton.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.3)';
   });
 
   // クリックイベント
-  ptaButton.addEventListener('click', showPTADialog);
+  aiButton.addEventListener('click', showAiDialog);
 
   // ページに追加
-  document.body.appendChild(ptaButton);
+  document.body.appendChild(aiButton);
 
-  console.log('PTA支援ボタンを追加しました');
+  console.log('AI支援ボタンを追加しました');
 }
 
 /**
- * PTAダイアログを表示
+ * AIダイアログを表示
  */
-function showPTADialog() {
+function showAiDialog() {
   const selectedText = getSelectedText();
   const dialogData = {
     pageTitle: document.title,
@@ -191,22 +191,22 @@ function showPTADialog() {
     Object.assign(dialogData, emailData);
   }
 
-  createPTADialog(dialogData);
+  createAiDialog(dialogData);
 }
 
 /**
- * PTAダイアlogを作成（確実にモーダル表示）
+ * AIダイアログを作成（確実にモーダル表示）
  */
-function createPTADialog(dialogData) {
+function createAiDialog(dialogData) {
   // 既存のダイアログを削除
-  const existingDialog = document.getElementById('pta-dialog');
+  const existingDialog = document.getElementById('ai-dialog');
   if (existingDialog) {
     existingDialog.remove();
   }
 
   // ダイアログコンテナを作成
   const dialog = document.createElement('div');
-  dialog.id = 'pta-dialog';
+  dialog.id = 'ai-dialog';
   dialog.dialogData = dialogData; // データを保存
 
   // 強制的にモーダルスタイル適用
@@ -248,8 +248,8 @@ function createPTADialog(dialogData) {
             color: white;
             border-radius: 12px 12px 0 0;
         ">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">🏫 PTA支援ツール</h3>
-            <button onclick="closePTADialog()" style="
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600;">🏫 AI支援ツール</h3>
+            <button onclick="closeAiDialog()" style="
                 background: none;
                 border: none;
                 color: white;
@@ -329,7 +329,7 @@ function createPTADialog(dialogData) {
             </div>
             
             <div>
-                <div id="pta-loading" style="display: none; text-align: center; padding: 20px; color: #666;">
+                <div id="ai-loading" style="display: none; text-align: center; padding: 20px; color: #666;">
                     <div style="
                         border: 4px solid #f3f3f3;
                         border-top: 4px solid #2196F3;
@@ -341,7 +341,7 @@ function createPTADialog(dialogData) {
                     "></div>
                     <span>AI処理中...</span>
                 </div>
-                <div id="pta-result" style="display: none; background: #f9f9f9; padding: 16px; border-radius: 8px; border-left: 4px solid #2196F3;"></div>
+                <div id="ai-result" style="display: none; background: #f9f9f9; padding: 16px; border-radius: 8px; border-left: 4px solid #2196F3;"></div>
             </div>
         </div>
     `;
@@ -349,9 +349,9 @@ function createPTADialog(dialogData) {
   dialog.appendChild(content);
 
   // スピナーアニメーション用のCSSを追加
-  if (!document.getElementById('pta-spinner-style')) {
+  if (!document.getElementById('ai-spinner-style')) {
     const style = document.createElement('style');
-    style.id = 'pta-spinner-style';
+    style.id = 'ai-spinner-style';
     style.textContent = `
             @keyframes spin {
                 0% { transform: rotate(0deg); }
@@ -367,21 +367,21 @@ function createPTADialog(dialogData) {
   // オーバーレイクリックで閉じる
   dialog.addEventListener('click', (e) => {
     if (e.target === dialog) {
-      closePTADialog();
+      closeAiDialog();
     }
   });
 
   // ESCキーで閉じる
   document.addEventListener('keydown', handleEscapeKey);
 
-  console.log('PTAダイアログを作成しました（モーダル表示）');
+  console.log('AIダイアログを作成しました（モーダル表示）');
 }
 
 /**
  * ダイアログを閉じる
  */
-function closePTADialog() {
-  const dialog = document.getElementById('pta-dialog');
+function closeAiDialog() {
+  const dialog = document.getElementById('ai-dialog');
   if (dialog) {
     dialog.remove();
   }
@@ -395,7 +395,7 @@ function closePTADialog() {
  */
 function handleEscapeKey(event) {
   if (event.key === 'Escape') {
-    closePTADialog();
+    closeAiDialog();
   }
 }
 
@@ -461,13 +461,13 @@ function getSelectedText() {
  */
 function showNotification(message, type = 'info') {
   // 既存の通知を削除
-  const existingNotification = document.getElementById('pta-notification');
+  const existingNotification = document.getElementById('ai-notification');
   if (existingNotification) {
     existingNotification.remove();
   }
 
   const notification = document.createElement('div');
-  notification.id = 'pta-notification';
+  notification.id = 'ai-notification';
   notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -501,8 +501,8 @@ function showNotification(message, type = 'info') {
  * ローディング表示
  */
 function showLoading() {
-  const loadingElement = document.getElementById('pta-loading');
-  const resultElement = document.getElementById('pta-result');
+  const loadingElement = document.getElementById('ai-loading');
+  const resultElement = document.getElementById('ai-result');
 
   if (loadingElement) {
     loadingElement.style.display = 'block';
@@ -516,7 +516,7 @@ function showLoading() {
  * ローディング非表示
  */
 function hideLoading() {
-  const loadingElement = document.getElementById('pta-loading');
+  const loadingElement = document.getElementById('ai-loading');
 
   if (loadingElement) {
     loadingElement.style.display = 'none';
@@ -527,7 +527,7 @@ function hideLoading() {
  * 結果を表示
  */
 function showResult(result) {
-  const resultElement = document.getElementById('pta-result');
+  const resultElement = document.getElementById('ai-result');
 
   if (resultElement) {
     resultElement.innerHTML = result;
@@ -539,7 +539,7 @@ function showResult(result) {
  * メール解析を実行
  */
 function analyzeEmail() {
-  const dialog = document.getElementById('pta-dialog');
+  const dialog = document.getElementById('ai-dialog');
   const emailData = dialog.dialogData;
 
   showLoading();
@@ -566,7 +566,7 @@ function analyzeEmail() {
  * ページ解析を実行
  */
 function analyzePage() {
-  const dialog = document.getElementById('pta-dialog');
+  const dialog = document.getElementById('ai-dialog');
   const pageData = dialog.dialogData;
 
   showLoading();
@@ -593,7 +593,7 @@ function analyzePage() {
  * 選択テキスト解析を実行
  */
 function analyzeSelection() {
-  const dialog = document.getElementById('pta-dialog');
+  const dialog = document.getElementById('ai-dialog');
   const selectionData = dialog.dialogData;
 
   showLoading();
@@ -620,7 +620,7 @@ function analyzeSelection() {
  * 返信作成を実行
  */
 function composeReply() {
-  const dialog = document.getElementById('pta-dialog');
+  const dialog = document.getElementById('ai-dialog');
   const emailData = dialog.dialogData;
 
   showLoading();
@@ -660,7 +660,7 @@ function handlePageAnalysis(data) {
     pageContent: document.body.innerText.substring(0, 5000) // 最初の5000字
   };
 
-  createPTADialog(pageData);
+  createAiDialog(pageData);
 }
 
 /**
@@ -679,7 +679,7 @@ function handleSelectionAnalysis(data) {
     selectedText: selectedText
   };
 
-  createPTADialog(selectionData);
+  createAiDialog(selectionData);
 }
 
 /**
@@ -693,9 +693,9 @@ function observeUrlChanges() {
       currentUrl = window.location.href;
 
       // URL変更時に既存のボタンを削除
-      if (ptaButton) {
-        ptaButton.remove();
-        ptaButton = null;
+      if (aiButton) {
+        aiButton.remove();
+        aiButton = null;
       }
 
       // 新しいページでボタンを再追加
@@ -723,6 +723,6 @@ window.analyzePage = analyzePage;
 window.analyzeSelection = analyzeSelection;
 window.composeReply = composeReply;
 window.openSettings = openSettings;
-window.closePTADialog = closePTADialog;
+window.closeAiDialog = closeAiDialog;
 
-console.log('PTA支援ツール - コンテンツスクリプト読み込み完了');
+console.log('AI支援ツール - コンテンツスクリプト読み込み完了');
