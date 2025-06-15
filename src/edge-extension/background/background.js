@@ -192,124 +192,174 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
+// Content scriptからのメッセージを受信
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('メッセージを受信:', request.action);
+
+    // 非同期処理のために true を返す
+    handleMessage(request, sender, sendResponse);
+    return true;
+});
+
+/**
+ * メッセージ処理
+ */
+async function handleMessage(request, sender, sendResponse) {
+    try {
+        switch (request.action) {
+            case 'analyzeEmail':
+                await handleAnalyzeEmail(request.data, sendResponse);
+                break;
+
+            case 'analyzePage':
+                await handleAnalyzePage(request.data, sendResponse);
+                break;
+
+            case 'analyzeSelection':
+                await handleAnalyzeSelection(request.data, sendResponse);
+                break;
+
+            case 'composeEmail':
+                await handleComposeEmail(request.data, sendResponse);
+                break;
+
+            default:
+                sendResponse({ success: false, error: '不明なアクション: ' + request.action });
+        }
+    } catch (error) {
+        console.error('メッセージ処理エラー:', error);
+        sendResponse({ success: false, error: error.message });
+    }
+}
+
 /**
  * メール解析処理
  */
-async function handleEmailAnalysis(data, sendResponse) {
+async function handleAnalyzeEmail(data, sendResponse) {
     try {
+        // 設定を取得
         const settings = await getSettings();
 
-        if (!settings.apiKey) {
-            sendResponse({ error: 'APIキーが設定されていません' });
-            return;
-        }
-
-        const prompt = createAnalysisPrompt(data);
+        // AI API を呼び出し
+        const prompt = `件名: ${data.subject}\n\n本文:\n${data.body}\n\nこのメールの内容を要約し、重要なポイントや必要なアクションがあれば教えてください。`;
         const result = await callAIAPI(prompt, settings);
-
-        // 履歴に保存
-        await saveToHistory({
-            type: 'analysis',
-            timestamp: new Date().toISOString(),
-            emailSubject: data.subject,
-            result: result
-        });
 
         sendResponse({ success: true, result: result });
     } catch (error) {
-        console.error('メール解析エラー:', error);
-        sendResponse({ error: error.message });
+        sendResponse({ success: false, error: error.message });
     }
 }
 
 /**
  * ページ解析処理
  */
-async function handlePageAnalysis(data, sendResponse) {
+async function handleAnalyzePage(data, sendResponse) {
     try {
+        // 設定を取得
         const settings = await getSettings();
 
-        if (!settings.apiKey) {
-            sendResponse({ error: 'APIキーが設定されていません' });
-            return;
-        }
-
-        const prompt = createPageAnalysisPrompt(data);
+        // AI API を呼び出し
+        const prompt = `ページタイトル: ${data.pageTitle}\nURL: ${data.pageUrl}\n\n内容:\n${data.pageContent}\n\nこのWebページの内容を要約し、重要なポイントを教えてください。`;
         const result = await callAIAPI(prompt, settings);
-
-        // 履歴に保存
-        await saveToHistory({
-            type: 'page_analysis',
-            timestamp: new Date().toISOString(),
-            pageTitle: data.pageTitle,
-            pageUrl: data.pageUrl,
-            result: result
-        });
 
         sendResponse({ success: true, result: result });
     } catch (error) {
-        console.error('ページ解析エラー:', error);
-        sendResponse({ error: error.message });
+        sendResponse({ success: false, error: error.message });
     }
 }
 
 /**
  * 選択テキスト解析処理
  */
-async function handleSelectionAnalysis(data, sendResponse) {
+async function handleAnalyzeSelection(data, sendResponse) {
     try {
-        const settings = await getSettings();
-
-        if (!settings.apiKey) {
-            sendResponse({ error: 'APIキーが設定されていません' });
-            return;
+        if (!data.selectedText) {
+            throw new Error('選択されたテキストがありません。');
         }
 
-        const prompt = createSelectionAnalysisPrompt(data);
-        const result = await callAIAPI(prompt, settings);
+        // 設定を取得
+        const settings = await getSettings();
 
-        // 履歴に保存
-        await saveToHistory({
-            type: 'selection_analysis',
-            timestamp: new Date().toISOString(),
-            pageTitle: data.pageTitle,
-            pageUrl: data.pageUrl,
-            selectedText: data.selectedText.substring(0, 100) + '...',
-            result: result
-        });
+        // AI API を呼び出し
+        const prompt = `選択されたテキスト:\n${data.selectedText}\n\n選択されたテキストを要約し、重要なポイントを教えてください。`;
+        const result = await callAIAPI(prompt, settings);
 
         sendResponse({ success: true, result: result });
     } catch (error) {
-        console.error('選択テキスト解析エラー:', error);
-        sendResponse({ error: error.message });
+        sendResponse({ success: false, error: error.message });
     }
 }
-async function handleEmailComposition(data, sendResponse) {
+
+/**
+ * メール作成処理
+ */
+async function handleComposeEmail(data, sendResponse) {
     try {
+        // 設定を取得
         const settings = await getSettings();
 
-        if (!settings.apiKey) {
-            sendResponse({ error: 'APIキーが設定されていません' });
-            return;
-        }
-
-        const prompt = createCompositionPrompt(data);
+        // AI API を呼び出し
+        const prompt = `${data.content}\n\n適切で丁寧なメールの返信を作成してください。日本語で回答してください。`;
         const result = await callAIAPI(prompt, settings);
-
-        // 履歴に保存
-        await saveToHistory({
-            type: 'composition',
-            timestamp: new Date().toISOString(),
-            requestType: data.type,
-            result: result
-        });
 
         sendResponse({ success: true, result: result });
     } catch (error) {
-        console.error('メール作成エラー:', error);
-        sendResponse({ error: error.message });
+        sendResponse({ success: false, error: error.message });
     }
 }
+
+// メッセージハンドラー
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Background: メッセージ受信:', message, 'from:', sender);
+
+    // Offscreen documentからのメッセージは処理しない（循環を防ぐ）
+    if (sender.documentId && message.target === 'offscreen') {
+        console.log('Background: Offscreen documentからのメッセージを無視');
+        return false;
+    } switch (message.action) {
+        case 'analyzeEmail':
+            handleEmailAnalysis(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'analyzePage':
+            handlePageAnalysis(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'analyzeSelection':
+            handleSelectionAnalysis(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'translateSelection':
+            handleTranslateSelection(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'translatePage':
+            handleTranslatePage(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'extractUrls':
+            handleExtractUrls(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'copyPageInfo':
+            handleCopyPageInfo(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'composeEmail':
+            handleEmailComposition(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        case 'testApiConnection':
+            handleApiTest(message.data, sendResponse);
+            return true; // 非同期レスポンス
+
+        default:
+            console.log('Background: 不明なアクション:', message.action);
+            sendResponse({ error: 'サポートされていないアクションです' });
+    }
+});
+
+// ...existing code...
 
 /**
  * システム診断機能
