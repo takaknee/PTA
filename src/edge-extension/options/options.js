@@ -24,6 +24,12 @@ function initializeOptions() {
     document.getElementById('clear-all-data').addEventListener('click', clearAllData);
     document.getElementById('import-file').addEventListener('change', handleImportFile);
 
+    // パスワード表示切り替えボタン（CSP準拠）
+    const togglePasswordBtn = document.getElementById('toggle-password-btn');
+    if (togglePasswordBtn) {
+        togglePasswordBtn.addEventListener('click', togglePassword);
+    }
+
     // Azure エンドポイントのリアルタイムフィードバック
     const azureEndpointInput = document.getElementById('azure-endpoint');
     if (azureEndpointInput) {
