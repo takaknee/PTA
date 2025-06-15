@@ -1,6 +1,6 @@
 /*
- * PTA Edge拡張機能 - コンテンツスクリプト
- * Copyright (c) 2024 PTA Development Team
+ * Shima Edge拡張機能 - コンテンツスクリプト
+ * Copyright (c) 2024 Shima Development Team
  */
 
 // 現在のメールサービスを判定
