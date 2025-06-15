@@ -141,7 +141,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     }
 });
 
-// メッセージハンドラー
+// 統合されたメッセージハンドラー
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Background: メッセージ受信:', message, 'from:', sender);
 
@@ -149,89 +149,70 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (sender.documentId && message.target === 'offscreen') {
         console.log('Background: Offscreen documentからのメッセージを無視');
         return false;
-    } switch (message.action) {
-        case 'analyzeEmail':
-            handleEmailAnalysis(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'analyzePage':
-            handlePageAnalysis(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'analyzeSelection':
-            handleSelectionAnalysis(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'translateSelection':
-            handleTranslateSelection(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'translatePage':
-            handleTranslatePage(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'extractUrls':
-            handleExtractUrls(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'copyPageInfo':
-            handleCopyPageInfo(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'composeEmail':
-            handleEmailComposition(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'testApiConnection':
-            handleApiTest(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        default:
-            console.log('Background: 不明なアクション:', message.action);
-            sendResponse({ error: 'サポートされていないアクションです' });
     }
-});
 
-// Content scriptからのメッセージを受信
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('メッセージを受信:', request.action);
-
-    // 非同期処理のために true を返す
-    handleMessage(request, sender, sendResponse);
-    return true;
+    // 非同期処理のために統合ハンドラーを呼び出し
+    handleUnifiedMessage(message, sender, sendResponse);
+    return true; // 非同期レスポンス
 });
 
 /**
- * メッセージ処理
+ * 統合メッセージ処理
  */
-async function handleMessage(request, sender, sendResponse) {
+async function handleUnifiedMessage(message, sender, sendResponse) {
     try {
-        switch (request.action) {
+        const action = message.action;
+        const data = message.data || message; // dataプロパティがない場合は、message自体を使用
+
+        console.log('統合メッセージハンドラー:', action);
+
+        switch (action) {
             case 'analyzeEmail':
-                await handleAnalyzeEmail(request.data, sendResponse);
+                await handleAnalyzeEmail(data, sendResponse);
                 break;
 
             case 'analyzePage':
-                await handleAnalyzePage(request.data, sendResponse);
+                await handleAnalyzePage(data, sendResponse);
                 break;
 
             case 'analyzeSelection':
-                await handleAnalyzeSelection(request.data, sendResponse);
+                await handleAnalyzeSelection(data, sendResponse);
+                break;
+
+            case 'translateSelection':
+                await handleTranslateSelection(data, sendResponse);
+                break;
+
+            case 'translatePage':
+                await handleTranslatePage(data, sendResponse);
+                break;
+
+            case 'extractUrls':
+                await handleExtractUrls(data, sendResponse);
+                break;
+
+            case 'copyPageInfo':
+                await handleCopyPageInfo(data, sendResponse);
                 break;
 
             case 'composeEmail':
-                await handleComposeEmail(request.data, sendResponse);
+                await handleComposeEmail(data, sendResponse);
                 break;
 
             case 'testConnection':
-                await handleConnectionTest(request.data, sendResponse);
+                await handleConnectionTest(data, sendResponse);
+                break;
+
+            case 'testApiConnection':
+                await handleConnectionTest(data, sendResponse);
                 break;
 
             default:
-                sendResponse({ success: false, error: '不明なアクション: ' + request.action });
+                console.log('Background: 不明なアクション:', action);
+                sendResponse({ success: false, error: 'サポートされていないアクション: ' + action });
         }
     } catch (error) {
-        console.error('メッセージ処理エラー:', error);
+        console.error('統合メッセージ処理エラー:', error);
         sendResponse({ success: false, error: error.message });
     }
 }
@@ -311,57 +292,6 @@ async function handleComposeEmail(data, sendResponse) {
         sendResponse({ success: false, error: error.message });
     }
 }
-
-// メッセージハンドラー
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Background: メッセージ受信:', message, 'from:', sender);
-
-    // Offscreen documentからのメッセージは処理しない（循環を防ぐ）
-    if (sender.documentId && message.target === 'offscreen') {
-        console.log('Background: Offscreen documentからのメッセージを無視');
-        return false;
-    } switch (message.action) {
-        case 'analyzeEmail':
-            handleEmailAnalysis(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'analyzePage':
-            handlePageAnalysis(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'analyzeSelection':
-            handleSelectionAnalysis(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'translateSelection':
-            handleTranslateSelection(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'translatePage':
-            handleTranslatePage(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'extractUrls':
-            handleExtractUrls(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'copyPageInfo':
-            handleCopyPageInfo(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'composeEmail':
-            handleEmailComposition(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        case 'testApiConnection':
-            handleApiTest(message.data, sendResponse);
-            return true; // 非同期レスポンス
-
-        default:
-            console.log('Background: 不明なアクション:', message.action);
-            sendResponse({ error: 'サポートされていないアクションです' });
-    }
-});
 
 /**
  * システム診断機能
