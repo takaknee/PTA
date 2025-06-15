@@ -653,30 +653,40 @@ function hideLoading() {
  * 結果を表示
  */
 /**
- * AI応答を構造化して表示
+ * AI応答をそのまま表示（HTML形式）
  */
 function showResult(result) {
     const resultElement = document.getElementById('ai-result');
 
     if (resultElement) {
-        // テーマに応じた色設定を取得
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const textColor = prefersDark ? '#ffffff' : '#333333';
-        const bgColor = prefersDark ? '#404040' : '#f9f9f9';
-        const borderColor = prefersDark ? '#555555' : '#e0e0e0';
-        const headingColor = prefersDark ? '#ffffff' : '#2196F3';
+        // エラーメッセージの場合はそのまま表示
+        if (typeof result === 'string' && result.includes('❌ エラー:')) {
+            resultElement.innerHTML = result;
+        } else {
+            // AI応答をHTML形式でそのまま表示
+            // 基本的なサニタイズを実行（セキュリティ対策）
+            const sanitizedResult = sanitizeHtmlResponse(result);
+            resultElement.innerHTML = sanitizedResult;
+        }
 
-        // 構造化された結果をHTMLに変換
-        const formattedResult = formatAIResponse(result, {
-            textColor,
-            bgColor,
-            borderColor,
-            headingColor
-        });
-
-        resultElement.innerHTML = formattedResult;
         resultElement.style.display = 'block';
     }
+}
+
+/**
+ * HTML応答の基本的なサニタイズ（セキュリティ対策）
+ */
+function sanitizeHtmlResponse(html) {
+    // 危険なタグやJavaScriptコードを除去
+    const sanitized = html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // <script>タグを除去
+        .replace(/on\w+="[^"]*"/gi, '') // onclick等のイベントハンドラーを除去
+        .replace(/javascript:/gi, '') // javascript:を除去
+        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // <iframe>を除去
+        .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '') // <object>を除去
+        .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, ''); // <embed>を除去
+
+    return sanitized;
 }
 
 /**

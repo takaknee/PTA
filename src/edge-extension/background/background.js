@@ -276,12 +276,13 @@ URL: ${data.pageUrl}
 内容: ${data.pageContent}
 
 【重要】回答の際は以下を厳守してください：
-- HTMLタグやCSSコードを一切含めないでください
-- プレーンテキストとMarkdown形式のみで回答してください
-- コードブロックや技術的なマークアップは除外してください
-- 読みやすい日本語の文章で回答してください
+- 回答は必ずHTML形式で出力してください
+- 適切なHTMLタグ（h3, p, ul, li, strong等）を使用してください
+- 見出しには<h3>、重要ポイントには<ul><li>を使用してください
+- CSSスタイル属性は一切含めないでください（class属性のみ可）
+- 読みやすい構造化されたHTMLで回答してください
 
-このWebページの内容を要約し、重要なポイントを教えてください。`;
+このWebページの内容を要約し、重要なポイントをHTML形式で教えてください。`;
         const result = await callAIAPI(prompt, settings);
 
         sendResponse({ success: true, result: result });
@@ -308,12 +309,13 @@ async function handleAnalyzeSelection(data, sendResponse) {
 選択されたテキスト: ${data.selectedText}
 
 【重要】回答の際は以下を厳守してください：
-- HTMLタグやCSSコードを一切含めないでください
-- プレーンテキストとMarkdown形式のみで回答してください
-- コードブロックや技術的なマークアップは除外してください
-- 読みやすい日本語の文章で回答してください
+- 回答は必ずHTML形式で出力してください
+- 適切なHTMLタグ（h3, p, ul, li, strong等）を使用してください
+- 見出しには<h3>、重要ポイントには<ul><li>を使用してください
+- CSSスタイル属性は一切含めないでください（class属性のみ可）
+- 読みやすい構造化されたHTMLで回答してください
 
-選択されたテキストを要約し、重要なポイントを教えてください。`;
+選択されたテキストを要約し、重要なポイントをHTML形式で教えてください。`;
         const result = await callAIAPI(prompt, settings);
 
         sendResponse({ success: true, result: result });
