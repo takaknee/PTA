@@ -8,14 +8,31 @@
   </head>
   <body>
     <div class="popup-container">
-      <header class="popup-header">
-        <div class="header-content">
+      <!-- 固定タイトルバー -->
+      <header class="popup-header fixed-header">
+        <div class="header-left">
           <span class="logo">🤖</span>
-          <h1>AI業務支援ツール</h1>
+          <div class="page-info">
+            <span class="page-title" id="current-page-title"
+              >読み込み中...</span
+            >
+            <button
+              class="copy-button"
+              id="copy-page-link"
+              title="ページリンクをコピー"
+            >
+              <span class="button-icon">📋</span>
+            </button>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="header-button" id="open-settings" title="設定">
+            <span class="button-icon">⚙️</span>
+          </button>
         </div>
       </header>
 
-      <main class="popup-main">
+      <main class="popup-main scrollable-content">
         <div class="tab-navigation">
           <button class="tab-button active" data-tab="quick">クイック</button>
           <button class="tab-button" data-tab="compose">作成</button>
@@ -29,27 +46,63 @@
             <p class="section-description">
               現在表示されているページやコンテンツをAIで解析します
             </p>
-            <button class="action-button primary" id="analyze-current-email">
-              <span class="button-icon">🔍</span>
-              現在のページを解析
-            </button>
+            <div class="action-group">
+              <button class="action-button primary" id="analyze-current-email">
+                <span class="button-icon">🔍</span>
+                現在のページを解析
+              </button>
+              <button
+                class="copy-button"
+                id="copy-page-markdown"
+                title="ページ情報をMarkdown形式でコピー"
+              >
+                <span class="button-icon">📝</span>
+              </button>
+            </div>
           </div>
 
           <div class="section">
             <h2>⚡ クイック機能</h2>
             <div class="quick-actions">
-              <button class="quick-button" id="quick-reply">
-                <span class="button-icon">💬</span>
-                文書作成
-              </button>
-              <button class="quick-button" id="quick-summary">
-                <span class="button-icon">📝</span>
-                要約作成
-              </button>
-              <button class="quick-button" id="quick-action">
-                <span class="button-icon">✅</span>
-                アクション提案
-              </button>
+              <div class="quick-button-group">
+                <button class="quick-button" id="quick-reply">
+                  <span class="button-icon">💬</span>
+                  文書作成
+                </button>
+                <button
+                  class="copy-button"
+                  id="copy-page-markdown-reply"
+                  title="ページ情報をMarkdown形式でコピー"
+                >
+                  <span class="button-icon">📝</span>
+                </button>
+              </div>
+              <div class="quick-button-group">
+                <button class="quick-button" id="quick-summary">
+                  <span class="button-icon">📝</span>
+                  要約作成
+                </button>
+                <button
+                  class="copy-button"
+                  id="copy-page-markdown-summary"
+                  title="ページ情報をMarkdown形式でコピー"
+                >
+                  <span class="button-icon">📝</span>
+                </button>
+              </div>
+              <div class="quick-button-group">
+                <button class="quick-button" id="quick-action">
+                  <span class="button-icon">✅</span>
+                  アクション提案
+                </button>
+                <button
+                  class="copy-button"
+                  id="copy-page-markdown-action"
+                  title="ページ情報をMarkdown形式でコピー"
+                >
+                  <span class="button-icon">📝</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -101,13 +154,8 @@
           </div>
         </div>
       </main>
-
       <footer class="popup-footer">
         <div class="footer-actions">
-          <button class="footer-button" id="open-settings">
-            <span class="button-icon">⚙️</span>
-            設定
-          </button>
           <button class="footer-button" id="test-api">
             <span class="button-icon">🔧</span>
             API テスト
@@ -120,14 +168,23 @@
         <div class="result-content">
           <div class="result-header">
             <h3>結果</h3>
-            <button class="close-result" onclick="closeResult()">×</button>
+            <div class="result-header-actions">
+              <button
+                class="copy-result-button"
+                id="copy-structured-result"
+                title="構造的にコピー"
+              >
+                <span class="button-icon">📋</span>
+              </button>
+              <button class="close-result" onclick="closeResult()">×</button>
+            </div>
           </div>
           <div class="result-body" id="result-body">
             <!-- 結果がここに表示されます -->
           </div>
           <div class="result-actions">
             <button class="action-button secondary" onclick="copyResult()">
-              📋 コピー
+              📋 テキストコピー
             </button>
             <button class="action-button primary" onclick="closeResult()">
               閉じる

@@ -213,24 +213,59 @@ function addAISupportButton() {
  * AIダイアログを表示
  */
 function showAiDialog() {
-    const selectedText = getSelectedText();
-    const pageContent = extractPageContent();
+    try {
+        const selectedText = getSelectedText();
+        let pageContent = '';
 
-    const dialogData = {
-        pageTitle: document.title,
-        pageUrl: window.location.href,
-        pageContent: pageContent,
-        selectedText: selectedText,
-        currentService: currentService
-    };
+        // ページコンテンツを安全に取得
+        try {
+            pageContent = extractPageContent();
+        } catch (contentError) {
+            console.error('ページコンテンツ抽出でエラー:', contentError);
+            pageContent = `コンテンツ抽出エラー: ${contentError.message}`;
+        }
 
-    // メール情報が利用可能な場合は追加
-    if (currentService === 'outlook' || currentService === 'gmail') {
-        const emailData = getCurrentEmailData();
-        Object.assign(dialogData, emailData);
+        const dialogData = {
+            pageTitle: document.title || 'タイトル不明',
+            pageUrl: window.location.href,
+            pageContent: pageContent,
+            selectedText: selectedText,
+            currentService: currentService
+        };
+
+        // メール情報が利用可能な場合は追加
+        if (currentService === 'outlook' || currentService === 'gmail') {
+            try {
+                const emailData = getCurrentEmailData();
+                Object.assign(dialogData, emailData);
+            } catch (emailError) {
+                console.error('メール情報取得でエラー:', emailError);
+                // メール情報の取得に失敗してもダイアログは表示
+            }
+        }
+
+        // ダイアログを作成して表示
+        createAiDialog(dialogData);
+
+    } catch (error) {
+        console.error('AIダイアログ表示でエラー:', error);
+        console.error('エラー詳細:', error.stack);
+
+        // エラーが発生した場合も最低限のダイアログを表示
+        try {
+            const fallbackData = {
+                pageTitle: document.title || 'エラー',
+                pageUrl: window.location.href,
+                pageContent: `ダイアログ表示中にエラーが発生しました: ${error.message}`,
+                selectedText: '',
+                currentService: currentService
+            };
+            createAiDialog(fallbackData);
+        } catch (fallbackError) {
+            console.error('フォールバックダイアログでもエラー:', fallbackError);
+            alert('AI支援ツールでエラーが発生しました。ページを再読み込みしてください。');
+        }
     }
-
-    createAiDialog(dialogData);
 }
 
 /**
@@ -1586,6 +1621,12 @@ function extractPageContent() {
     let pageContent = '';
 
     try {
+        // 基本的な要素の存在チェック
+        if (!document || !document.body) {
+            console.warn('Document または body が存在しません');
+            return 'ページが正常に読み込まれていません';
+        }
+
         // 方法1: メインコンテンツエリアを探す
         const mainSelectors = [
             'main',
@@ -1600,70 +1641,95 @@ function extractPageContent() {
         ];
 
         for (const selector of mainSelectors) {
-            const element = document.querySelector(selector);
-            if (element && element.innerText && element.innerText.trim()) {
-                pageContent = element.innerText.trim();
-                console.log(`コンテンツ抽出成功: ${selector}`);
-                break;
+            try {
+                const element = document.querySelector(selector);
+                if (element && element.innerText && element.innerText.trim().length > 50) {
+                    pageContent = element.innerText.trim();
+                    console.log(`コンテンツ抽出成功: ${selector}`);
+                    break;
+                }
+            } catch (selectorError) {
+                console.warn(`セレクタエラー: ${selector}`, selectorError);
+                continue;
             }
         }
 
         // 方法2: body全体から抽出（スクリプトやスタイルを除外）
         if (!pageContent.trim()) {
-            const bodyClone = document.body.cloneNode(true);
+            try {
+                const bodyClone = document.body.cloneNode(true);
 
-            // 不要な要素を削除
-            const unwantedSelectors = [
-                'script', 'style', 'noscript',
-                'nav', 'header', 'footer',
-                '.menu', '.sidebar', '.advertisement', '.ad',
-                '.social-share', '.comments', '.related-posts',
-                '[class*="menu"]', '[class*="nav"]', '[class*="sidebar"]'
-            ];
+                // 不要な要素を削除
+                const unwantedSelectors = [
+                    'script', 'style', 'noscript',
+                    'nav', 'header', 'footer',
+                    '.menu', '.sidebar', '.advertisement', '.ad',
+                    '.social-share', '.comments', '.related-posts',
+                    '[class*="menu"]', '[class*="nav"]', '[class*="sidebar"]'
+                ];
 
-            unwantedSelectors.forEach(selector => {
-                try {
-                    const elements = bodyClone.querySelectorAll(selector);
-                    elements.forEach(el => el.remove());
-                } catch (e) {
-                    // セレクタエラーを無視
-                }
-            });
+                unwantedSelectors.forEach(selector => {
+                    try {
+                        const elements = bodyClone.querySelectorAll(selector);
+                        elements.forEach(el => {
+                            if (el && el.parentNode) {
+                                el.parentNode.removeChild(el);
+                            }
+                        });
+                    } catch (removeError) {
+                        console.warn(`要素削除エラー: ${selector}`, removeError);
+                    }
+                });
 
-            pageContent = bodyClone.innerText || bodyClone.textContent || '';
-            console.log('body全体からコンテンツ抽出');
+                pageContent = bodyClone.innerText || bodyClone.textContent || '';
+                console.log('body全体からコンテンツ抽出');
+            } catch (cloneError) {
+                console.warn('body cloneでエラー:', cloneError);
+            }
         }
 
         // 方法3: 空の場合のフォールバック
         if (!pageContent.trim()) {
-            pageContent = document.body.innerText || document.body.textContent || '';
-            console.log('フォールバックでコンテンツ抽出');
+            try {
+                pageContent = document.body.innerText || document.body.textContent || '';
+                console.log('フォールバックでコンテンツ抽出');
+            } catch (fallbackError) {
+                console.warn('フォールバック抽出でエラー:', fallbackError);
+            }
         }
 
         // 長すぎる場合は切り詰め（最初の8000文字）
-        if (pageContent.length > 8000) {
+        if (pageContent && pageContent.length > 8000) {
             pageContent = pageContent.substring(0, 8000).trim();
             console.log('コンテンツを8000文字に切り詰め');
         }
 
         // 最終チェック
-        if (!pageContent.trim()) {
-            pageContent = '（ページコンテンツを取得できませんでした）';
+        if (!pageContent || !pageContent.trim()) {
+            pageContent = `（ページコンテンツを取得できませんでした）\nURL: ${window.location.href}\nタイトル: ${document.title || '不明'}`;
             console.warn('ページコンテンツが空です');
         }
 
     } catch (error) {
         console.error('ページコンテンツ抽出エラー:', error);
+        console.error('エラースタック:', error.stack);
+
         // エラーの場合は最低限の情報を返す
         try {
-            pageContent = document.body.innerText || document.body.textContent || 'コンテンツを取得できませんでした';
-        } catch (e) {
-            pageContent = 'コンテンツ取得中にエラーが発生しました';
+            const fallbackContent = document.body?.innerText || document.body?.textContent;
+            if (fallbackContent && fallbackContent.trim()) {
+                pageContent = fallbackContent.trim();
+            } else {
+                pageContent = `コンテンツ取得中にエラーが発生しました\nURL: ${window.location.href}\nタイトル: ${document.title || '不明'}\nエラー: ${error.message}`;
+            }
+        } catch (finalError) {
+            console.error('最終フォールバックでもエラー:', finalError);
+            pageContent = `重大なエラー: コンテンツを取得できませんでした (${error.message})`;
         }
     }
 
     console.log(`最終的に抽出されたコンテンツ（最初の200文字）:`, pageContent.substring(0, 200));
-    return pageContent;
+    return pageContent || 'コンテンツが空です';
 }
 
 /**

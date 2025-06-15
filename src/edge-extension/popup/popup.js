@@ -34,7 +34,18 @@ function initializePopup() {
     document.getElementById('open-settings').addEventListener('click', openSettings);
     document.getElementById('test-api').addEventListener('click', testAPI);
 
+    // ページリンクコピーイベント
+    document.getElementById('copy-page-link').addEventListener('click', copyPageLink);
+    document.getElementById('copy-page-markdown').addEventListener('click', () => copyPageMarkdown());
+    document.getElementById('copy-page-markdown-reply').addEventListener('click', () => copyPageMarkdown());
+    document.getElementById('copy-page-markdown-summary').addEventListener('click', () => copyPageMarkdown());
+    document.getElementById('copy-page-markdown-action').addEventListener('click', () => copyPageMarkdown());
+
+    // 構造的コピーイベント
+    document.getElementById('copy-structured-result').addEventListener('click', copyStructuredResult);
+
     // 初期データ読み込み
+    loadPageInfo();
     loadHistory();
     checkAPISettings();
 }
@@ -315,6 +326,131 @@ function checkAPISettings() {
             );
         }
     });
+}
+
+/**
+ * 現在のページ情報を読み込み
+ */
+async function loadPageInfo() {
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const pageTitle = tab.title || 'ページタイトル不明';
+        const pageUrl = tab.url || '';
+
+        // ページタイトルを更新
+        const titleElement = document.getElementById('current-page-title');
+        titleElement.textContent = pageTitle;
+        titleElement.title = `${pageTitle}\n${pageUrl}`;
+
+        // グローバル変数として保存（他の関数で使用）
+        window.currentPageInfo = {
+            title: pageTitle,
+            url: pageUrl
+        };
+    } catch (error) {
+        console.error('ページ情報の取得に失敗:', error);
+        document.getElementById('current-page-title').textContent = 'ページ情報取得エラー';
+    }
+}
+
+/**
+ * ページリンクをコピー
+ */
+async function copyPageLink() {
+    try {
+        if (!window.currentPageInfo) {
+            await loadPageInfo();
+        }
+
+        const pageInfo = window.currentPageInfo;
+        const linkText = `${pageInfo.title}\n${pageInfo.url}`;
+
+        await navigator.clipboard.writeText(linkText);
+        showNotification('ページリンクをコピーしました');
+    } catch (error) {
+        console.error('ページリンクのコピーに失敗:', error);
+        showNotification('コピーに失敗しました', 'error');
+    }
+}
+
+/**
+ * ページ情報をMarkdown形式でコピー
+ */
+async function copyPageMarkdown() {
+    try {
+        if (!window.currentPageInfo) {
+            await loadPageInfo();
+        }
+
+        const pageInfo = window.currentPageInfo;
+        const markdownText = `[${pageInfo.title}](${pageInfo.url})`;
+
+        await navigator.clipboard.writeText(markdownText);
+        showNotification('Markdown形式でコピーしました');
+    } catch (error) {
+        console.error('Markdownコピーに失敗:', error);
+        showNotification('コピーに失敗しました', 'error');
+    }
+}
+
+/**
+ * 構造的な結果をコピー
+ */
+async function copyStructuredResult() {
+    try {
+        const resultBody = document.getElementById('result-body');
+        const resultText = resultBody.textContent || resultBody.innerText;
+
+        if (!window.currentPageInfo) {
+            await loadPageInfo();
+        }
+
+        const pageInfo = window.currentPageInfo;
+        const structuredResult = `# AI解析結果\n\n## 対象ページ\n- タイトル: ${pageInfo.title}\n- URL: ${pageInfo.url}\n\n## 解析結果\n${resultText}\n\n---\n生成日時: ${new Date().toLocaleString('ja-JP')}`;
+
+        await navigator.clipboard.writeText(structuredResult);
+        showNotification('構造的な結果をコピーしました');
+    } catch (error) {
+        console.error('構造的コピーに失敗:', error);
+        showNotification('コピーに失敗しました', 'error');
+    }
+}
+
+/**
+ * 通知を表示
+ */
+function showNotification(message, type = 'success') {
+    // 既存の通知があれば削除
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    // 新しい通知を作成
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: ${type === 'error' ? '#f44336' : '#4caf50'};
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    `;
+
+    document.body.appendChild(notification);
+
+    // 3秒後に自動削除
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
 }
 
 /**
