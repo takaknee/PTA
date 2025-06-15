@@ -26,47 +26,80 @@
             </select>
             <p class="help-text">使用するAIサービスを選択してください</p>
           </div>
-
           <div id="azure-settings" class="provider-settings">
             <div class="setting-group">
               <label for="azure-endpoint">Azure エンドポイント</label>
-              <input
-                type="url"
-                id="azure-endpoint"
-                placeholder="https://your-resource-name.openai.azure.com"
-              />
+              <div class="input-with-status">
+                <input
+                  type="url"
+                  id="azure-endpoint"
+                  placeholder="https://your-resource-name.openai.azure.com"
+                />
+                <div class="input-status" id="endpoint-status">
+                  <span class="status-icon">⚪</span>
+                  <span class="status-text">未入力</span>
+                </div>
+              </div>
               <p class="help-text">Azure OpenAIリソースのエンドポイントURL</p>
             </div>
           </div>
 
           <div class="setting-group">
             <label for="api-key">APIキー</label>
-            <div class="password-field">
-              <input
-                type="password"
-                id="api-key"
-                placeholder="APIキーを入力してください"
-              />
-              <button
-                type="button"
-                class="toggle-password"
-                onclick="togglePassword()"
-              >
-                👁️
-              </button>
+            <div class="input-with-status">
+              <div class="password-field">
+                <input
+                  type="password"
+                  id="api-key"
+                  placeholder="APIキーを入力してください"
+                />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  onclick="togglePassword()"
+                >
+                  👁️
+                </button>
+              </div>
+              <div class="input-status" id="apikey-status">
+                <span class="status-icon">⚪</span>
+                <span class="status-text">未入力</span>
+              </div>
             </div>
             <p class="help-text">APIキーは安全に暗号化して保存されます</p>
           </div>
+
           <div class="setting-group">
             <label for="model">モデル</label>
-            <select id="model">
-              <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
-              <option value="gpt-4o">GPT-4o</option>
-              <option value="gpt-4o-mini">GPT-4o Mini</option>
-              <option value="o1-mini">o1-mini</option>
-              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-            </select>
-            <p class="help-text">使用するAIモデルを選択してください</p>
+            <div class="model-selector">
+              <select id="model-select">
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                <option value="o1-mini">o1-mini</option>
+                <option value="o1-preview">o1-preview</option>
+                <option value="custom">🎯 カスタムモデル</option>
+              </select>
+              <div
+                class="custom-model-input"
+                id="custom-model-input"
+                style="display: none"
+              >
+                <input
+                  type="text"
+                  id="custom-model"
+                  placeholder="カスタムモデル名を入力 (例: gpt-4.1-nano)"
+                />
+                <div class="model-hint">
+                  💡
+                  任意のモデル名を指定できます。デプロイ済みのモデル名を正確に入力してください。
+                </div>
+              </div>
+            </div>
+            <p class="help-text">
+              使用するAIモデルを選択、またはカスタムモデル名を入力してください
+            </p>
           </div>
 
           <div class="setting-group">

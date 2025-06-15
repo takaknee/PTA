@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function initializeOptions() {
     // イベントリスナーの設定
     document.getElementById('provider').addEventListener('change', handleProviderChange);
+    document.getElementById('model-select').addEventListener('change', handleModelChange);
     document.getElementById('test-connection').addEventListener('click', testConnection);
     document.getElementById('save-settings').addEventListener('click', saveSettings);
     document.getElementById('reset-settings').addEventListener('click', resetSettings);
@@ -23,14 +24,39 @@ function initializeOptions() {
     document.getElementById('clear-all-data').addEventListener('click', clearAllData);
     document.getElementById('import-file').addEventListener('change', handleImportFile);
 
-    // Azure エンドポイントのリアルタイムバリデーション
+    // Azure エンドポイントのリアルタイムフィードバック
     const azureEndpointInput = document.getElementById('azure-endpoint');
     if (azureEndpointInput) {
         azureEndpointInput.addEventListener('input', function () {
-            validateAzureEndpoint(this.value);
+            handleEndpointInput(this);
         });
         azureEndpointInput.addEventListener('blur', function () {
             validateAzureEndpoint(this.value);
+        });
+        azureEndpointInput.addEventListener('focus', function () {
+            this.classList.add('typing');
+        });
+    }
+
+    // APIキーのリアルタイムフィードバック
+    const apiKeyInput = document.getElementById('api-key');
+    if (apiKeyInput) {
+        apiKeyInput.addEventListener('input', function () {
+            handleApiKeyInput(this);
+        });
+        apiKeyInput.addEventListener('focus', function () {
+            this.classList.add('typing');
+        });
+        apiKeyInput.addEventListener('blur', function () {
+            validateApiKey(this.value);
+        });
+    }
+
+    // カスタムモデル入力のフィードバック
+    const customModelInput = document.getElementById('custom-model');
+    if (customModelInput) {
+        customModelInput.addEventListener('input', function () {
+            handleCustomModelInput(this);
         });
     }
 
@@ -54,6 +80,21 @@ function handleProviderChange() {
 }
 
 /**
+ * モデル選択変更時の処理
+ */
+function handleModelChange() {
+    const modelSelect = document.getElementById('model-select');
+    const customModelInput = document.getElementById('custom-model-input');
+
+    if (modelSelect.value === 'custom') {
+        customModelInput.style.display = 'block';
+        document.getElementById('custom-model').focus();
+    } else {
+        customModelInput.style.display = 'none';
+    }
+}
+
+/**
  * 設定を読み込み
  */
 function loadSettings() {
@@ -61,23 +102,57 @@ function loadSettings() {
         const settings = result.ai_settings || {
             provider: 'azure',
             model: 'gpt-4o-mini',
+            customModel: '',
             apiKey: '',
             azureEndpoint: '',
             autoDetect: true,
             showNotifications: true,
             saveHistory: true
         };
+
         // UI要素に設定値を反映
         document.getElementById('provider').value = settings.provider || 'azure';
-        document.getElementById('model').value = settings.model || 'gpt-4o-mini';
         document.getElementById('api-key').value = settings.apiKey || '';
         document.getElementById('azure-endpoint').value = settings.azureEndpoint || '';
         document.getElementById('auto-detect').checked = settings.autoDetect !== false;
         document.getElementById('show-notifications').checked = settings.showNotifications !== false;
         document.getElementById('save-history').checked = settings.saveHistory !== false;
 
+        // モデル設定の復元
+        const modelSelect = document.getElementById('model-select');
+        const customModelInput = document.getElementById('custom-model');
+
+        if (settings.customModel && settings.customModel.trim() !== '') {
+            // カスタムモデルが設定されている場合
+            modelSelect.value = 'custom';
+            customModelInput.value = settings.customModel;
+            document.getElementById('custom-model-input').style.display = 'block';
+        } else {
+            // 標準モデルの場合
+            const modelValue = settings.model || 'gpt-4o-mini';
+            // 選択肢に存在するかチェック
+            const optionExists = Array.from(modelSelect.options).some(option => option.value === modelValue);
+
+            if (optionExists) {
+                modelSelect.value = modelValue;
+            } else {
+                // 存在しない場合はカスタムモデルとして設定
+                modelSelect.value = 'custom';
+                customModelInput.value = modelValue;
+                document.getElementById('custom-model-input').style.display = 'block';
+            }
+        }
+
         // プロバイダー設定の表示制御
         handleProviderChange();
+
+        // 入力値の初期バリデーション
+        if (settings.azureEndpoint) {
+            validateAzureEndpoint(settings.azureEndpoint);
+        }
+        if (settings.apiKey) {
+            validateApiKey(settings.apiKey);
+        }
     });
 }
 
@@ -375,14 +450,29 @@ function showTestResult(message, type) {
 }
 
 /**
- * 現在の設定を取得
+ * 現在の設定を取得（改善版）
  */
 function getCurrentSettings() {
+    const modelSelect = document.getElementById('model-select');
+    const customModel = document.getElementById('custom-model');
+
+    let finalModel;
+    let customModelValue = '';
+
+    if (modelSelect.value === 'custom') {
+        finalModel = customModel.value.trim();
+        customModelValue = finalModel;
+    } else {
+        finalModel = modelSelect.value;
+        customModelValue = '';
+    }
+
     return {
         provider: document.getElementById('provider').value,
-        model: document.getElementById('model').value,
-        apiKey: document.getElementById('api-key').value,
-        azureEndpoint: document.getElementById('azure-endpoint').value,
+        model: finalModel,
+        customModel: customModelValue,
+        apiKey: document.getElementById('api-key').value.trim(),
+        azureEndpoint: document.getElementById('azure-endpoint').value.trim(),
         autoDetect: document.getElementById('auto-detect').checked,
         showNotifications: document.getElementById('show-notifications').checked,
         saveHistory: document.getElementById('save-history').checked
@@ -392,17 +482,22 @@ function getCurrentSettings() {
 /**
  * 設定を保存
  */
+/**
+ * 設定保存
+ */
 function saveSettings() {
     const settings = getCurrentSettings();
 
     // 必須項目の検証
     if (!settings.apiKey) {
         showNotification('APIキーを入力してください', 'error');
+        document.getElementById('api-key').focus();
         return;
     }
 
     if (settings.provider === 'azure' && !settings.azureEndpoint) {
         showNotification('Azureエンドポイントを入力してください', 'error');
+        document.getElementById('azure-endpoint').focus();
         return;
     }
 
@@ -411,9 +506,26 @@ function saveSettings() {
         const isValidEndpoint = validateAzureEndpoint(settings.azureEndpoint);
         if (!isValidEndpoint) {
             showNotification('Azure エンドポイントの形式が正しくありません。正しい形式で入力してください。', 'error');
+            document.getElementById('azure-endpoint').focus();
             return;
         }
-    }    // 保存実行
+    }
+
+    // APIキーの詳細バリデーション
+    const isValidApiKey = validateApiKey(settings.apiKey);
+    if (!isValidApiKey) {
+        showNotification('APIキーの形式を確認してください。', 'error');
+        document.getElementById('api-key').focus();
+        return;
+    }
+
+    // モデル名の検証
+    if (!settings.model || settings.model.trim() === '') {
+        showNotification('モデル名を指定してください。', 'error');
+        return;
+    }
+
+    // 保存実行
     chrome.storage.local.set({ 'ai_settings': settings }, () => {
         showNotification('✅ 設定を保存しました', 'success');
     });
@@ -569,109 +681,209 @@ function showConfirmDialog(message, callback) {
 }
 
 /**
+ * パスワード表示切り替え
+ */
+function togglePassword() {
+    const passwordField = document.getElementById('api-key');
+    const toggleButton = document.querySelector('.toggle-password');
+
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleButton.textContent = '🙈';
+    } else {
+        passwordField.type = 'password';
+        toggleButton.textContent = '👁️';
+    }
+}
+
+/**
  * 確認ダイアログを閉じる
  */
 function closeConfirmModal() {
     document.getElementById('confirm-modal').style.display = 'none';
 }
 
-/**
- * 通知表示
- */
-function showNotification(message, type = 'info') {
-    const notification = document.getElementById('notification');
-    notification.textContent = message;
-    notification.className = `notification ${type}`;
-    notification.style.display = 'block';
+// ...existing code...
 
-    // 3秒後に自動で非表示
-    setTimeout(() => {
-        notification.style.display = 'none';
-    }, 3000);
+/**
+ * Azure エンドポイント入力時の処理
+ */
+function handleEndpointInput(input) {
+    const statusElement = document.getElementById('endpoint-status');
+    const value = input.value.trim();
+
+    // 入力状態のスタイル更新
+    input.classList.remove('valid', 'invalid');
+    input.classList.add('typing');
+
+    if (value === '') {
+        updateInputStatus(statusElement, 'empty', '⚪', '未入力');
+        input.classList.remove('typing');
+        return;
+    }
+
+    // リアルタイムでの簡易バリデーション
+    if (value.startsWith('https://') && value.includes('.openai.azure.com')) {
+        updateInputStatus(statusElement, 'typing', '🔄', '入力中...');
+    } else {
+        updateInputStatus(statusElement, 'typing', '⚠️', '形式を確認中...');
+    }
+
+    // デバウンス処理で本格的なバリデーションを実行
+    clearTimeout(input.validationTimeout);
+    input.validationTimeout = setTimeout(() => {
+        validateAzureEndpoint(value, statusElement, input);
+    }, 1000);
 }
 
 /**
- * パスワード表示切り替え
+ * APIキー入力時の処理
  */
-function togglePassword() {
-    const apiKeyInput = document.getElementById('api-key');
-    const toggleButton = document.querySelector('.toggle-password');
+function handleApiKeyInput(input) {
+    const statusElement = document.getElementById('apikey-status');
+    const value = input.value.trim();
 
-    if (apiKeyInput.type === 'password') {
-        apiKeyInput.type = 'text';
-        toggleButton.textContent = '🙈';
+    input.classList.remove('valid', 'invalid');
+    input.classList.add('typing');
+
+    if (value === '') {
+        updateInputStatus(statusElement, 'empty', '⚪', '未入力');
+        input.classList.remove('typing');
+        return;
+    }
+
+    // APIキーの基本的な形式チェック
+    if (value.length < 10) {
+        updateInputStatus(statusElement, 'typing', '⚠️', '短すぎる可能性があります...');
+    } else if (value.length > 100) {
+        updateInputStatus(statusElement, 'invalid', '❌', 'APIキーが長すぎます');
+        input.classList.remove('typing');
+        input.classList.add('invalid');
     } else {
-        apiKeyInput.type = 'password';
-        toggleButton.textContent = '👁️';
+        updateInputStatus(statusElement, 'typing', '🔄', 'APIキー確認中...');
+
+        // デバウンス処理
+        clearTimeout(input.validationTimeout);
+        input.validationTimeout = setTimeout(() => {
+            validateApiKey(value, statusElement, input);
+        }, 1000);
     }
 }
 
 /**
- * Azure エンドポイントのリアルタイムバリデーション
+ * カスタムモデル入力時の処理
  */
-function validateAzureEndpoint(endpointValue) {
-    const validationElement = document.getElementById('azure-endpoint-validation') || createValidationElement();
+function handleCustomModelInput(input) {
+    const value = input.value.trim();
 
-    if (!endpointValue) {
-        validationElement.textContent = '';
-        validationElement.className = 'validation-message';
+    input.classList.remove('valid', 'invalid');
+
+    if (value === '') {
+        input.classList.remove('valid', 'invalid');
+        return;
+    }
+
+    // モデル名の基本的な形式チェック
+    const modelNamePattern = /^[a-zA-Z0-9\-_.]+$/;
+    if (modelNamePattern.test(value)) {
+        input.classList.add('valid');
+    } else {
+        input.classList.add('invalid');
+    }
+}
+
+/**
+ * 入力ステータスの更新
+ */
+function updateInputStatus(statusElement, statusClass, icon, text) {
+    statusElement.className = `input-status ${statusClass}`;
+    statusElement.querySelector('.status-icon').textContent = icon;
+    statusElement.querySelector('.status-text').textContent = text;
+}
+
+/**
+ * Azure エンドポイントのバリデーション（改善版）
+ */
+function validateAzureEndpoint(url, statusElement = null, inputElement = null) {
+    if (!statusElement) {
+        statusElement = document.getElementById('endpoint-status');
+    }
+    if (!inputElement) {
+        inputElement = document.getElementById('azure-endpoint');
+    }
+
+    inputElement.classList.remove('typing');
+
+    if (!url || url.trim() === '') {
+        updateInputStatus(statusElement, 'empty', '⚪', '未入力');
+        inputElement.classList.remove('valid', 'invalid');
         return false;
     }
 
     try {
-        const url = new URL(endpointValue);
+        const urlObj = new URL(url);
 
-        if (!url.hostname.includes('.openai.azure.com')) {
-            validationElement.textContent = '❌ 無効な形式です。正しい形式: https://your-resource-name.openai.azure.com';
-            validationElement.className = 'validation-message error';
+        // Azure OpenAI の基本的な URL 形式チェック
+        if (urlObj.protocol !== 'https:') {
+            updateInputStatus(statusElement, 'invalid', '❌', 'HTTPSが必要です');
+            inputElement.classList.add('invalid');
             return false;
         }
 
-        if (url.protocol !== 'https:') {
-            validationElement.textContent = '❌ HTTPS形式で入力してください';
-            validationElement.className = 'validation-message error';
+        if (!urlObj.hostname.includes('.openai.azure.com')) {
+            updateInputStatus(statusElement, 'invalid', '❌', 'Azure OpenAI のエンドポイントではありません');
+            inputElement.classList.add('invalid');
             return false;
         }
 
-        validationElement.textContent = '✅ 正しい形式です';
-        validationElement.className = 'validation-message success';
+        // 有効な形式
+        updateInputStatus(statusElement, 'valid', '✅', '有効なエンドポイントです');
+        inputElement.classList.add('valid');
         return true;
 
     } catch (error) {
-        validationElement.textContent = '❌ 無効なURL形式です。例: https://my-resource.openai.azure.com';
-        validationElement.className = 'validation-message error';
+        updateInputStatus(statusElement, 'invalid', '❌', '無効なURL形式です');
+        inputElement.classList.add('invalid');
         return false;
     }
 }
 
 /**
- * バリデーション要素を作成
+ * APIキーのバリデーション
  */
-function createValidationElement() {
-    const validationElement = document.createElement('div');
-    validationElement.id = 'azure-endpoint-validation';
-    validationElement.className = 'validation-message';
-    validationElement.style.cssText = `
-        margin-top: 5px;
-        font-size: 12px;
-        line-height: 1.4;
-    `;
+function validateApiKey(apiKey, statusElement = null, inputElement = null) {
+    if (!statusElement) {
+        statusElement = document.getElementById('apikey-status');
+    }
+    if (!inputElement) {
+        inputElement = document.getElementById('api-key');
+    }
 
-    const azureEndpointInput = document.getElementById('azure-endpoint');
-    azureEndpointInput.parentNode.insertBefore(validationElement, azureEndpointInput.nextSibling);
+    inputElement.classList.remove('typing');
 
-    // CSS スタイルを追加
-    const style = document.createElement('style');
-    style.textContent = `
-        .validation-message.success { color: #28a745; }
-        .validation-message.error { color: #dc3545; }
-        .validation-message.warning { color: #ffc107; }
-    `;
-    document.head.appendChild(style);
+    if (!apiKey || apiKey.trim() === '') {
+        updateInputStatus(statusElement, 'empty', '⚪', '未入力');
+        inputElement.classList.remove('valid', 'invalid');
+        return false;
+    }
 
-    return validationElement;
+    // APIキーの基本的な検証
+    const trimmedKey = apiKey.trim();
+
+    if (trimmedKey.length < 20) {
+        updateInputStatus(statusElement, 'invalid', '❌', 'APIキーが短すぎます');
+        inputElement.classList.add('invalid');
+        return false;
+    }
+
+    if (trimmedKey.length > 200) {
+        updateInputStatus(statusElement, 'invalid', '❌', 'APIキーが長すぎます');
+        inputElement.classList.add('invalid');
+        return false;
+    }
+
+    // 有効そうなAPIキー
+    updateInputStatus(statusElement, 'valid', '✅', 'APIキーが設定されました');
+    inputElement.classList.add('valid');
+    return true;
 }
-
-// グローバル関数として公開
-window.closeConfirmModal = closeConfirmModal;
-window.togglePassword = togglePassword;
