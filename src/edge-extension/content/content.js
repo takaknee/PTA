@@ -353,59 +353,122 @@ function createAiDialog(dialogData) {
         overflow-y: auto !important;
         position: relative !important;
     `;
-    content.innerHTML = `
-        <div class="ai-dialog-header" style="
+    content.innerHTML = `        <div class="ai-dialog-header" style="
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;            border-bottom: 1px solid ${borderColor};
+            padding: 16px 20px;
+            border-bottom: 1px solid ${borderColor};
             background: ${headerBg};
             color: white;
             border-radius: 12px 12px 0 0;
-        ">            <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: ${headerTextColor};">🏫 AI支援ツール</h3>
-            <button class="ai-close-btn" style="
-                background: none;
-                border: none;
-                color: ${headerTextColor};
-                font-size: 24px;
-                cursor: pointer;
-                width: 32px;
-                height: 32px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-            ">×</button>
-        </div>
-        <div style="padding: 20px;">
-            <div style="margin-bottom: 20px;">                <h4 style="margin: 0 0 8px 0; color: ${dialogText};">📄 ${dialogData.pageTitle || 'ページ情報'}</h4>
-                <p style="margin: 0 0 16px 0; color: ${textMuted}; font-size: 12px; word-break: break-all;">${dialogData.pageUrl || ''}</p>
-                ${dialogData.selectedText ? `<div style="background: ${infoBg}; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px; color: ${dialogText};"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        ">
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                <span style="font-size: 18px;">🏫</span>
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                    <span style="
+                        font-size: 14px; 
+                        font-weight: 500; 
+                        color: ${headerTextColor}; 
+                        white-space: nowrap; 
+                        overflow: hidden; 
+                        text-overflow: ellipsis;
+                        max-width: 300px;
+                        cursor: pointer;
+                    " title="${dialogData.pageTitle || 'タイトル不明'}\n${dialogData.pageUrl || ''}">${dialogData.pageTitle || 'AI支援ツール'}</span>
+                    <button class="ai-copy-page-link-btn" style="
+                        background: rgba(255, 255, 255, 0.1);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        color: ${headerTextColor};
+                        padding: 4px 6px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 11px;
+                        transition: all 0.2s ease;
+                        flex-shrink: 0;
+                    " title="ページリンクをMarkdown形式でコピー">📋</button>
+                </div>
             </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="ai-header-settings-btn" style="
+                    background: rgba(255, 255, 255, 0.1);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    color: ${headerTextColor};
+                    padding: 6px 8px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    transition: all 0.2s ease;
+                " title="設定">⚙️</button>
+                <button class="ai-close-btn" style="
+                    background: none;
+                    border: none;
+                    color: ${headerTextColor};
+                    font-size: 20px;
+                    cursor: pointer;
+                    width: 28px;
+                    height: 28px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                ">×</button>
+            </div>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; flex: 1;">
+            ${dialogData.selectedText ? `<div style="background: ${infoBg}; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px; color: ${dialogText};"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
             
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
                 ${currentService === 'outlook' || currentService === 'gmail' ? `
-                    <button class="ai-analyze-email-btn" style="
-                        background: linear-gradient(135deg, #2196F3, #1976D2);
-                        color: white;
-                        border: none;
-                        border-radius: 6px;
-                        padding: 12px 16px;
-                        cursor: pointer;
-                        font-size: 14px;
-                        font-weight: 500;
-                    ">📧 メール解析</button>
-                    <button class="ai-compose-reply-btn" style="
-                        background: linear-gradient(135deg, #4CAF50, #388E3C);
-                        color: white;
-                        border: none;
-                        border-radius: 6px;
-                        padding: 12px 16px;
-                        cursor: pointer;
-                        font-size: 14px;
-                        font-weight: 500;
-                    ">📝 返信作成</button>
-                ` : `
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <button class="ai-analyze-email-btn" style="
+                            background: linear-gradient(135deg, #2196F3, #1976D2);
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            padding: 12px 16px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 500;
+                            flex: 1;
+                        ">📧 メール解析</button>
+                        <button class="ai-copy-markdown-email-btn" style="
+                            background: #f5f5f5;
+                            border: 1px solid #ddd;
+                            color: #666;
+                            padding: 12px 8px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 11px;
+                            flex-shrink: 0;
+                        " title="ページ情報をMarkdown形式でコピー">📝</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <button class="ai-compose-reply-btn" style="
+                            background: linear-gradient(135deg, #4CAF50, #388E3C);
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            padding: 12px 16px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 500;
+                            flex: 1;
+                        ">📝 返信作成</button>
+                        <button class="ai-copy-markdown-reply-btn" style="
+                            background: #f5f5f5;
+                            border: 1px solid #ddd;
+                            color: #666;
+                            padding: 12px 8px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 11px;
+                            flex-shrink: 0;
+                        " title="ページ情報をMarkdown形式でコピー">📝</button>
+                    </div>                ` : `
                     <button class="ai-analyze-page-btn" style="
                         background: linear-gradient(135deg, #2196F3, #1976D2);
                         color: white;
@@ -416,8 +479,7 @@ function createAiDialog(dialogData) {
                         font-size: 14px;
                         font-weight: 500;
                     ">📄 ページ要約</button>
-                `}
-                ${dialogData.selectedText ? `
+                `}                ${dialogData.selectedText ? `
                     <button class="ai-analyze-selection-btn" style="
                         background: linear-gradient(135deg, #FF9800, #F57C00);
                         color: white;
@@ -428,19 +490,11 @@ function createAiDialog(dialogData) {
                         font-size: 14px;
                         font-weight: 500;
                     ">🔍 選択テキスト分析</button>
-                ` : ''}                <button class="ai-open-settings-btn" style="
-                    background: ${prefersDark ? '#555555' : '#f5f5f5'};
-                    color: ${prefersDark ? '#cccccc' : '#666666'};
-                    border: 1px solid ${prefersDark ? '#777777' : '#dddddd'};
-                    border-radius: 6px;
-                    padding: 12px 16px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 500;
-                ">⚙️ 設定</button>
+                ` : ''}
             </div>
             
-            <div>                <div id="ai-loading" style="display: none; text-align: center; padding: 20px; color: ${textMuted};">
+            <div>
+                <div id="ai-loading" style="display: none; text-align: center; padding: 20px; color: ${textMuted};">
                     <div style="
                         border: 4px solid ${prefersDark ? '#555555' : '#f3f3f3'};
                         border-top: 4px solid #2196F3;
@@ -452,7 +506,30 @@ function createAiDialog(dialogData) {
                     "></div>
                     <span>AI処理中...</span>
                 </div>
-                <div id="ai-result" style="display: none; background: ${prefersDark ? '#404040' : '#f9f9f9'}; padding: 16px; border-radius: 8px; border-left: 4px solid #2196F3; color: ${dialogText};"></div>
+                <div id="ai-result" style="
+                    display: none; 
+                    background: ${prefersDark ? '#404040' : '#f9f9f9'}; 
+                    padding: 16px; 
+                    border-radius: 8px; 
+                    border-left: 4px solid #2196F3; 
+                    color: ${dialogText};
+                    position: relative;
+                ">
+                    <button class="ai-copy-structured-result-btn" style="
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        background: #2196F3;
+                        border: none;
+                        color: white;
+                        padding: 6px 8px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 11px;
+                        display: none;
+                    " title="構造的にコピー">📋</button>
+                    <div id="ai-result-content"></div>
+                </div>
             </div>
         </div>
     `;
@@ -559,13 +636,44 @@ function setupDialogEventListeners(dialog) {
     if (analyzeSelectionBtn) {
         analyzeSelectionBtn.addEventListener('click', analyzeSelection);
         console.log('選択テキスト解析ボタンのイベントリスナー設定完了');
-    }
-
-    // 設定ボタン
+    }    // 設定ボタン（旧版）
     const openSettingsBtn = dialog.querySelector('.ai-open-settings-btn');
     if (openSettingsBtn) {
         openSettingsBtn.addEventListener('click', openSettings);
         console.log('設定ボタンのイベントリスナー設定完了');
+    }
+
+    // 設定ボタン（ヘッダー版）
+    const headerSettingsBtn = dialog.querySelector('.ai-header-settings-btn');
+    if (headerSettingsBtn) {
+        headerSettingsBtn.addEventListener('click', openSettings);
+        console.log('ヘッダー設定ボタンのイベントリスナー設定完了');
+    }
+
+    // ページリンクコピーボタン
+    const copyPageLinkBtn = dialog.querySelector('.ai-copy-page-link-btn');
+    if (copyPageLinkBtn) {
+        copyPageLinkBtn.addEventListener('click', () => copyPageLink(dialog));
+        console.log('ページリンクコピーボタンのイベントリスナー設定完了');
+    }    // Markdownコピーボタン群
+    const markdownBtns = [
+        '.ai-copy-markdown-email-btn',
+        '.ai-copy-markdown-reply-btn'
+    ];
+
+    markdownBtns.forEach(selector => {
+        const btn = dialog.querySelector(selector);
+        if (btn) {
+            btn.addEventListener('click', () => copyPageMarkdown(dialog));
+            console.log(`Markdownコピーボタン (${selector}) のイベントリスナー設定完了`);
+        }
+    });
+
+    // 構造的結果コピーボタン
+    const copyStructuredBtn = dialog.querySelector('.ai-copy-structured-result-btn');
+    if (copyStructuredBtn) {
+        copyStructuredBtn.addEventListener('click', () => copyStructuredResult(dialog));
+        console.log('構造的結果コピーボタンのイベントリスナー設定完了');
     }
 
     console.log('setupDialogEventListeners 完了');
@@ -653,34 +761,51 @@ function getSelectedText() {
 /**
  * 通知を表示
  */
-function showNotification(message, type = 'info') {
-    // 既存の通知を削除
-    const existingNotification = document.getElementById('ai-notification');
+function showNotification(message, type = 'success') {
+    // 既存の通知があれば削除
+    const existingNotification = document.querySelector('.ai-notification');
     if (existingNotification) {
         existingNotification.remove();
     }
 
+    // 新しい通知を作成
     const notification = document.createElement('div');
-    notification.id = 'ai-notification';
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 8px;
-        color: white;
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 14px;
-        z-index: 2147483647;
-        max-width: 300px;
-        word-wrap: break-word;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-        ${type === 'success' ? 'background: #4CAF50;' :
-            type === 'error' ? 'background: #f44336;' :
-                'background: #2196F3;'}
-    `;
+    notification.className = `ai-notification ${type}`;
     notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed !important;
+        top: 20px !important;
+        right: 20px !important;
+        background: ${type === 'error' ? '#f44336' : '#4caf50'} !important;
+        color: white !important;
+        padding: 12px 16px !important;
+        border-radius: 6px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        z-index: 2147483647 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        animation: slideInRight 0.3s ease !important;
+    `;
+
+    // アニメーション用のCSSを追加
+    if (!document.getElementById('ai-notification-style')) {
+        const style = document.createElement('style');
+        style.id = 'ai-notification-style';
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     document.body.appendChild(notification);
 
     // 3秒後に自動削除
@@ -725,19 +850,26 @@ function hideLoading() {
  */
 function showResult(result) {
     const resultElement = document.getElementById('ai-result');
+    const resultContentElement = document.getElementById('ai-result-content');
+    const copyStructuredBtn = document.querySelector('.ai-copy-structured-result-btn');
 
-    if (resultElement) {
+    if (resultElement && resultContentElement) {
         // エラーメッセージの場合はそのまま表示
         if (typeof result === 'string' && result.includes('❌ エラー:')) {
-            resultElement.innerHTML = result;
+            resultContentElement.innerHTML = result;
         } else {
             // AI応答をHTML形式でそのまま表示
             // 基本的なサニタイズを実行（セキュリティ対策）
             const sanitizedResult = sanitizeHtmlResponse(result);
-            resultElement.innerHTML = sanitizedResult;
+            resultContentElement.innerHTML = sanitizedResult;
         }
 
         resultElement.style.display = 'block';
+
+        // 構造的コピーボタンを表示
+        if (copyStructuredBtn) {
+            copyStructuredBtn.style.display = 'block';
+        }
     }
 }
 
@@ -1974,4 +2106,55 @@ function getSavedButtonPositionSync() {
     }
 
     return defaultPosition;
+}
+
+/**
+ * ページリンクをコピー（Markdown形式）
+ */
+async function copyPageLink(dialog) {
+    try {
+        const dialogData = dialog.dialogData;
+        const markdownLink = `[${dialogData.pageTitle || 'タイトル不明'}](${dialogData.pageUrl || ''})`;
+
+        await navigator.clipboard.writeText(markdownLink);
+        showNotification('ページリンクをMarkdown形式でコピーしました', 'success');
+    } catch (error) {
+        console.error('ページリンクコピーエラー:', error);
+        showNotification('コピーに失敗しました', 'error');
+    }
+}
+
+/**
+ * ページ情報をMarkdown形式でコピー
+ */
+async function copyPageMarkdown(dialog) {
+    try {
+        const dialogData = dialog.dialogData;
+        const markdownText = `[${dialogData.pageTitle || 'タイトル不明'}](${dialogData.pageUrl || ''})`;
+
+        await navigator.clipboard.writeText(markdownText);
+        showNotification('Markdown形式でコピーしました', 'success');
+    } catch (error) {
+        console.error('Markdownコピーエラー:', error);
+        showNotification('コピーに失敗しました', 'error');
+    }
+}
+
+/**
+ * 構造的な結果をコピー
+ */
+async function copyStructuredResult(dialog) {
+    try {
+        const dialogData = dialog.dialogData;
+        const resultContent = document.getElementById('ai-result-content');
+        const resultText = resultContent ? (resultContent.textContent || resultContent.innerText) : '';
+
+        const structuredResult = `# AI解析結果\n\n## 対象ページ\n- タイトル: ${dialogData.pageTitle || 'タイトル不明'}\n- URL: ${dialogData.pageUrl || ''}\n\n## 解析結果\n${resultText}\n\n---\n生成日時: ${new Date().toLocaleString('ja-JP')}`;
+
+        await navigator.clipboard.writeText(structuredResult);
+        showNotification('構造的な結果をコピーしました', 'success');
+    } catch (error) {
+        console.error('構造的コピーエラー:', error);
+        showNotification('コピーに失敗しました', 'error');
+    }
 }
