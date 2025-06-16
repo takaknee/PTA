@@ -1,13 +1,15 @@
-# Copilot開発ガイド
+# Copilot 開発ガイド
 
 ## 概要
-このドキュメントは、PTAプロジェクトでGitHub Copilotを効率的に使用するためのガイドです。
+
+このドキュメントは、PTA プロジェクトで GitHub Copilot を効率的に使用するためのガイドです。
 
 ## プロンプト例集
 
 ### 1. 新機能開発
 
 #### Google Apps Script
+
 ```
 PTAプロジェクトで「メール自動送信機能」を実装してください。
 
@@ -23,18 +25,19 @@ PTAプロジェクトで「メール自動送信機能」を実装してくだ�
 - 設定管理: PropertiesService使用
 ```
 
-#### VBA + AI連携
+#### Excel VBA + AI 連携
+
 ```
-Outlook VBAでOpenAI APIを使用した「メール要約機能」を実装してください。
+Excel VBAでOpenAI APIを使用した「データ分析機能」を実装してください。
 
 要件:
-- 機能: 選択メールの内容を要約
+- 機能: 選択したセル範囲のデータを分析
 - API: OpenAI GPT-4使用
-- 出力: 日本語での要約結果表示
+- 出力: 日本語での分析結果表示
 - エラー処理: API接続エラー、タイムアウト対応
 
 既存パターン参考:
-- src/outlook/OutlookAI_Unified.bas
+- src/excel/AI_CellProcessor.bas
 - API呼び出し: CallOpenAIAPI関数パターン
 - エラー表示: ShowError関数使用
 ```
@@ -87,6 +90,7 @@ Outlook VBAでOpenAI APIを使用した「メール要約機能」を実装し�
 ### タスク実行中の典型的な課題
 
 #### 1. 大きなタスクの分割方法
+
 ```
 例：「メール配信システムの全面改修」
 
@@ -107,18 +111,19 @@ Outlook VBAでOpenAI APIを使用した「メール要約機能」を実装し�
 ```
 
 #### 2. 技術的負債への対応
+
 ```javascript
 // レガシーコードの段階的改善例
 function improveExistingCode() {
   // Phase 1: 現状の動作を保証するテストを作成
   testExistingFunctionality();
-  
+
   // Phase 2: 小さな単位でのリファクタリング
   refactorSmallFunctions();
-  
+
   // Phase 3: 大きな構造の改善
   refactorArchitecture();
-  
+
   // Phase 4: 新機能の追加
   addNewFeatures();
 }
@@ -127,6 +132,7 @@ function improveExistingCode() {
 ### Google Apps Script
 
 **Q: undefined function エラーが発生する**
+
 ```javascript
 // A: 関数の定義順序とスコープを確認
 // 共通関数は最上部で定義、またはライブラリ化
@@ -151,6 +157,7 @@ function main() {
 ```
 
 **Q: スプレッドシートアクセスエラー**
+
 ```javascript
 // A: シートの存在確認とエラーハンドリング
 function getSafeSheet(sheetName) {
@@ -164,7 +171,8 @@ function getSafeSheet(sheetName) {
 
 ### VBA
 
-**Q: API接続エラー (HTTP 401)**
+**Q: API 接続エラー (HTTP 401)**
+
 ```vba
 ' A: 認証情報の確認と適切なヘッダー設定
 Private Sub ValidateAPICredentials()
@@ -176,6 +184,7 @@ End Sub
 ```
 
 **Q: 文字化けが発生する**
+
 ```vba
 ' A: UTF-8エンコーディングの明示的指定
 http.setRequestHeader "Content-Type", "application/json; charset=utf-8"
@@ -184,18 +193,21 @@ http.setRequestHeader "Content-Type", "application/json; charset=utf-8"
 ## コード品質チェックリスト
 
 ### 実装前チェック
+
 - [ ] 要件の明確化
 - [ ] 既存パターンの確認
 - [ ] セキュリティ要件の把握
 - [ ] エラーケースの洗い出し
 
 ### 実装中チェック
+
 - [ ] 日本語コメントの記述
 - [ ] エラーハンドリングの実装
 - [ ] ログ出力の追加
 - [ ] 入力値検証の実装
 
 ### 実装後チェック
+
 - [ ] 単体テストの実行
 - [ ] エラーケースのテスト
 - [ ] 既存機能への影響確認
@@ -204,13 +216,14 @@ http.setRequestHeader "Content-Type", "application/json; charset=utf-8"
 ## パフォーマンス最適化
 
 ### Google Apps Script
+
 ```javascript
 // ✅ バッチ処理でAPI制限回避
 function processInBatches(data, batchSize = 50) {
   for (let i = 0; i < data.length; i += batchSize) {
     const batch = data.slice(i, i + batchSize);
     processBatch(batch);
-    
+
     if (i + batchSize < data.length) {
       Utilities.sleep(1000); // レート制限対策
     }
@@ -221,28 +234,30 @@ function processInBatches(data, batchSize = 50) {
 function optimizedSheetAccess() {
   const sheet = getSafeSheet("データ");
   const data = sheet.getDataRange().getValues(); // 一括取得
-  
+
   // データ処理
-  const processedData = data.map(row => processRow(row));
-  
+  const processedData = data.map((row) => processRow(row));
+
   sheet.clear();
-  sheet.getRange(1, 1, processedData.length, processedData[0].length)
-       .setValues(processedData); // 一括書き込み
+  sheet
+    .getRange(1, 1, processedData.length, processedData[0].length)
+    .setValues(processedData); // 一括書き込み
 }
 ```
 
 ### VBA
+
 ```vba
 ' ✅ API呼び出しの最適化
 Private Sub OptimizedAPICall()
     ' バッチ処理でリクエスト数削減
     Dim batchContent As String
     batchContent = CombineMultipleInputs()
-    
+
     ' 一回のAPI呼び出しで複数処理
     Dim result As String
     result = CallOpenAIAPI(batchContent, SYSTEM_PROMPT)
-    
+
     ' 結果の分割処理
     Call ProcessBatchResult(result)
 End Sub
@@ -251,26 +266,28 @@ End Sub
 ## セキュリティベストプラクティス
 
 ### 機密情報管理
+
 ```javascript
 // ✅ 推奨: PropertiesService使用
-const apiKey = PropertiesService.getScriptProperties().getProperty('API_KEY');
+const apiKey = PropertiesService.getScriptProperties().getProperty("API_KEY");
 
-// ❌ 禁止: ハードコーディング  
+// ❌ 禁止: ハードコーディング
 const apiKey = "sk-1234567890"; // 絶対に避ける
 ```
 
 ### 入力値検証
+
 ```javascript
 function validateInput(input) {
-  if (!input || typeof input !== 'string') {
-    throw new Error('無効な入力値です');
+  if (!input || typeof input !== "string") {
+    throw new Error("無効な入力値です");
   }
-  
+
   // SQLインジェクション対策
-  if (input.includes('<script>') || input.includes('DROP TABLE')) {
-    throw new Error('不正な文字列が検出されました');
+  if (input.includes("<script>") || input.includes("DROP TABLE")) {
+    throw new Error("不正な文字列が検出されました");
   }
-  
+
   return input.trim();
 }
 ```
@@ -280,6 +297,7 @@ function validateInput(input) {
 ### 体系的問題解決アプローチ
 
 #### 1. 問題の分類と優先度付け
+
 ```
 問題分類マトリクス:
                      影響度
@@ -289,37 +307,38 @@ function validateInput(input) {
         低    |  D  |  C  |  B  |
 
 A: 即座に対応 (1時間以内)
-B: 当日中に対応 (8時間以内) 
+B: 当日中に対応 (8時間以内)
 C: 週内に対応 (1週間以内)
 D: 計画的に対応 (次回メンテナンス時)
 ```
 
 #### 2. 段階的デバッグ手法
+
 ```javascript
 // デバッグのための段階的アプローチ
 function systematicDebugging(issue) {
   console.log(`問題調査開始: ${issue.description}`);
-  
+
   // Step 1: 再現性の確認
   const isReproducible = tryToReproduce(issue);
   if (!isReproducible) {
     console.log("一時的な問題の可能性 - 監視継続");
     return;
   }
-  
+
   // Step 2: 最小限の再現ケース作成
   const minimalCase = createMinimalReproduction(issue);
-  
+
   // Step 3: 変更履歴の確認
   const recentChanges = checkRecentChanges();
-  
+
   // Step 4: 段階的な機能無効化
   const isolatedProblem = isolateIssue(minimalCase);
-  
+
   // Step 5: 解決策の実装と検証
   const solution = implementSolution(isolatedProblem);
   validateSolution(solution);
-  
+
   console.log("問題解決完了");
 }
 ```
@@ -327,6 +346,7 @@ function systematicDebugging(issue) {
 ## チーム開発とコラボレーション
 
 ### 1. GitHub Copilot を使ったペアプログラミング
+
 ```
 セッション準備:
 1. 共通のコンテキスト設定
@@ -346,37 +366,45 @@ function systematicDebugging(issue) {
 ```
 
 ### 2. 知識継承のためのドキュメント化
-```markdown
+
+````markdown
 ## 実装記録テンプレート
 
 ### 概要
+
 - 機能名: [機能名]
 - 担当者: [担当者名]
 - 実装期間: [開始日] - [完了日]
 
 ### 技術的判断
+
 - 選択した技術: [技術名]
 - 選択理由: [理由]
 - 代替案と比較: [比較内容]
 
 ### 実装パターン
+
 ```javascript
 // 主要な実装パターン
 function examplePattern() {
   // 実装内容
 }
 ```
+````
 
 ### 学習ポイント
+
 - 新しく学んだこと: [内容]
 - 既存知識との関連: [関連性]
 - 今後の応用可能性: [応用例]
 
 ### 注意点とトラップ
+
 - 陥りやすい問題: [問題内容]
 - 回避方法: [回避策]
-- 参考資料: [URL等]
-```
+- 参考資料: [URL 等]
+
+````
 
 ### 3. レビュー効率化のためのChecklists
 ```markdown
@@ -389,7 +417,7 @@ function examplePattern() {
 - [ ] ログ出力の日本語化
 - [ ] セキュリティ要件の遵守
 
-### PTA固有項目  
+### PTA固有項目
 - [ ] 会員情報の適切な取り扱い
 - [ ] メール配信の設定確認
 - [ ] スプレッドシート権限の確認
@@ -400,18 +428,21 @@ function examplePattern() {
 - [ ] テストカバレッジ
 - [ ] パフォーマンス要件
 - [ ] ドキュメント更新
-```
+````
 
 1. **エラーログの確認**
+
    - Google Apps Script: 実行ログ画面
-   - VBA: Debug.Print出力
+   - VBA: Debug.Print 出力
 
 2. **権限・設定の確認**
+
    - API キーの有効性
    - スコープ・権限設定
    - レート制限状況
 
 3. **段階的デバッグ**
+
    - 小さな単位でのテスト
    - ログ出力の追加
    - エラー再現の最小化

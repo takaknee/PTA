@@ -1,15 +1,18 @@
 # Copilot 指示ファイル（効率化強化版）
 
 ## プロジェクト概要
-このプロジェクトは **PTA情報配信システム** のための Google Workspace および Microsoft 365 自動化スクリプト集です。
+
+このプロジェクトは **PTA 情報配信システム** のための Google Workspace および Microsoft 365 自動化スクリプト集です。
 
 ### 主要技術スタック
-- **Google Apps Script (GAS)**: Gmail自動化、スプレッドシート操作、カレンダー管理
-- **VBA (Outlook)**: メール処理、AI連携（OpenAI API）、検索フォルダ分析
-- **VSTO (C#)**: Outlook アドイン、M365展開対応、保守性向上
+
+- **Google Apps Script (GAS)**: Gmail 自動化、スプレッドシート操作、カレンダー管理
+- **VBA (Outlook)**: メール処理、AI 連携（OpenAI API）、検索フォルダ分析
+- **VSTO (C#)**: Outlook アドイン、M365 展開対応、保守性向上
 - **JavaScript/Node.js**: ビルドツール、テスト、CI/CD
 
 ### アーキテクチャ
+
 ```
 PTA/
 ├── src/
@@ -26,6 +29,7 @@ PTA/
 ## コーディング方針とパターン
 
 ### 1. 日本語中心開発
+
 - **すべてのやり取りを日本語で行う**
 - **コード内のコメントは日本語で記述**
 - **エラーメッセージやログ出力も日本語で実装**
@@ -33,6 +37,7 @@ PTA/
 - **ドキュメントは日本語で作成**
 
 ### 2. 命名規則とコードスタイル
+
 ```javascript
 // ✅ 推奨パターン
 function sendEmailToMembers(memberList, subject, body) {
@@ -51,18 +56,18 @@ function sendEmailToMembers(memberList, subject, body) {
 // ✅ VBA推奨パターン
 Private Sub ProcessEmailWithAI()
     On Error GoTo ErrorHandler
-    
+
     ' メール処理のメインロジック
     Dim emailContent As String
     emailContent = GetSelectedEmailContent()
-    
+
     ' AI処理実行
     Dim result As String
     result = CallOpenAIAPI(emailContent)
-    
+
     ShowMessage result, "AI処理結果"
     Exit Sub
-    
+
 ErrorHandler:
     ShowError "メール処理中にエラーが発生しました", Err.Description
 End Sub
@@ -73,32 +78,33 @@ public async Task ProcessEmailWithAIAsync()
     try
     {
         _logger.LogInformation("メール解析処理を開始します");
-        
+
         // 選択されたメールアイテムの取得
         var mailItem = GetSelectedMailItem();
         if (mailItem == null)
         {
             throw new InvalidOperationException("メールが選択されていません");
         }
-        
+
         // AI処理の実行（非同期）
         var result = await _emailAnalysisService.AnalyzeEmailAsync(mailItem);
-        
+
         // 結果の表示
         ShowAnalysisResult(result);
-        
+
         _logger.LogInformation("メール解析処理が完了しました");
     }
     catch (Exception ex)
     {
         _logger.LogError(ex, "メール解析処理中にエラーが発生しました");
-        MessageBox.Show($"メール解析中にエラーが発生しました:\n{ex.Message}", 
+        MessageBox.Show($"メール解析中にエラーが発生しました:\n{ex.Message}",
                        "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 }
 ```
 
 ### 3. エラーハンドリングパターン
+
 ```javascript
 // Google Apps Script 標準パターン
 function robustFunction() {
@@ -109,7 +115,7 @@ function robustFunction() {
     // 日本語エラーログ
     console.error(`処理エラー: ${error.message}`);
     Logger.log(`エラー詳細: ${error.stack}`);
-    
+
     // ユーザー向けメッセージ
     throw new Error(`処理に失敗しました: ${error.message}`);
   }
@@ -119,6 +125,7 @@ function robustFunction() {
 ## プロジェクト固有パターンとベストプラクティス
 
 ### Google Apps Script 特有パターン
+
 ```javascript
 // 設定値の安全な取得
 function getConfigValue(key, defaultValue = null) {
@@ -137,7 +144,7 @@ function safeSheetOperation(sheetName, operation) {
   if (!sheet) {
     throw new Error(`シート '${sheetName}' が見つかりません`);
   }
-  
+
   return operation(sheet);
 }
 
@@ -147,7 +154,7 @@ function processMembersInBatches(members, batchSize = 50) {
   for (let i = 0; i < members.length; i += batchSize) {
     const batch = members.slice(i, i + batchSize);
     results.push(...processBatch(batch));
-    
+
     // レート制限対策
     if (i + batchSize < members.length) {
       Utilities.sleep(1000); // 1秒待機
@@ -158,33 +165,34 @@ function processMembersInBatches(members, batchSize = 50) {
 ```
 
 ### VBA + OpenAI API パターン
+
 ```vba
 ' API呼び出しの標準パターン
 Private Function CallOpenAIAPI(content As String, systemPrompt As String) As String
     On Error GoTo ErrorHandler
-    
+
     Dim http As Object
     Set http = CreateObject("MSXML2.XMLHTTP")
-    
+
     ' リクエスト構築
     Dim requestBody As String
     requestBody = BuildAPIRequest(content, systemPrompt)
-    
+
     ' API呼び出し実行
     http.Open "POST", OPENAI_API_ENDPOINT, False
     http.setRequestHeader "Content-Type", "application/json"
     http.setRequestHeader "Authorization", "Bearer " & OPENAI_API_KEY
     http.send requestBody
-    
+
     ' レスポンス処理
     If http.Status = 200 Then
         CallOpenAIAPI = ParseAPIResponse(http.responseText)
     Else
         Err.Raise vbObjectError + 1000, , "API呼び出しエラー: " & http.Status
     End If
-    
+
     Exit Function
-    
+
 ErrorHandler:
     ShowError "API処理エラー", "詳細: " & Err.Description
     CallOpenAIAPI = ""
@@ -200,6 +208,7 @@ End Function
 ```
 
 ### VSTO + OpenAI API パターン
+
 ```csharp
 // API呼び出しの標準パターン（非同期）
 public async Task<string> CallOpenAIAPIAsync(string content, string systemPrompt)
@@ -207,7 +216,7 @@ public async Task<string> CallOpenAIAPIAsync(string content, string systemPrompt
     try
     {
         _logger.LogDebug("OpenAI API呼び出しを開始します");
-        
+
         // リクエストボディの構築
         var requestBody = new
         {
@@ -220,25 +229,25 @@ public async Task<string> CallOpenAIAPIAsync(string content, string systemPrompt
             max_tokens = _configService.GetMaxTokens(),
             temperature = 0.7
         };
-        
+
         var json = JsonConvert.SerializeObject(requestBody);
         var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
-        
+
         // API設定の取得
         var apiKey = _configService.GetOpenAIApiKey();
         var endpoint = _configService.GetOpenAIEndpoint();
-        
-        _httpClient.DefaultRequestHeaders.Authorization = 
+
+        _httpClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-        
+
         // API呼び出し実行
         var response = await _httpClient.PostAsync(endpoint, httpContent);
-        
+
         if (response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync();
             var result = ParseOpenAIResponse(responseContent);
-            
+
             _logger.LogDebug("OpenAI API呼び出しが成功しました");
             return result;
         }
@@ -264,7 +273,7 @@ public async Task<string> CallOpenAIAPIAsync(string content, string systemPrompt
 public class ConfigurationService
 {
     private readonly ILogger<ConfigurationService> _logger;
-    
+
     public string GetOpenAIApiKey()
     {
         try
@@ -279,10 +288,10 @@ public class ConfigurationService
             return ConfigurationManager.AppSettings["OpenAIApiKey"];
         }
     }
-    
+
     public string GetOpenAIEndpoint()
     {
-        return ConfigurationManager.AppSettings["OpenAIEndpoint"] ?? 
+        return ConfigurationManager.AppSettings["OpenAIEndpoint"] ??
                throw new ConfigurationException("OpenAIエンドポイントが設定されていません");
     }
 }
@@ -291,9 +300,11 @@ public class ConfigurationService
 ## セキュリティとコンプライアンス
 
 ### 機密情報の安全な管理
+
 ```javascript
 // ✅ 推奨: PropertiesService使用
-const apiKey = PropertiesService.getScriptProperties().getProperty('OPENAI_API_KEY');
+const apiKey =
+  PropertiesService.getScriptProperties().getProperty("OPENAI_API_KEY");
 
 // ❌ 禁止: ハードコーディング
 const apiKey = "sk-1234567890abcdef"; // 絶対に避ける
@@ -311,46 +322,50 @@ End Function
 ```
 
 ### データ保護要件
+
 - **個人情報**: メールアドレス、氏名等は必要最小限の使用
-- **API制限**: レート制限の遵守（1分間60リクエスト以下）
+- **API 制限**: レート制限の遵守（1 分間 60 リクエスト以下）
 - **ログ記録**: 個人情報を含まない形での実行ログ記録
 - **エラー処理**: 機密情報を含まないエラーメッセージ
 
-## 推奨ライブラリとAPI
+## 推奨ライブラリと API
 
 ### Google Apps Script
+
 ```javascript
 // 基本サービス
-SpreadsheetApp    // スプレッドシート操作
-DriveApp         // ファイル・フォルダ管理  
-GmailApp         // メール送受信
-CalendarApp      // カレンダー操作
-FormApp          // フォーム作成・回答処理
+SpreadsheetApp; // スプレッドシート操作
+DriveApp; // ファイル・フォルダ管理
+GmailApp; // メール送受信
+CalendarApp; // カレンダー操作
+FormApp; // フォーム作成・回答処理
 
 // ユーティリティ
-Logger           // ログ出力
-Utilities        // 各種ユーティリティ
-PropertiesService // 設定値管理
-LockService      // 排他制御
-HtmlService      // UI作成
+Logger; // ログ出力
+Utilities; // 各種ユーティリティ
+PropertiesService; // 設定値管理
+LockService; // 排他制御
+HtmlService; // UI作成
 ```
 
 ### Microsoft 365 / VBA
+
 ```vba
 ' Outlook VBA
 Application.ActiveInspector    ' アクティブメール
 Application.Session           ' Outlookセッション
 MSXML2.XMLHTTP               ' HTTP通信（API呼び出し）
 
-' Excel VBA  
+' Excel VBA
 Application.Workbooks        ' ワークブック操作
 Range                       ' セル範囲操作
 Worksheet                   ' ワークシート操作
 ```
 
-### 外部API
-- **OpenAI API**: GPT-4によるテキスト処理
-- **Microsoft Graph API**: M365データアクセス  
+### 外部 API
+
+- **OpenAI API**: GPT-4 によるテキスト処理
+- **Microsoft Graph API**: M365 データアクセス
 - **Google Workspace Admin SDK**: 管理者機能
 
 ## タスクベース開発のベストプラクティス
@@ -358,6 +373,7 @@ Worksheet                   ' ワークシート操作
 ### タスク分解と進行の指針
 
 #### 1. 効果的なタスク分解手法
+
 ```
 大きなタスクを以下の段階で分解してください:
 
@@ -382,9 +398,10 @@ Worksheet                   ' ワークシート操作
    - 既存機能への影響確認
 ```
 
-#### 2. GitHub WorkflowでのCopilot活用
+#### 2. GitHub Workflow での Copilot 活用
 
-##### Pull Requestベースの開発
+##### Pull Request ベースの開発
+
 ```
 1. **ブランチ作成時**
    - 機能別の明確なブランチ名（feature/email-automation等）
@@ -402,8 +419,9 @@ Worksheet                   ' ワークシート操作
 ```
 
 ### コード生成時の必須要件
+
 1. **日本語での応答とコメント**
-2. **エラーメッセージも日本語で実装**  
+2. **エラーメッセージも日本語で実装**
 3. **ログ出力も日本語で記録**
 4. **関数や変数の説明も日本語で提供**
 5. **既存のコードパターンとの整合性確保**
@@ -412,6 +430,7 @@ Worksheet                   ' ワークシート操作
 ### プロンプト例とテンプレート
 
 #### 新機能開発時
+
 ```
 このPTAプロジェクトで[機能名]を実装してください。
 - 技術: [GAS/VBA/JavaScript]
@@ -421,7 +440,8 @@ Worksheet                   ' ワークシート操作
 - ログ: logInfo/logError関数を使用
 ```
 
-#### バグ修正時  
+#### バグ修正時
+
 ```
 以下のエラーを修正してください:
 - ファイル: [ファイルパス]
@@ -431,10 +451,11 @@ Worksheet                   ' ワークシート操作
 ```
 
 #### コードレビュー時
+
 ```
 以下のコードをレビューしてください:
 - セキュリティ面での問題点
-- パフォーマンスの改善点  
+- パフォーマンスの改善点
 - 日本語化の改善提案
 - PTA特有の要件への適合性
 ```
@@ -442,40 +463,50 @@ Worksheet                   ' ワークシート操作
 ### よくあるタスクパターン
 
 1. **メール自動送信機能**: `src/gsuite/pta/informationDistribution.gs` 参考
-2. **スプレッドシート操作**: `src/gsuite/pta/memberManagement.gs` 参考  
-3. **VBA + AI連携**: `src/outlook/OutlookAI_Unified.bas` 参考
-4. **VSTO + AI連携**: `src/outlook-vsto/Core/Services/EmailAnalysisService.cs` 参考
-5. **VSTO UI統合**: `src/outlook-vsto/UI/Ribbon/PTARibbon.cs` 参考
-6. **設定管理**: `AI_ConfigManager.bas` (VBA) / `ConfigurationService.cs` (VSTO) パターン使用
-7. **エラーハンドリング**: 既存の`ShowError`/`logError`パターン踏襲
+2. **スプレッドシート操作**: `src/gsuite/pta/memberManagement.gs` 参考
+3. **Excel + AI 連携**: `src/excel/AI_CellProcessor.bas` 参考
+4. **設定管理**: `src/excel/AI_ConfigManager.bas` パターン使用
+5. **エラーハンドリング**: 既存の`ShowError`/`logError`パターン踏襲
 
 ## テストとバリデーション戦略
 
 ### 段階的テストアプローチ
 
 #### 1. 開発前のテスト設計
+
 ```javascript
 // テスト設計の例：メール送信機能
 function testEmailSending() {
   const testCases = [
     {
       description: "正常ケース：有効な会員リストでの送信",
-      input: { memberList: validMembers, subject: "テスト件名", body: "テスト本文" },
-      expected: { success: true, sentCount: validMembers.length }
+      input: {
+        memberList: validMembers,
+        subject: "テスト件名",
+        body: "テスト本文",
+      },
+      expected: { success: true, sentCount: validMembers.length },
     },
     {
       description: "異常ケース：空の会員リスト",
       input: { memberList: [], subject: "テスト件名", body: "テスト本文" },
-      expected: { success: false, error: "会員リストが空です" }
+      expected: { success: false, error: "会員リストが空です" },
     },
     {
       description: "異常ケース：無効なメールアドレス",
-      input: { memberList: invalidMembers, subject: "テスト件名", body: "テスト本文" },
-      expected: { success: false, error: "無効なメールアドレスが含まれています" }
-    }
+      input: {
+        memberList: invalidMembers,
+        subject: "テスト件名",
+        body: "テスト本文",
+      },
+      expected: {
+        success: false,
+        error: "無効なメールアドレスが含まれています",
+      },
+    },
   ];
-  
-  testCases.forEach(testCase => {
+
+  testCases.forEach((testCase) => {
     console.log(`テスト実行: ${testCase.description}`);
     // テスト実装
   });
@@ -483,6 +514,7 @@ function testEmailSending() {
 ```
 
 #### 2. 実装中のバリデーション
+
 ```javascript
 // 段階的な機能確認
 function validateImplementation() {
@@ -490,15 +522,15 @@ function validateImplementation() {
     // Step 1: 基本機能の確認
     console.log("Step 1: 基本機能テスト開始");
     testBasicFunctionality();
-    
+
     // Step 2: エラーハンドリングの確認
     console.log("Step 2: エラーハンドリングテスト開始");
     testErrorHandling();
-    
+
     // Step 3: 統合テスト
     console.log("Step 3: 統合テスト開始");
     testIntegration();
-    
+
     console.log("すべてのテストが完了しました");
   } catch (error) {
     console.error(`テスト失敗: ${error.message}`);
@@ -507,29 +539,30 @@ function validateImplementation() {
 }
 ```
 
-#### 3. VBA向けテストパターン
+#### 3. VBA 向けテストパターン
+
 ```vba
 ' VBAテスト実装例
 Private Sub TestAPIIntegration()
     On Error GoTo ErrorHandler
-    
+
     ' テストケース1: 正常なAPI呼び出し
     Console.Print "テスト1: 正常なAPI呼び出し"
     Dim result As String
     result = CallOpenAIAPI("テストコンテンツ", "システムプロンプト")
-    
+
     If result <> "" Then
         Console.Print "✓ API呼び出し成功"
     Else
         Console.Print "✗ API呼び出し失敗"
     End If
-    
+
     ' テストケース2: エラーハンドリング
     Console.Print "テスト2: 無効なAPIキーでのエラーハンドリング"
     ' 実装...
-    
+
     Exit Sub
-    
+
 ErrorHandler:
     Console.Print "テストエラー: " & Err.Description
 End Sub
@@ -538,6 +571,7 @@ End Sub
 ### コード品質チェックリスト
 
 #### 実装前チェック
+
 - [ ] タスクの明確な定義と分解
 - [ ] 既存パターンとの整合性確認
 - [ ] セキュリティ要件の把握
@@ -545,6 +579,7 @@ End Sub
 - [ ] エラーケースの洗い出し
 
 #### 実装中チェック
+
 - [ ] 段階的な実装（小さな単位での確認）
 - [ ] 日本語コメントの充実
 - [ ] エラーハンドリングの実装
@@ -553,6 +588,7 @@ End Sub
 - [ ] 各段階でのテスト実行
 
 #### 実装後チェック
+
 - [ ] 全テストケースの実行と合格確認
 - [ ] 既存機能への影響なし確認
 - [ ] パフォーマンス要件の満足
@@ -560,18 +596,21 @@ End Sub
 - [ ] ドキュメントの更新
 - [ ] コードレビューの完了
 
-## トラブルシューティングとFAQ
+## トラブルシューティングと FAQ
 
 ### よくある問題と解決法
 
-#### Google Apps Script関連
+#### Google Apps Script 関連
+
 **Q: 「参照エラー: xxx は定義されていません」**
+
 ```javascript
 // A: 依存関数の定義順序を確認、または共通モジュールの読み込み
 // 例: PTA_CONFIG, logInfo, logError などは共通関数として定義が必要
 ```
 
-**Q: スプレッドシートアクセスエラー**  
+**Q: スプレッドシートアクセスエラー**
+
 ```javascript
 // A: 権限確認とシート存在チェック
 function safeGetSheet(sheetName) {
@@ -583,8 +622,10 @@ function safeGetSheet(sheetName) {
 }
 ```
 
-#### VBA + OpenAI API関連
-**Q: API接続エラー (401 Unauthorized)**
+#### VBA + OpenAI API 関連
+
+**Q: API 接続エラー (401 Unauthorized)**
+
 ```vba
 ' A: APIキーとエンドポイントの確認
 Private Sub ValidateAPISettings()
@@ -596,7 +637,8 @@ End Sub
 ```
 
 **Q: タイムアウトエラー**
-```vba  
+
+```vba
 ' A: タイムアウト値の調整とレート制限対策
 http.setTimeouts 0, REQUEST_TIMEOUT * 1000, REQUEST_TIMEOUT * 1000, REQUEST_TIMEOUT * 1000
 ```
@@ -604,6 +646,7 @@ http.setTimeouts 0, REQUEST_TIMEOUT * 1000, REQUEST_TIMEOUT * 1000, REQUEST_TIME
 ### パフォーマンス最適化
 
 #### 大量データ処理
+
 ```javascript
 // バッチ処理でAPI制限回避
 function processLargeDataset(data, batchSize = 50) {
@@ -611,7 +654,7 @@ function processLargeDataset(data, batchSize = 50) {
   for (let i = 0; i < data.length; i += batchSize) {
     const batch = data.slice(i, i + batchSize);
     results.push(...processBatch(batch));
-    
+
     // レート制限対策の待機
     if (i + batchSize < data.length) {
       Utilities.sleep(1000);
@@ -623,9 +666,10 @@ function processLargeDataset(data, batchSize = 50) {
 
 ## 開発ワークフロー
 
-### GitHub連携によるタスクベース開発
+### GitHub 連携によるタスクベース開発
 
 #### 1. Issue-Driven Development
+
 ```
 1. **Issue作成**
    - 具体的なタスク定義（日本語）
@@ -645,6 +689,7 @@ function processLargeDataset(data, batchSize = 50) {
 ```
 
 #### 2. Pull Request ベストプラクティス
+
 ```
 PR作成時のチェックリスト:
 - [ ] 明確なPRタイトル（日本語）
@@ -658,6 +703,7 @@ PR作成時のチェックリスト:
 ```
 
 #### 3. コードレビュー指針
+
 ```
 レビュー観点:
 1. **機能性**: 要件通りの実装か
@@ -669,16 +715,18 @@ PR作成時のチェックリスト:
 ```
 
 ### 新機能開発手順
+
 1. **要件分析**: 既存機能との整合性確認
-2. **設計**: 該当するパターン（GAS/VBA）の選択  
+2. **設計**: 該当するパターン（GAS/VBA）の選択
 3. **実装**: テンプレートコードの活用
 4. **テスト**: 単体テスト + 統合テスト
-5. **ドキュメント**: README.md更新
+5. **ドキュメント**: README.md 更新
 6. **デプロイ**: 段階的なリリース計画
 
-### Copilot活用のワークフロー統合
+### Copilot 活用のワークフロー統合
 
 #### GitHub Copilot Chat の効果的な使用
+
 ```
 // タスク開始時のコンテキスト設定
 このPTAプロジェクトで「[具体的な機能名]」を実装します。
@@ -693,6 +741,7 @@ PR作成時のチェックリスト:
 ```
 
 #### コード生成時の品質確保
+
 ```
 1. **初期実装**
    - 基本機能の骨格作成
@@ -711,17 +760,19 @@ PR作成時のチェックリスト:
 ```
 
 ### コードレビューポイント
+
 - ✅ 日本語コメント・メッセージの充実度
 - ✅ エラーハンドリングの網羅性
 - ✅ セキュリティ要件（機密情報漏洩防止）
 - ✅ 既存パターンとの整合性
-- ✅ パフォーマンス（特にAPI呼び出し回数）
+- ✅ パフォーマンス（特に API 呼び出し回数）
 
 ## 継続的改善とメンテナンス
 
 ### 品質メトリクスとモニタリング
 
 #### 1. コード品質指標
+
 ```javascript
 // 品質チェック自動化の例
 function checkCodeQuality() {
@@ -730,20 +781,21 @@ function checkCodeQuality() {
     codeComplexity: analyzeCyclomaticComplexity(),
     duplicateCode: findDuplicateBlocks(),
     securityIssues: scanSecurityVulnerabilities(),
-    performanceIssues: analyzePerformanceBottlenecks()
+    performanceIssues: analyzePerformanceBottlenecks(),
   };
-  
+
   logInfo(`品質メトリクス:`, metrics);
-  
+
   if (metrics.testCoverage < 80) {
-    logError('テストカバレッジが不足しています');
+    logError("テストカバレッジが不足しています");
   }
-  
+
   return metrics;
 }
 ```
 
 #### 2. 定期的なコードレビュー
+
 ```
 月次レビュー項目:
 - [ ] セキュリティパッチの適用状況
@@ -757,22 +809,27 @@ function checkCodeQuality() {
 ### 学習と知識共有
 
 #### 1. ベストプラクティスの蓄積
+
 ```markdown
 ## 学習ログ テンプレート
 
 ### 実装した機能
+
 - 機能名: [機能名]
 - 実装日: [日付]
 - 技術: [GAS/VBA/JavaScript]
 
 ### 学んだポイント
+
 - 技術的課題: [課題内容]
 - 解決方法: [解決策]
 - 改善点: [次回への改善提案]
 
 ### 再利用可能パターン
 ```
+
 [コードパターン]
+
 ```
 
 ### 今後の注意点
@@ -780,29 +837,31 @@ function checkCodeQuality() {
 ```
 
 #### 2. トラブルシューティング知識ベース
+
 ```javascript
 // 問題解決パターンの蓄積
 const troubleshootingPatterns = {
-  "API接続エラー": {
+  API接続エラー: {
     symptoms: ["401 Unauthorized", "タイムアウト", "レート制限"],
     solutions: [
       "APIキーの確認",
       "エンドポイントURL検証",
-      "リクエスト頻度の調整"
+      "リクエスト頻度の調整",
     ],
     prevention: [
       "定期的なAPI設定チェック",
       "レート制限監視の実装",
-      "フォールバック機構の準備"
-    ]
-  }
+      "フォールバック機構の準備",
+    ],
+  },
   // 他のパターンも追加
 };
 ```
 
 ## 禁止事項と注意点
+
 - ❌ 英語でのコメントや説明
-- ❌ 機密情報のハードコーディング  
+- ❌ 機密情報のハードコーディング
 - ❌ セキュリティリスクのあるコード
 - ❌ 著作権に問題のあるコード
 - ❌ 既存の動作を破壊する変更
@@ -813,6 +872,7 @@ const troubleshootingPatterns = {
 ## 緊急時対応手順
 
 ### 1. 障害発生時の対応
+
 ```
 1. **初期対応** (5分以内)
    - 障害状況の把握
@@ -836,6 +896,7 @@ const troubleshootingPatterns = {
 ```
 
 ### 2. セキュリティインシデント対応
+
 ```
 1. **即座に実行**
    - 影響のあるシステムの隔離
