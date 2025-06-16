@@ -524,7 +524,15 @@ function createAiDialog(dialogData) {
                     font-weight: 500;
                 ">📅 予定表に追加</button>
                 
-                ${dialogData.pageUrl && (dialogData.pageUrl.includes('code.visualstudio.com') || dialogData.pageUrl.includes('vscode') || dialogData.pageUrl.includes('marketplace.visualstudio.com')) ? `
+                ${dialogData.pageUrl && (() => {
+                    try {
+                        const url = new URL(dialogData.pageUrl);
+                        const allowedHosts = ['code.visualstudio.com', 'marketplace.visualstudio.com'];
+                        return allowedHosts.includes(url.host);
+                    } catch (e) {
+                        return false; // Invalid URL
+                    }
+                })() ? `
                     <button class="ai-analyze-vscode-btn" style="
                         background: linear-gradient(135deg, #007ACC, #005A9E);
                         color: white;
