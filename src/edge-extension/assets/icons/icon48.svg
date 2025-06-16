@@ -1,1 +1,61 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><rect width="48" height="48" fill="#2196F3"/><text x="24" y="32" text-anchor="middle" fill="white" font-family="Arial" font-size="24">PTA</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="bodyGradient48" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2C5282;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="headGradient48" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5BA0F0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3A7BD5;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="eyeGradient48" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E53E3E;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="badgeGradient48" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="48" height="48" fill="url(#bodyGradient48)" rx="8" ry="8"/>
+  
+  <!-- ロボットの胴体 -->
+  <rect x="12" y="20" width="24" height="22" fill="url(#bodyGradient48)" rx="3" ry="3"/>
+  
+  <!-- ロボットの頭部 -->
+  <rect x="15" y="8" width="18" height="15" fill="url(#headGradient48)" rx="4" ry="4"/>
+  
+  <!-- アンテナ -->
+  <rect x="21" y="5" width="2" height="4" fill="#718096"/>
+  <rect x="25" y="5" width="2" height="4" fill="#718096"/>
+  <circle cx="22" cy="4" r="1" fill="#E53E3E"/>
+  <circle cx="26" cy="4" r="1" fill="#48BB78"/>
+  
+  <!-- 目 -->
+  <rect x="17" y="11" width="4" height="3" fill="url(#eyeGradient48)" rx="1" ry="1"/>
+  <rect x="27" y="11" width="4" height="3" fill="url(#eyeGradient48)" rx="1" ry="1"/>
+  
+  <!-- 口部分 -->
+  <rect x="18" y="17" width="12" height="2" fill="#2D3748" rx="1" ry="1"/>
+  
+  <!-- 肩章 -->
+  <rect x="8" y="18" width="6" height="3" fill="url(#badgeGradient48)" rx="1" ry="1"/>
+  <rect x="34" y="18" width="6" height="3" fill="url(#badgeGradient48)" rx="1" ry="1"/>
+  
+  <!-- 胸部のPTAバッジ -->
+  <circle cx="24" cy="28" r="4" fill="url(#badgeGradient48)"/>
+  <circle cx="24" cy="28" r="3" fill="#2D3748"/>
+  <text x="24" y="31" text-anchor="middle" fill="#FFD700" font-family="Arial, sans-serif" font-size="4" font-weight="bold">PTA</text>
+  
+  <!-- 腕部 -->
+  <rect x="6" y="23" width="8" height="12" fill="url(#bodyGradient48)" rx="2" ry="2"/>
+  <rect x="34" y="23" width="8" height="12" fill="url(#bodyGradient48)" rx="2" ry="2"/>
+  
+  <!-- 胸部パネル -->
+  <rect x="17" y="24" width="14" height="8" fill="#2D3748" rx="1" ry="1"/>
+  <rect x="19" y="26" width="3" height="1" fill="#48BB78"/>
+  <rect x="22" y="26" width="4" height="1" fill="#E53E3E"/>
+  <rect x="26" y="26" width="3" height="1" fill="#4299E1"/>
+</svg>
