@@ -1512,15 +1512,37 @@ async function handleAddToCalendar(data, sendResponse) {
  */
 async function handleAnalyzeVSCodeSettings(data, sendResponse) {
     try {
-        console.log('Background: VSCode設定解析処理開始:', data);
-
-        // VSCodeドキュメントかどうかを判定
-        const isVSCodeDoc = data.pageUrl && (
-            data.pageUrl.includes('code.visualstudio.com') ||
-            data.pageUrl.includes('vscode.docs') ||
-            data.pageUrl.includes('docs.microsoft.com/ja-jp/azure/developer/javascript/') ||
-            data.pageUrl.includes('marketplace.visualstudio.com')
-        );
+        console.log('Background: VSCode設定解析処理開始:', data);        // VSCodeドキュメントかどうかを判定（安全なURL検証）
+        const isVSCodeDoc = data.pageUrl && (() => {
+            try {
+                const url = new URL(data.pageUrl);
+                const allowedHosts = [
+                    'code.visualstudio.com',
+                    'marketplace.visualstudio.com'
+                ];
+                const allowedHostsWithPath = [
+                    { host: 'docs.microsoft.com', pathPrefix: '/ja-jp/azure/developer/javascript/' }
+                ];
+                
+                // 完全一致するホストをチェック
+                if (allowedHosts.includes(url.hostname)) {
+                    return true;
+                }
+                
+                // ホストとパスの組み合わせをチェック
+                for (const allowed of allowedHostsWithPath) {
+                    if (url.hostname === allowed.host && url.pathname.startsWith(allowed.pathPrefix)) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            } catch (error) {
+                // 無効なURLの場合はfalseを返す
+                console.warn('無効なURL形式:', data.pageUrl, error);
+                return false;
+            }
+        })();
 
         if (!isVSCodeDoc) {
             sendResponse({
