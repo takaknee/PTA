@@ -30,6 +30,7 @@
         "http://*/*"
       ],
       "js": [
+        "infrastructure/url-validator.js",
         "content/content.js"
       ],
       "css": [

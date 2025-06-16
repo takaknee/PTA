@@ -3,11 +3,12 @@
  * Copyright (c) 2024 AI Development Team
  */
 
-// 現在のメールサービスを判定
+// 現在のメールサービスを判定（セキュアなホスト名チェック）
 let currentService = 'unknown';
-if (window.location.hostname.includes('outlook.office.com') || window.location.hostname.includes('outlook.live.com')) {
+const hostname = window.location.hostname;
+if (hostname === 'outlook.office.com' || hostname === 'outlook.live.com') {
     currentService = 'outlook';
-} else if (window.location.hostname.includes('mail.google.com')) {
+} else if (hostname === 'mail.google.com') {
     currentService = 'gmail';
 } else {
     currentService = 'general'; // 一般的なWebページ
@@ -525,14 +526,14 @@ function createAiDialog(dialogData) {
                 ">📅 予定表に追加</button>
                 
                 ${dialogData.pageUrl && (() => {
-                    try {
-                        const url = new URL(dialogData.pageUrl);
-                        const allowedHosts = ['code.visualstudio.com', 'marketplace.visualstudio.com'];
-                        return allowedHosts.includes(url.host);
-                    } catch (e) {
-                        return false; // Invalid URL
-                    }
-                })() ? `
+            try {
+                const url = new URL(dialogData.pageUrl);
+                const allowedHosts = ['code.visualstudio.com', 'marketplace.visualstudio.com'];
+                return allowedHosts.includes(url.host);
+            } catch (e) {
+                return false; // Invalid URL
+            }
+        })() ? `
                     <button class="ai-analyze-vscode-btn" style="
                         background: linear-gradient(135deg, #007ACC, #005A9E);
                         color: white;
@@ -2239,10 +2240,10 @@ async function copyStructuredResult(dialog) {
 async function forwardToTeams(dialog) {
     try {
         const dialogData = dialog.dialogData;
-        
+
         // ローディング表示
         showLoading();
-        
+
         // バックグラウンドスクリプトに転送リクエストを送信
         const response = await chrome.runtime.sendMessage({
             action: 'forwardToTeams',
@@ -2254,7 +2255,7 @@ async function forwardToTeams(dialog) {
         });
 
         hideLoading();
-        
+
         if (response.success) {
             showResult(`<div style="color: #4CAF50; padding: 16px; background: #f1f8e9; border-radius: 8px; border-left: 4px solid #4CAF50;">
                 <h3>✅ Teams転送完了</h3>
@@ -2268,7 +2269,7 @@ async function forwardToTeams(dialog) {
                 <p><small>💡 Microsoft 365へのログインとTeamsへのアクセス権限が必要です。</small></p>
             </div>`);
         }
-        
+
     } catch (error) {
         hideLoading();
         console.error('Teams転送エラー:', error);
@@ -2285,10 +2286,10 @@ async function forwardToTeams(dialog) {
 async function addToCalendar(dialog) {
     try {
         const dialogData = dialog.dialogData;
-        
+
         // ローディング表示
         showLoading();
-        
+
         // バックグラウンドスクリプトに予定表追加リクエストを送信
         const response = await chrome.runtime.sendMessage({
             action: 'addToCalendar',
@@ -2300,7 +2301,7 @@ async function addToCalendar(dialog) {
         });
 
         hideLoading();
-        
+
         if (response.success) {
             const eventInfo = response.event;
             showResult(`<div style="color: #2196F3; padding: 16px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196F3;">
@@ -2321,7 +2322,7 @@ async function addToCalendar(dialog) {
                 <p><small>💡 Microsoft 365へのログインとOutlookへのアクセス権限が必要です。</small></p>
             </div>`);
         }
-        
+
     } catch (error) {
         hideLoading();
         console.error('予定表追加エラー:', error);
@@ -2338,14 +2339,10 @@ async function addToCalendar(dialog) {
 async function analyzeVSCodeSettings(dialog) {
     try {
         const dialogData = dialog.dialogData;
-        
-        // VSCodeドキュメントページかチェック
-        const isVSCodeDoc = dialogData.pageUrl && (
-            dialogData.pageUrl.includes('code.visualstudio.com') ||
-            dialogData.pageUrl.includes('vscode') ||
-            dialogData.pageUrl.includes('marketplace.visualstudio.com')
-        );
-        
+
+        // VSCodeドキュメントページかチェック（セキュアなURL検証）
+        const isVSCodeDoc = window.UrlValidator && window.UrlValidator.isVSCodeDocumentPage(dialogData.pageUrl);
+
         if (!isVSCodeDoc) {
             showResult(`<div style="color: #ff9800; padding: 16px; background: #fff3e0; border-radius: 8px; border-left: 4px solid #ff9800;">
                 <h3>⚠️ VSCodeドキュメントページではありません</h3>
@@ -2354,10 +2351,10 @@ async function analyzeVSCodeSettings(dialog) {
             </div>`);
             return;
         }
-        
+
         // ローディング表示
         showLoading();
-        
+
         // バックグラウンドスクリプトに解析リクエストを送信
         const response = await chrome.runtime.sendMessage({
             action: 'analyzeVSCodeSettings',
@@ -2369,7 +2366,7 @@ async function analyzeVSCodeSettings(dialog) {
         });
 
         hideLoading();
-        
+
         if (response.success) {
             // 解析結果を表示（コピーボタン付き）
             const resultHtml = `<div style="padding: 16px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #007ACC;">
@@ -2390,9 +2387,9 @@ async function analyzeVSCodeSettings(dialog) {
                     <strong>対象ページ:</strong> <a href="${response.pageInfo.url}" target="_blank">${response.pageInfo.title}</a>
                 </div>
             </div>`;
-            
+
             showResult(resultHtml);
-            
+
             // コピー機能をグローバルに追加
             window.copyVSCodeAnalysis = async () => {
                 try {
@@ -2407,7 +2404,7 @@ async function analyzeVSCodeSettings(dialog) {
                     showNotification('コピーに失敗しました', 'error');
                 }
             };
-            
+
         } else {
             showResult(`<div style="color: #f44336; padding: 16px; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
                 <h3>❌ VSCode設定解析エラー</h3>
@@ -2415,7 +2412,7 @@ async function analyzeVSCodeSettings(dialog) {
                 ${response.suggestion ? `<p><small>💡 ${response.suggestion}</small></p>` : ''}
             </div>`);
         }
-        
+
     } catch (error) {
         hideLoading();
         console.error('VSCode設定解析エラー:', error);
@@ -2438,7 +2435,7 @@ function handleForwardToTeamsFromContext(data) {
     };
 
     createAiDialog(pageData);
-    
+
     // ダイアログが作成された後にTeams転送を実行
     setTimeout(() => {
         const dialog = document.getElementById('ai-dialog');
@@ -2460,7 +2457,7 @@ function handleAddToCalendarFromContext(data) {
     };
 
     createAiDialog(pageData);
-    
+
     // ダイアログが作成された後に予定表追加を実行
     setTimeout(() => {
         const dialog = document.getElementById('ai-dialog');
@@ -2482,7 +2479,7 @@ function handleAnalyzeVSCodeSettingsFromContext(data) {
     };
 
     createAiDialog(pageData);
-    
+
     // ダイアログが作成された後にVSCode設定解析を実行
     setTimeout(() => {
         const dialog = document.getElementById('ai-dialog');

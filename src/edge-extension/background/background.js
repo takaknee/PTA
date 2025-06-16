@@ -3,6 +3,61 @@
  * Copyright (c) 2024 AI Business Support Team
  */
 
+/**
+ * セキュアなURL検証ユーティリティ
+ * セキュリティ原則:
+ * - ホスト名の完全一致チェック
+ * - パスプレフィックスの厳密な検証
+ * - URL偽装攻撃の防止
+ */
+function isVSCodeDocumentPage(url) {
+    if (!url || typeof url !== 'string') {
+        return false;
+    }
+
+    try {
+        const urlObj = new URL(url);
+
+        // 許可されたホスト名（完全一致）
+        const allowedHosts = [
+            'code.visualstudio.com',
+            'marketplace.visualstudio.com'
+        ];
+
+        // ホストとパスの組み合わせで許可するパターン
+        const allowedHostsWithPath = [
+            {
+                host: 'docs.microsoft.com',
+                pathPrefix: '/ja-jp/azure/developer/javascript/'
+            },
+            {
+                host: 'docs.microsoft.com',
+                pathPrefix: '/en-us/azure/developer/javascript/'
+            }
+        ];
+
+        // 完全一致するホストをチェック
+        if (allowedHosts.includes(urlObj.hostname)) {
+            return true;
+        }
+
+        // ホストとパスの組み合わせをチェック
+        for (const allowed of allowedHostsWithPath) {
+            if (urlObj.hostname === allowed.host &&
+                urlObj.pathname.startsWith(allowed.pathPrefix)) {
+                return true;
+            }
+        }
+
+        return false;
+
+    } catch (error) {
+        // 無効なURLの場合はfalseを返す
+        console.warn('URL検証エラー - 無効なURL形式:', url, error.message);
+        return false;
+    }
+}
+
 // 拡張機能のインストール時
 chrome.runtime.onInstalled.addListener((details) => {
     console.log('AI業務支援ツールがインストールされました');
@@ -509,10 +564,8 @@ async function handleApiTest(data, sendResponse) {
                     hostname: url.hostname,
                     pathname: url.pathname,
                     fullUrl: endpoint
-                });
-
-                // Azure OpenAI エンドポイントの形式チェック
-                if (!url.hostname.includes('.openai.azure.com')) {
+                });                // Azure OpenAI エンドポイントの形式チェック（セキュアな検証）
+                if (!url.hostname.endsWith('.openai.azure.com')) {
                     throw new Error(
                         `無効なAzure OpenAIエンドポイントです。\n\n` +
                         `入力値: ${endpoint}\n\n` +
@@ -1324,7 +1377,7 @@ async function getMicrosoftGraphToken() {
                 'https://graph.microsoft.com/Calendars.ReadWrite'
             ]
         });
-        
+
         return tokenResponse.token;
     } catch (error) {
         console.error('Microsoft Graph認証エラー:', error);
@@ -1348,9 +1401,9 @@ async function handleForwardToTeams(data, sendResponse) {
             const teamsUrl = `https://teams.microsoft.com/l/chat/0/0?message=${encodeURIComponent(
                 `📄 **${data.pageTitle || 'ページ情報'}**\n\n🔗 ${data.pageUrl || ''}\n\n📝 ${data.content || ''}`
             )}`;
-            
+
             await chrome.tabs.create({ url: teamsUrl });
-            
+
             sendResponse({
                 success: true,
                 message: 'Teams Web版を開きました。チャットウィンドウから送信してください。',
@@ -1431,13 +1484,13 @@ async function handleAddToCalendar(data, sendResponse) {
             const now = new Date();
             const startTime = encodeURIComponent(now.toISOString());
             const endTime = encodeURIComponent(new Date(now.getTime() + 60 * 60 * 1000).toISOString()); // 1時間後
-            
+
             const outlookUrl = `https://outlook.office.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(data.pageTitle || 'ページレビュー')}&startdt=${startTime}&enddt=${endTime}&body=${encodeURIComponent(
                 `📄 ページレビュー\n\n🔗 URL: ${data.pageUrl || ''}\n\n📝 内容:\n${data.content || ''}\n\n---\nAI業務支援ツールから追加`
             )}`;
-            
+
             await chrome.tabs.create({ url: outlookUrl });
-            
+
             sendResponse({
                 success: true,
                 message: 'Outlook Web版を開きました。予定の詳細を確認して保存してください。',
@@ -1512,37 +1565,10 @@ async function handleAddToCalendar(data, sendResponse) {
  */
 async function handleAnalyzeVSCodeSettings(data, sendResponse) {
     try {
-        console.log('Background: VSCode設定解析処理開始:', data);        // VSCodeドキュメントかどうかを判定（安全なURL検証）
-        const isVSCodeDoc = data.pageUrl && (() => {
-            try {
-                const url = new URL(data.pageUrl);
-                const allowedHosts = [
-                    'code.visualstudio.com',
-                    'marketplace.visualstudio.com'
-                ];
-                const allowedHostsWithPath = [
-                    { host: 'docs.microsoft.com', pathPrefix: '/ja-jp/azure/developer/javascript/' }
-                ];
-                
-                // 完全一致するホストをチェック
-                if (allowedHosts.includes(url.hostname)) {
-                    return true;
-                }
-                
-                // ホストとパスの組み合わせをチェック
-                for (const allowed of allowedHostsWithPath) {
-                    if (url.hostname === allowed.host && url.pathname.startsWith(allowed.pathPrefix)) {
-                        return true;
-                    }
-                }
-                
-                return false;
-            } catch (error) {
-                // 無効なURLの場合はfalseを返す
-                console.warn('無効なURL形式:', data.pageUrl, error);
-                return false;
-            }
-        })();
+        console.log('Background: VSCode設定解析処理開始:', data);
+
+        // VSCodeドキュメントかどうかを判定（セキュアなURL検証）
+        const isVSCodeDoc = isVSCodeDocumentPage(data.pageUrl);
 
         if (!isVSCodeDoc) {
             sendResponse({
@@ -1607,7 +1633,7 @@ VSCodeドキュメントの内容に基づいて、実用的で分かりやす�
 
         // AI APIを呼び出してOffscreen Documentで処理
         const aiResult = await callAIAPI(analysisPrompt, aiSettings);
-        
+
         if (aiResult.success) {
             sendResponse({
                 success: true,
