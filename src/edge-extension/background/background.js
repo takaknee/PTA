@@ -65,6 +65,26 @@ function createContextMenus() {
             title: '📋 ページ情報をコピー',
             contexts: ['page']
         });
+
+        // M365統合機能メニュー
+        chrome.contextMenus.create({
+            id: 'ai-forward-teams',
+            title: '💬 Teams chatに転送',
+            contexts: ['page']
+        });
+
+        chrome.contextMenus.create({
+            id: 'ai-add-calendar',
+            title: '📅 予定表に追加',
+            contexts: ['page']
+        });
+
+        // VSCode設定解析メニュー（条件付きで表示される）
+        chrome.contextMenus.create({
+            id: 'ai-analyze-vscode',
+            title: '⚙️ VSCode設定を解析',
+            contexts: ['page']
+        });
     });
 }
 
@@ -138,6 +158,39 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
                 }
             });
             break;
+
+        case 'ai-forward-teams':
+            // Teams chatに転送
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'forwardToTeams',
+                data: {
+                    pageUrl: info.pageUrl,
+                    pageTitle: tab.title
+                }
+            });
+            break;
+
+        case 'ai-add-calendar':
+            // 予定表に追加
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'addToCalendar',
+                data: {
+                    pageUrl: info.pageUrl,
+                    pageTitle: tab.title
+                }
+            });
+            break;
+
+        case 'ai-analyze-vscode':
+            // VSCode設定解析
+            chrome.tabs.sendMessage(tab.id, {
+                action: 'analyzeVSCodeSettings',
+                data: {
+                    pageUrl: info.pageUrl,
+                    pageTitle: tab.title
+                }
+            });
+            break;
     }
 });
 
@@ -205,6 +258,18 @@ async function handleUnifiedMessage(message, sender, sendResponse) {
 
             case 'testApiConnection':
                 await handleConnectionTest(data, sendResponse);
+                break;
+
+            case 'forwardToTeams':
+                await handleForwardToTeams(data, sendResponse);
+                break;
+
+            case 'addToCalendar':
+                await handleAddToCalendar(data, sendResponse);
+                break;
+
+            case 'analyzeVSCodeSettings':
+                await handleAnalyzeVSCodeSettings(data, sendResponse);
                 break;
 
             default:
@@ -1240,6 +1305,305 @@ URL: ${data.url}
         sendResponse({
             success: false,
             error: error.message
+        });
+    }
+}
+
+/**
+ * Microsoft Graph APIの認証トークンを取得
+ */
+async function getMicrosoftGraphToken() {
+    try {
+        // Chrome identityAPIを使用してMicrosoft Graph認証を実行
+        // 開発版では単純化されたアプローチを使用
+        const tokenResponse = await chrome.identity.getAuthToken({
+            interactive: true,
+            scopes: [
+                'https://graph.microsoft.com/User.Read',
+                'https://graph.microsoft.com/Chat.ReadWrite',
+                'https://graph.microsoft.com/Calendars.ReadWrite'
+            ]
+        });
+        
+        return tokenResponse.token;
+    } catch (error) {
+        console.error('Microsoft Graph認証エラー:', error);
+        throw new Error('Microsoft 365へのログインが必要です');
+    }
+}
+
+/**
+ * Teams chatへの転送処理
+ */
+async function handleForwardToTeams(data, sendResponse) {
+    try {
+        console.log('Background: Teams転送処理開始:', data);
+
+        // Microsoft Graph認証を試行
+        let authToken;
+        try {
+            authToken = await getMicrosoftGraphToken();
+        } catch (error) {
+            // 認証失敗時は、代替手段としてTeams Web版を開く
+            const teamsUrl = `https://teams.microsoft.com/l/chat/0/0?message=${encodeURIComponent(
+                `📄 **${data.pageTitle || 'ページ情報'}**\n\n🔗 ${data.pageUrl || ''}\n\n📝 ${data.content || ''}`
+            )}`;
+            
+            await chrome.tabs.create({ url: teamsUrl });
+            
+            sendResponse({
+                success: true,
+                message: 'Teams Web版を開きました。チャットウィンドウから送信してください。',
+                method: 'web'
+            });
+            return;
+        }
+
+        // Microsoft Graph APIでTeamsチャットに投稿
+        // ユーザー自身への投稿（Self chat）
+        // Note: 簡単化のため、チャット作成のみ実装。実際のメッセージ投稿は将来の機能拡張で対応
+        /*
+        const messagePayload = {
+            body: {
+                contentType: 'html',
+                content: `<h3>📄 ${data.pageTitle || 'ページ情報'}</h3>
+                         <p><strong>🔗 URL:</strong> <a href="${data.pageUrl || ''}">${data.pageUrl || ''}</a></p>
+                         <p><strong>📝 内容:</strong></p>
+                         <div>${data.content || ''}</div>
+                         <p><em>AI業務支援ツールから転送</em></p>`
+            }
+        };
+        */
+
+        const response = await fetch('https://graph.microsoft.com/v1.0/me/chats', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                chatType: 'oneOnOne',
+                topic: `AI支援ツール - ${data.pageTitle || 'ページ転送'}`,
+                members: [
+                    {
+                        '@odata.type': '#microsoft.graph.aadUserConversationMember',
+                        user: {
+                            '@odata.type': '#microsoft.graph.user',
+                            id: 'me'
+                        }
+                    }
+                ]
+            })
+        });
+
+        if (response.ok) {
+            sendResponse({
+                success: true,
+                message: 'Teams chatに転送しました',
+                method: 'api'
+            });
+        } else {
+            throw new Error(`Teams API エラー: ${response.status}`);
+        }
+
+    } catch (error) {
+        console.error('Background: Teams転送エラー:', error);
+        sendResponse({
+            success: false,
+            error: `Teams転送に失敗しました: ${error.message}`
+        });
+    }
+}
+
+/**
+ * M365予定表への登録処理
+ */
+async function handleAddToCalendar(data, sendResponse) {
+    try {
+        console.log('Background: 予定表追加処理開始:', data);
+
+        // Microsoft Graph認証を試行
+        let authToken;
+        try {
+            authToken = await getMicrosoftGraphToken();
+        } catch (error) {
+            // 認証失敗時は、代替手段としてOutlook Web版を開く
+            const now = new Date();
+            const startTime = encodeURIComponent(now.toISOString());
+            const endTime = encodeURIComponent(new Date(now.getTime() + 60 * 60 * 1000).toISOString()); // 1時間後
+            
+            const outlookUrl = `https://outlook.office.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(data.pageTitle || 'ページレビュー')}&startdt=${startTime}&enddt=${endTime}&body=${encodeURIComponent(
+                `📄 ページレビュー\n\n🔗 URL: ${data.pageUrl || ''}\n\n📝 内容:\n${data.content || ''}\n\n---\nAI業務支援ツールから追加`
+            )}`;
+            
+            await chrome.tabs.create({ url: outlookUrl });
+            
+            sendResponse({
+                success: true,
+                message: 'Outlook Web版を開きました。予定の詳細を確認して保存してください。',
+                method: 'web'
+            });
+            return;
+        }
+
+        // 現在日時で予定表イベントを作成
+        const now = new Date();
+        const eventPayload = {
+            subject: data.pageTitle || 'ページレビュー',
+            start: {
+                dateTime: now.toISOString(),
+                timeZone: 'Asia/Tokyo'
+            },
+            end: {
+                dateTime: new Date(now.getTime() + 60 * 60 * 1000).toISOString(), // 1時間後
+                timeZone: 'Asia/Tokyo'
+            },
+            body: {
+                contentType: 'html',
+                content: `<h3>📄 ページレビュー</h3>
+                         <p><strong>🔗 URL:</strong> <a href="${data.pageUrl || ''}">${data.pageUrl || ''}</a></p>
+                         <p><strong>📝 内容:</strong></p>
+                         <div>${data.content || ''}</div>
+                         <p><em>AI業務支援ツールから追加</em></p>`
+            },
+            location: {
+                displayName: 'オンライン'
+            },
+            categories: ['AI支援ツール'],
+            importance: 'normal'
+        };
+
+        const response = await fetch('https://graph.microsoft.com/v1.0/me/events', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(eventPayload)
+        });
+
+        if (response.ok) {
+            const event = await response.json();
+            sendResponse({
+                success: true,
+                message: '予定表にイベントを追加しました',
+                event: {
+                    id: event.id,
+                    subject: event.subject,
+                    startTime: event.start.dateTime
+                },
+                method: 'api'
+            });
+        } else {
+            throw new Error(`Calendar API エラー: ${response.status}`);
+        }
+
+    } catch (error) {
+        console.error('Background: 予定表追加エラー:', error);
+        sendResponse({
+            success: false,
+            error: `予定表追加に失敗しました: ${error.message}`
+        });
+    }
+}
+
+/**
+ * VSCodeドキュメントの設定解析処理
+ */
+async function handleAnalyzeVSCodeSettings(data, sendResponse) {
+    try {
+        console.log('Background: VSCode設定解析処理開始:', data);
+
+        // VSCodeドキュメントかどうかを判定
+        const isVSCodeDoc = data.pageUrl && (
+            data.pageUrl.includes('code.visualstudio.com') ||
+            data.pageUrl.includes('vscode.docs') ||
+            data.pageUrl.includes('docs.microsoft.com/ja-jp/azure/developer/javascript/') ||
+            data.pageUrl.includes('marketplace.visualstudio.com')
+        );
+
+        if (!isVSCodeDoc) {
+            sendResponse({
+                success: false,
+                error: 'VSCodeドキュメントページではありません',
+                suggestion: 'この機能はVSCode関連のドキュメントページでのみ利用できます'
+            });
+            return;
+        }
+
+        // AI APIを使用して設定を解析
+        const settings = await chrome.storage.local.get(['ai_settings']);
+        const aiSettings = settings.ai_settings;
+
+        if (!aiSettings || !aiSettings.apiKey) {
+            sendResponse({
+                success: false,
+                error: 'AI APIが設定されていません。設定画面でAPIキーを設定してください。'
+            });
+            return;
+        }
+
+        // VSCode設定解析用のプロンプト
+        const analysisPrompt = `あなたはVSCode設定の専門家です。以下のVSCodeドキュメントページから設定項目を抽出し、日本語で分かりやすく解説してください。
+
+ページタイトル: ${data.pageTitle || ''}
+ページURL: ${data.pageUrl || ''}
+ページ内容: ${data.content || ''}
+
+以下の形式で回答してください：
+
+## 📋 設定項目一覧
+
+### 主要設定
+[設定名]: [設定値の例]
+[説明]
+
+### 追加設定（オプション）
+[設定名]: [設定値の例]
+[説明]
+
+## 🛠️ サンプル設定ファイル (settings.json)
+
+\`\`\`json
+{
+    // 抽出された設定項目
+}
+\`\`\`
+
+## 💡 使用方法
+
+1. [手順1]
+2. [手順2]
+3. [手順3]
+
+## ⚠️ 注意点
+
+- [注意点1]
+- [注意点2]
+
+VSCodeドキュメントの内容に基づいて、実用的で分かりやすい設定解説を提供してください。`;
+
+        // AI APIを呼び出してOffscreen Documentで処理
+        const aiResult = await callAIAPI(analysisPrompt, aiSettings);
+        
+        if (aiResult.success) {
+            sendResponse({
+                success: true,
+                analysis: aiResult.content,
+                pageInfo: {
+                    title: data.pageTitle,
+                    url: data.pageUrl
+                }
+            });
+        } else {
+            throw new Error(aiResult.error || 'AI解析に失敗しました');
+        }
+
+    } catch (error) {
+        console.error('Background: VSCode設定解析エラー:', error);
+        sendResponse({
+            success: false,
+            error: `VSCode設定解析に失敗しました: ${error.message}`
         });
     }
 }

@@ -9,13 +9,16 @@
     "storage",
     "scripting",
     "contextMenus",
-    "offscreen"
+    "offscreen",
+    "identity"
   ],
   "host_permissions": [
     "https://*/*",
     "http://*/*",
     "https://api.openai.com/*",
-    "https://*.openai.azure.com/*"
+    "https://*.openai.azure.com/*",
+    "https://graph.microsoft.com/*",
+    "https://login.microsoftonline.com/*"
   ],
   "background": {
     "service_worker": "background/background.js"
