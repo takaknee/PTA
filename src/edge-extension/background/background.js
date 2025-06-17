@@ -4,7 +4,7 @@
  */
 
 // プロンプト設定管理（直接統合版）
-var PromptManager = {
+const PromptManager = {
     // VSCode設定解析用プロンプト
     VSCODE_ANALYSIS: {
         template: "あなたはVSCode設定の専門家です。以下のVSCodeドキュメントページから設定項目を抽出し、HTML構造で日本語解説を提供してください。\n\n" +
@@ -60,15 +60,13 @@ var PromptManager = {
             "        </ul>\n" +
             "    </div>\n" +
             "</div>\n\n" +
-            "重要: 必ずHTML構造で回答し、マークダウン記法は使用しないでください。VSCodeドキュメントの内容に基づいて、実用的で分かりやすい設定解説をHTML形式で提供してください。",
-
-        build: function (data) {
-            var prompt = this.template;
-            prompt = prompt.replace('{{pageTitle}}', data.pageTitle || '');
-            prompt = prompt.replace('{{pageUrl}}', data.pageUrl || '');
-            prompt = prompt.replace('{{pageContent}}', data.pageContent || '');
-            return prompt;
-        }
+            "重要: 必ずHTML構造で回答し、マークダウン記法は使用しないでください。VSCodeドキュメントの内容に基づいて、実用的で分かりやすい設定解説をHTML形式で提供してください。", build: function (data) {
+                let prompt = this.template;
+                prompt = prompt.replace('{{pageTitle}}', data.pageTitle || '');
+                prompt = prompt.replace('{{pageUrl}}', data.pageUrl || '');
+                prompt = prompt.replace('{{pageContent}}', data.pageContent || '');
+                return prompt;
+            }
     },
 
     // プロンプト取得のメイン関数
@@ -874,8 +872,10 @@ async function getSettings() {
 }
 
 /**
- * 履歴保存
+ * 履歴保存関数 (現在未使用)
+ * 将来の拡張のために保持
  */
+/*
 async function saveToHistory(entry) {
     return new Promise((resolve) => {
         chrome.storage.local.get(['ai_history'], (result) => {
@@ -896,6 +896,7 @@ async function saveToHistory(entry) {
         });
     });
 }
+*/
 
 /**
  * 履歴保存関数 (現在未使用)
@@ -953,17 +954,17 @@ async function fallbackDirectFetch(requestData) {
         }
 
     } catch (corsError) {
-        console.log('CORS有効でのfetch失敗:', corsError.message);
-
-        // CORS無効で再試行
+        console.log('CORS有効でのfetch失敗:', corsError.message);        // CORS無効で再試行
         try {
             console.log('CORS無効でのfetch試行中...');
-            const response = await fetch(endpoint, {
+            await fetch(endpoint, {
                 method: 'POST',
                 headers: headers,
                 body: body,
                 mode: 'no-cors', // CORSを無効化（レスポンスは opaque になる）
-            });            // no-corsモードでは詳細なレスポンス情報を取得できない
+            });
+
+            // no-corsモードでは詳細なレスポンス情報を取得できない
             console.log('フォールバック fetch完了（no-corsモード）');
             return {
                 success: false,
@@ -1123,15 +1124,15 @@ async function handleExtractUrls(data, sendResponse) {
  */
 async function handleCopyPageInfo(data, sendResponse) {
     try {
-        console.log('Background: ページ情報コピー開始:', data);
-
-        // ページの要約をAIで生成
+        console.log('Background: ページ情報コピー開始:', data);        // ページの要約をAIで生成（将来の拡張用）
+        /* 
         const prompt = `以下のWebページの内容を簡潔に要約してください（200文字以内）:
 
 ページタイトル: ${data.title}
 URL: ${data.url}
 
 要約:`;
+        */
 
         // AI APIを呼び出し（オプション）
         // content scriptで簡単な要約を作成するため、ここではスキップ
@@ -1553,30 +1554,133 @@ async function handleOpenOptionsPage(sendResponse) {
 }
 
 /**
+ * より堅牢なHTMLサニタイゼーションとテキスト抽出
+ * DOMPurifyの代替として、Service Worker環境で動作する安全な実装
+ */
+function createSecureHTMLTextExtractor() {
+    // 危険なタグのリスト
+    const DANGEROUS_TAGS = [
+        'script', 'style', 'iframe', 'object', 'embed', 'form',
+        'input', 'button', 'select', 'textarea', 'link', 'meta',
+        'base', 'applet', 'audio', 'video', 'source', 'track'
+    ];
+
+    // 危険な属性のリスト
+    const DANGEROUS_ATTRIBUTES = [
+        'onclick', 'onload', 'onerror', 'onmouseover', 'onmouseout',
+        'onfocus', 'onblur', 'onchange', 'onsubmit', 'onreset',
+        'javascript:', 'vbscript:', 'data:', 'blob:'
+    ];
+
+    /**
+     * HTMLを安全にサニタイズしてテキストを抽出
+     */
+    function extractSafeText(html) {
+        if (!html || typeof html !== 'string') return '';
+
+        let sanitized = html;
+
+        try {
+            // 1. 危険なタグの完全除去（ネストやスペースを考慮）
+            DANGEROUS_TAGS.forEach(tag => {
+                // 開始タグと終了タグのペア
+                const regex1 = new RegExp(`<${tag}\\s*[^>]*>[\\s\\S]*?<\\/${tag}\\s*>`, 'gi');
+                sanitized = sanitized.replace(regex1, '');
+                // 自己完結タグ
+                const regex2 = new RegExp(`<${tag}\\s*[^>]*\\s*/?>`, 'gi');
+                sanitized = sanitized.replace(regex2, '');
+            });
+
+            // 2. コメントと特殊なセクションの除去
+            sanitized = sanitized
+                .replace(/<!--[\s\S]*?-->/g, '')           // コメント
+                .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '')  // CDATA
+                .replace(/<\?[\s\S]*?\?>/g, '');           // 処理命令
+
+            // 3. 残りのHTMLタグから属性をチェックして除去
+            sanitized = sanitized.replace(/<[^>]+>/g, (match) => {
+                // 危険な属性が含まれているかチェック
+                const lowerMatch = match.toLowerCase();
+                for (const attr of DANGEROUS_ATTRIBUTES) {
+                    if (lowerMatch.includes(attr)) {
+                        return ' '; // 危険な属性を含むタグは完全除去
+                    }
+                }
+                return ' '; // 安全でも最終的にはタグを除去してテキスト化
+            });
+
+            // 4. HTML実体参照の適切なデコード
+            const entityMap = {
+                '&amp;': '&',
+                '&lt;': '<',
+                '&gt;': '>',
+                '&quot;': '"',
+                '&#x27;': "'",
+                '&#39;': "'",
+                '&#x2F;': '/',
+                '&#47;': '/',
+                '&nbsp;': ' ',
+                '&copy;': '©',
+                '&reg;': '®',
+                '&trade;': '™'
+            };
+
+            Object.entries(entityMap).forEach(([entity, replacement]) => {
+                sanitized = sanitized.replace(new RegExp(entity, 'g'), replacement);
+            });
+
+            // 5. 数値文字参照のデコード（限定的）
+            sanitized = sanitized.replace(/&#(\d+);/g, (match, num) => {
+                const code = parseInt(num, 10);
+                // 安全な範囲の文字のみデコード
+                if (code >= 32 && code <= 126) {
+                    return String.fromCharCode(code);
+                }
+                return ' '; // 安全でない文字は空白に置換
+            });
+
+            // 6. 空白の正規化
+            sanitized = sanitized
+                .replace(/[\r\n\t]/g, ' ')    // 改行・タブを空白に
+                .replace(/\s+/g, ' ')         // 連続空白を単一空白に
+                .trim();
+
+            return sanitized;
+
+        } catch (error) {
+            console.error('HTMLサニタイゼーション中にエラー:', error);
+            // 緊急フォールバック: 最も基本的なタグ除去のみ
+            return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+    }
+
+    return { extractSafeText };
+}
+
+// セキュアなHTMLテキスト抽出器のインスタンス
+const SecureHTMLExtractor = createSecureHTMLTextExtractor();
+
+/**
  * HTMLコンテンツからプレーンテキストを抽出する共通関数
+ * セキュリティを考慮した堅牢なHTML処理（改良版）
  */
 function extractTextFromHTML(content, maxLength = 20000) {
     if (!content) return '';
 
     let text = content;
 
-    // HTMLタグが含まれている場合のみ処理
+    // HTMLタグが含まれている場合のみセキュア処理
     if (content.includes('<') && content.includes('>')) {
-        console.log('HTMLコンテンツを検出、テキスト抽出を実行');
-        text = content
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // スクリプトタグ除去
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')   // スタイルタグ除去
-            .replace(/<[^>]+>/g, ' ')                         // 残りのHTMLタグ除去
-            .replace(/\s+/g, ' ')                             // 連続する空白を単一スペースに
-            .trim();
+        console.log('HTMLコンテンツを検出、セキュアなテキスト抽出を実行');
+        text = SecureHTMLExtractor.extractSafeText(content);
     }
 
     // 文字数制限
     if (text.length > maxLength) {
         text = text.substring(0, maxLength) + '\n\n[注意: コンテンツが長いため、先頭部分のみを処理対象としています]';
-        console.log(`テキスト抽出: サイズ制限を適用（${maxLength}文字）`);
+        console.log(`セキュアテキスト抽出: サイズ制限を適用（${maxLength}文字）`);
     }
 
-    console.log(`テキスト抽出: 処理後テキスト長 ${text.length} 文字`);
+    console.log(`セキュアテキスト抽出: 処理後テキスト長 ${text.length} 文字`);
     return text;
 }
