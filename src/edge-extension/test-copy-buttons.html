@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>コピーボタンテストページ</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .copy-json-btn,
+      .ai-result-copy-btn {
+        background: #007acc;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .copy-json-btn:hover,
+      .ai-result-copy-btn:hover {
+        background: #005a9e;
+      }
+      .copy-json-btn.copied,
+      .ai-result-copy-btn.copied {
+        background: #28a745;
+      }
+      .settings-json-container {
+        position: relative;
+        margin: 10px 0;
+      }
+      .settings-json {
+        background: #f8f8f8;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        margin: 0;
+      }
+      .vscode-analysis-content {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>コピーボタン機能テスト</h1>
+
+    <div class="test-section">
+      <h2>1. settings.jsonコピーボタンテスト</h2>
+      <div class="settings-json-container">
+        <button
+          class="copy-json-btn"
+          onclick="copySettingsJSON(this)"
+          title="設定JSONをコピー"
+        >
+          📋 settings.jsonをコピー
+        </button>
+        <pre class="settings-json"><code>{
+    // VSCode設定例
+    "editor.fontSize": 14,
+    "editor.fontFamily": "Consolas, 'Courier New', monospace",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>2. AI解析結果コピーボタンテスト</h2>
+      <div class="ai-result-container">
+        <div class="ai-result-header">
+          <h3>⚙️ VSCode設定解析結果</h3>
+          <button onclick="copyVSCodeAnalysis()" class="ai-result-copy-btn">
+            📋 全体をコピー
+          </button>
+        </div>
+        <div id="vscode-analysis-content" class="vscode-analysis-content">
+          <div class="analysis-section">
+            <h3>📋 設定項目一覧</h3>
+            <div class="settings-group">
+              <h4>主要設定</h4>
+              <div class="setting-item">
+                <strong>editor.fontSize</strong>
+                <code>14</code>
+                <p>エディタのフォントサイズを設定します</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>3. 汎用コピーボタンテスト</h2>
+      <div class="ai-result-container">
+        <button
+          class="ai-result-copy-btn"
+          onclick="handleCopyButtonClick(event)"
+        >
+          📋 汎用コピー
+        </button>
+        <div class="analysis-content">
+          <p>これは汎用コピー機能のテストコンテンツです。</p>
+          <p>このテキストがクリップボードにコピーされるはずです。</p>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="notification-area"
+      style="position: fixed; top: 20px; right: 20px; z-index: 10000"
+    ></div>
+    <script>
+      // 必要な関数をモック実装（テスト用）
+      function showNotification(message, type) {
+        const notificationArea = document.getElementById("notification-area");
+        const notification = document.createElement("div");
+        notification.style.cssText = `
+                background: ${type === "success" ? "#28a745" : "#dc3545"};
+                color: white;
+                padding: 10px 15px;
+                margin: 5px 0;
+                border-radius: 4px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            `;
+        notification.textContent = message;
+        notificationArea.appendChild(notification);
+
+        setTimeout(() => {
+          notification.remove();
+        }, 3000);
+      }
+    </script>
+    <script src="test-copy-functions.js"></script>
+  </body>
+</html>

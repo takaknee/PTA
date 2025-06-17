@@ -745,7 +745,37 @@ function setupDialogEventListeners(dialog) {
     if (analyzeVSCodeBtn) {
         analyzeVSCodeBtn.addEventListener('click', () => analyzeVSCodeSettings(dialog));
         console.log('VSCode設定解析ボタンのイベントリスナー設定完了');
-    }
+    }    // コピーボタン（汎用） - イベントデリゲーション使用
+    const copyBtns = dialog.querySelectorAll('.ai-result-copy-btn, .copy-btn');
+    copyBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleCopyButtonClick(e);
+        });
+        console.log('汎用コピーボタンのイベントリスナー設定完了');
+    });
+
+    // 動的に生成されるコピーボタン用のイベントデリゲーション
+    dialog.addEventListener('click', (e) => {
+        // コピーボタンのクリックを処理
+        if (e.target.classList.contains('ai-result-copy-btn') ||
+            e.target.classList.contains('copy-json-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (e.target.classList.contains('copy-json-btn')) {
+                // settings.jsonコピーボタン
+                copySettingsJSON(e.target);
+            } else if (e.target.onclick && e.target.onclick.toString().includes('copyVSCodeAnalysis')) {
+                // VSCode解析結果全体コピー
+                copyVSCodeAnalysis();
+            } else {
+                // 汎用コピーボタン
+                handleCopyButtonClick(e);
+            }
+        }
+    });
 
     console.log('setupDialogEventListeners 完了');
 }
@@ -1973,6 +2003,8 @@ function sanitizeAIResponse(response) {
     // CSS値のパターンを除去（例：counter-increment: list-counter;）
     sanitized = sanitized.replace(/counter-increment:\s*[^;]+;/g, '');
 
+
+
     // data-*属性を除去（例：data-number="1"）
     sanitized = sanitized.replace(/data-[a-zA-Z-]+\s*=\s*"[^"]*"/g, '');
 
@@ -2391,21 +2423,6 @@ async function analyzeVSCodeSettings(dialog) {
             </div>`;
 
             showResult(resultHtml);
-
-            // コピー機能をグローバルに追加
-            window.copyVSCodeAnalysis = async () => {
-                try {
-                    const content = document.getElementById('vscode-analysis-content');
-                    if (content) {
-                        const textContent = content.innerText || content.textContent;
-                        await navigator.clipboard.writeText(textContent);
-                        showNotification('VSCode設定解析結果をコピーしました', 'success');
-                    }
-                } catch (error) {
-                    console.error('コピーエラー:', error);
-                    showNotification('コピーに失敗しました', 'error');
-                }
-            };
         } else {
             showResult(`<div class="ai-result-container ai-result-error">
                 <h3>❌ VSCode設定解析エラー</h3>
@@ -2424,108 +2441,224 @@ async function analyzeVSCodeSettings(dialog) {
 }
 
 /**
- * JSONコピー機能（VSCode設定解析結果用）
- * @param {HTMLElement} button - クリックされたコピーボタン
+ * フォールバック用クリップボードコピー機能
+ * @param {string} text - コピーするテキスト
  */
-function copySettingsJSON(button) {
+function fallbackCopyToClipboard(text) {
     try {
-        // ボタンの親要素からコードブロックを取得
-        const container = button.closest('.settings-json-container');
-        if (!container) {
-            console.error('設定JSONコンテナが見つかりません');
-            return;
-        }
+        // テキストエリアを作成してコピー
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+        textArea.style.padding = '0';
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+        textArea.style.background = 'transparent';
 
-        const codeBlock = container.querySelector('.settings-json code');
-        if (!codeBlock) {
-            console.error('設定JSONコードブロックが見つかりません');
-            return;
-        }
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
 
-        // コードブロックのテキスト内容を取得
-        const jsonText = codeBlock.textContent || codeBlock.innerText;
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
 
-        // クリップボードにコピー
-        navigator.clipboard.writeText(jsonText).then(() => {
-            // 成功時の視覚的フィードバック
-            const originalText = button.textContent;
-            const originalClass = button.className;
-
-            button.textContent = '✅ コピー完了!';
-            button.classList.add('copied');
-
-            // 2秒後に元に戻す
-            setTimeout(() => {
-                button.textContent = originalText;
-                button.className = originalClass;
-            }, 2000);
-
-            console.log('VSCode設定JSONをクリップボードにコピーしました');
-        }).catch(err => {
-            console.error('クリップボードへのコピーに失敗しました:', err);
-
-            // フォールバック: テキストエリアを使った古い方法
-            fallbackCopyToClipboard(jsonText, button);
-        });
-    } catch (error) {
-        console.error('JSONコピー処理中にエラーが発生しました:', error);
-        // エラー発生時もフォールバックを試行
-        try {
-            const container = button.closest('.settings-json-container');
-            const codeBlock = container?.querySelector('.settings-json code');
-            const jsonText = codeBlock?.textContent || codeBlock?.innerText || '';
-            fallbackCopyToClipboard(jsonText, button);
-        } catch (fallbackError) {
-            console.error('フォールバック処理でもエラー:', fallbackError);
-        }
+        showNotification('クリップボードにコピーしました', 'success');
+        console.log('フォールバック方式でコピーが完了しました');
+    } catch (err) {
+        console.error('フォールバックコピーも失敗しました:', err);
+        alert('クリップボードへのコピーに失敗しました。手動でコピーしてください。');
     }
 }
 
 /**
- * フォールバック用のクリップボードコピー機能
- * @param {string} text - コピーするテキスト
- * @param {HTMLElement} button - フィードバック用のボタン
+ * AI結果の汎用コピー機能
+ * @param {string} elementId - コピー対象要素のID（オプション）
+ * @param {HTMLElement} buttonElement - クリックされたボタン要素（オプション）
  */
-function fallbackCopyToClipboard(text, button) {
+function copyAIResult(elementId, buttonElement) {
     try {
-        // 一時的なテキストエリアを作成
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
+        let contentToCopy = '';
 
-        // テキストを選択してコピー
-        textArea.focus();
-        textArea.select();
-
-        const successful = document.execCommand('copy');
-        document.body.removeChild(textArea);
-
-        if (successful) {
-            // 成功時の視覚的フィードバック
-            const originalText = button.textContent;
-            const originalClass = button.className;
-
-            button.textContent = '✅ コピー完了!';
-            button.classList.add('copied');
-
-            setTimeout(() => {
-                button.textContent = originalText;
-                button.className = originalClass;
-            }, 2000);
-
-            console.log('VSCode設定JSON（フォールバック）をクリップボードにコピーしました');
-        } else {
-            throw new Error('execCommandでのコピーに失敗しました');
+        if (elementId) {
+            // 特定の要素からコンテンツを取得
+            const element = document.getElementById(elementId);
+            if (element) {
+                contentToCopy = element.innerText || element.textContent;
+            }
+        } else if (buttonElement) {
+            // ボタンの親要素から結果コンテンツを探す
+            const resultContainer = buttonElement.closest('.ai-result-container');
+            if (resultContainer) {
+                // ヘッダーとページ情報を除いたメインコンテンツを取得
+                const mainContent = resultContainer.querySelector('.ai-result-content, #vscode-analysis-content, .analysis-content, .vscode-analysis-content');
+                if (mainContent) {
+                    contentToCopy = mainContent.innerText || mainContent.textContent;
+                } else {
+                    // フォールバック: 結果コンテナ全体のテキスト
+                    contentToCopy = resultContainer.innerText || resultContainer.textContent;
+                }
+            }
         }
+
+        if (!contentToCopy) {
+            alert('コピーするコンテンツが見つかりませんでした。');
+            return;
+        }
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(contentToCopy).then(() => {
+            console.log('AI結果をクリップボードにコピーしました');
+            showNotification('AI解析結果をコピーしました', 'success');
+
+            // ボタンのフィードバック
+            if (buttonElement) {
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = '✅ コピー完了!';
+                buttonElement.classList.add('copied');
+
+                setTimeout(() => {
+                    buttonElement.textContent = originalText;
+                    buttonElement.classList.remove('copied');
+                }, 2000);
+            }
+        }).catch(err => {
+            console.error('AI結果のコピーに失敗しました:', err);
+            fallbackCopyToClipboard(contentToCopy);
+        });
     } catch (error) {
-        console.error('フォールバック コピー機能も失敗しました:', error);
-        // アラートでユーザーに通知
-        alert('クリップボードへのコピーに失敗しました。手動でテキストを選択してコピーしてください。');
+        console.error('AI結果コピー処理中にエラー:', error);
+        alert('コピー処理中にエラーが発生しました。');
     }
 }
 
-// グローバル関数として公開（HTMLのonclick属性から呼び出されるため）
+/**
+ * VSCode解析結果のコピー機能
+ */
+function copyVSCodeAnalysis() {
+    try {
+        const content = document.getElementById('vscode-analysis-content');
+        if (!content) {
+            alert('コピーするコンテンツが見つかりませんでした。');
+            return;
+        }
+
+        const textContent = content.innerText || content.textContent;
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(textContent).then(() => {
+            console.log('VSCode解析結果をクリップボードにコピーしました');
+            showNotification('VSCode解析結果をコピーしました', 'success');
+
+            // ボタンのフィードバック
+            const button = document.querySelector('.ai-result-copy-btn');
+            if (button) {
+                const originalText = button.textContent;
+                button.textContent = '✅ コピー完了!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }
+        }).catch(err => {
+            console.error('VSCode解析結果のコピーに失敗しました:', err);
+            fallbackCopyToClipboard(textContent);
+        });
+    } catch (error) {
+        console.error('VSCode解析結果コピー処理中にエラー:', error);
+        alert('コピー処理中にエラーが発生しました。');
+    }
+}
+
+/**
+ * 一般的なコピーボタンイベントハンドラ
+ * @param {Event} event - クリックイベント
+ */
+function handleCopyButtonClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const button = event.target;
+    const targetId = button.getAttribute('data-copy-target');
+
+    if (targetId) {
+        // 特定のIDからコピー
+        copyAIResult(targetId, button);
+    } else {
+        // ボタンの親要素から自動検出
+        copyAIResult(null, button);
+    }
+}
+
+/**
+ * VSCode設定ファイル（settings.json）のコピー機能
+ * @param {HTMLElement} buttonElement - クリックされたコピーボタン
+ */
+function copySettingsJSON(buttonElement) {
+    try {
+        // 設定JSONの親コンテナを取得
+        const container = buttonElement.closest('.settings-json-container');
+        if (!container) {
+            console.error('設定JSONコンテナが見つかりません');
+            alert('コピーする設定ファイルが見つかりませんでした。');
+            return;
+        }
+
+        // JSONコードブロックを取得
+        const codeElement = container.querySelector('.settings-json code');
+        if (!codeElement) {
+            console.error('設定JSONコードが見つかりません');
+            alert('コピーする設定ファイルが見つかりませんでした。');
+            return;
+        }
+
+        // JSONコンテンツを取得（コメントを含む）
+        const jsonContent = codeElement.textContent || codeElement.innerText;
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(jsonContent).then(() => {
+            console.log('VSCode設定ファイルをクリップボードにコピーしました');
+            showNotification('設定ファイル（settings.json）をコピーしました', 'success');
+
+            // ボタンのフィードバック
+            const originalText = buttonElement.textContent;
+            buttonElement.textContent = '✅ コピー完了!';
+            buttonElement.classList.add('copied');
+
+            setTimeout(() => {
+                buttonElement.textContent = originalText;
+                buttonElement.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('VSCode設定ファイルのコピーに失敗しました:', err);
+
+            // フォールバック: 従来のコピー方法
+            fallbackCopyToClipboard(jsonContent);
+
+            // ボタンのフィードバック（フォールバック成功時）
+            const originalText = buttonElement.textContent;
+            buttonElement.textContent = '✅ コピー完了!';
+            buttonElement.classList.add('copied');
+
+            setTimeout(() => {
+                buttonElement.textContent = originalText;
+                buttonElement.classList.remove('copied');
+            }, 2000);
+        });
+    } catch (error) {
+        console.error('VSCode設定ファイルコピー処理中にエラー:', error);
+        alert('設定ファイルのコピー処理中にエラーが発生しました。');
+    }
+}
+
+// グローバル関数として公開
+window.copyAIResult = copyAIResult;
+window.copyVSCodeAnalysis = copyVSCodeAnalysis;
 window.copySettingsJSON = copySettingsJSON;
+window.handleCopyButtonClick = handleCopyButtonClick;
