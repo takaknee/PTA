@@ -953,92 +953,242 @@
     color: var(--ai-page-info-text, #666);
 }
 
+/* VSCode設定解析結果のHTML構造用スタイル */
+.vscode-analysis-content {
+    font-family: var(--ai-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif);
+    line-height: 1.6;
+    color: var(--ai-text-color, #333);
+}
+
+.analysis-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--ai-section-bg, rgba(0,0,0,0.02));
+    border-radius: 8px;
+    border-left: 4px solid var(--ai-primary-color, #2196f3);
+}
+
+.analysis-section h3 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ai-heading-color, #1976d2);
+}
+
+.analysis-section h4 {
+    margin: 12px 0 8px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ai-subheading-color, #424242);
+}
+
+.settings-group {
+    margin-bottom: 16px;
+}
+
+.setting-item {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--ai-item-bg, rgba(255,255,255,0.5));
+    border-radius: 6px;
+    border: 1px solid var(--ai-item-border, rgba(0,0,0,0.1));
+}
+
+.setting-name {
+    color: var(--ai-setting-name-color, #d32f2f);
+    font-weight: 600;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.setting-value {
+    background: var(--ai-code-bg, #f5f5f5);
+    color: var(--ai-code-text, #e91e63);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.setting-description {
+    color: var(--ai-description-color, #666);
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.settings-json {
+    background: var(--ai-json-bg, #fafafa);
+    border: 1px solid var(--ai-json-border, #e0e0e0);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 0;
+}
+
+.settings-json code {
+    font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ai-json-text, #333);
+    white-space: pre;
+}
+
+.usage-steps, .warnings-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.usage-steps li, .warnings-list li {
+    margin-bottom: 8px;
+    color: var(--ai-list-text, #444);
+    line-height: 1.5;
+}
+
 /* ダークテーマ対応 */
 @media (prefers-color-scheme: dark) {
     :root {
-        --ai-success-bg: #0f2a2f;
-        --ai-success-text: #4fb3d9;
-        --ai-success-border: #4fb3d9;
-        
-        --ai-error-bg: #2f0f0f;
-        --ai-error-text: #ff6b6b;
-        --ai-error-border: #ff6b6b;
-        
-        --ai-warning-bg: #2f2010;
-        --ai-warning-text: #ffb74d;
-        --ai-warning-border: #ffb74d;
-        
-        --ai-info-bg: #0f1a2f;
-        --ai-info-text: #64b5f6;
-        --ai-info-border: #64b5f6;
-        
-        --ai-primary-color: #4fb3d9;
-        --ai-primary-hover: #6fc4e6;
-        
-        --ai-page-info-bg: rgba(0,0,0,0.3);
-        --ai-page-info-text: #ccc;
+        --ai-section-bg: rgba(255,255,255,0.05);
+        --ai-heading-color: #64b5f6;
+        --ai-subheading-color: #bdbdbd;
+        --ai-item-bg: rgba(255,255,255,0.03);
+        --ai-item-border: rgba(255,255,255,0.1);
+        --ai-setting-name-color: #ff6b6b;
+        --ai-code-bg: rgba(255,255,255,0.1);
+        --ai-code-text: #ff80ab;
+        --ai-description-color: #ccc;
+        --ai-json-bg: rgba(255,255,255,0.03);
+        --ai-json-border: rgba(255,255,255,0.1);
+        --ai-json-text: #e0e0e0;
+        --ai-list-text: #ccc;
     }
 }
 
 /* 高コントラストモード対応 */
 @media (forced-colors: active) {
-    .ai-result-container {
+    .analysis-section {
         background: Canvas;
-        color: CanvasText;
         border: 2px solid CanvasText;
-        border-left-width: 4px;
-    }
-    
-    .ai-result-copy-btn {
-        background: ButtonFace;
-        color: ButtonText;
-        border: 1px solid ButtonText;
-    }
-    
-    .ai-result_copy-btn:hover {
-        background: Highlight;
-        color: HighlightText;
-    }
-    
-    .ai-result-page-info {
-        background: Canvas;
         color: CanvasText;
+    }
+    
+    .setting-item {
+        background: Canvas;
         border: 1px solid CanvasText;
     }
     
-    /* 新しい成功表示クラスも高コントラストモード対応 */
-    .ai-result-teams-success,
-    .ai-result-calendar-success {
-        background: Canvas;
+    .setting-name,
+    .setting-value,
+    .setting-description,
+    .usage-steps li,
+    .warnings-list li {
         color: CanvasText;
-        border: 2px solid CanvasText;
-        border-left-width: 4px;
+    }
+    
+    .settings-json {
+        background: Canvas;
+        border: 1px solid CanvasText;
+    }
+    
+    .settings-json code {
+        color: CanvasText;
     }
 }
 
-/* Teams転送成功時の特別なスタイル */
-.ai-result-teams-success {
-    background: var(--ai-teams-success-bg, #e8f5e8);
-    color: var(--ai-teams-success-text, #2e7d32);
-    border-left-color: var(--ai-teams-success-border, #4caf50);
+/* VSCode設定解析結果のHTML構造用スタイル */
+.vscode-analysis-content {
+    font-family: var(--ai-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif);
+    line-height: 1.6;
+    color: var(--ai-text-color, #333);
 }
 
-/* カレンダー追加成功時の特別なスタイル */
-.ai-result-calendar-success {
-    background: var(--ai-calendar-success-bg, #e3f2fd);
-    color: var(--ai-calendar-success-text, #1976d2);
-    border-left-color: var(--ai-calendar-success-border, #2196f3);
+.analysis-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--ai-section-bg, rgba(0,0,0,0.02));
+    border-radius: 8px;
+    border-left: 4px solid var(--ai-primary-color, #2196f3);
 }
 
-/* ダークテーマでの成功スタイル対応 */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --ai-teams-success-bg: #0a2e0a;
-        --ai-teams-success-text: #81c784;
-        --ai-teams-success-border: #81c784;
-        
-        --ai-calendar-success-bg: #0f1a2f;
-        --ai-calendar-success-text: #64b5f6;
-        --ai-calendar-success-border: #64b5f6;
-    }
+.analysis-section h3 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ai-heading-color, #1976d2);
+}
+
+.analysis-section h4 {
+    margin: 12px 0 8px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ai-subheading-color, #424242);
+}
+
+.settings-group {
+    margin-bottom: 16px;
+}
+
+.setting-item {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--ai-item-bg, rgba(255,255,255,0.5));
+    border-radius: 6px;
+    border: 1px solid var(--ai-item-border, rgba(0,0,0,0.1));
+}
+
+.setting-name {
+    color: var(--ai-setting-name-color, #d32f2f);
+    font-weight: 600;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.setting-value {
+    background: var(--ai-code-bg, #f5f5f5);
+    color: var(--ai-code-text, #e91e63);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.setting-description {
+    color: var(--ai-description-color, #666);
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.settings-json {
+    background: var(--ai-json-bg, #fafafa);
+    border: 1px solid var(--ai-json-border, #e0e0e0);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 0;
+}
+
+.settings-json code {
+    font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--ai-json-text, #333);
+    white-space: pre;
+}
+
+.usage-steps, .warnings-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.usage-steps li, .warnings-list li {
+    margin-bottom: 8px;
+    color: var(--ai-list-text, #444);
+    line-height: 1.5;
 }

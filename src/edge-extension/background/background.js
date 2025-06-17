@@ -3,6 +3,82 @@
  * Copyright (c) 2024 AI Business Support Team
  */
 
+// プロンプト設定管理（直接統合版）
+var PromptManager = {
+    // VSCode設定解析用プロンプト
+    VSCODE_ANALYSIS: {
+        template: "あなたはVSCode設定の専門家です。以下のVSCodeドキュメントページから設定項目を抽出し、HTML構造で日本語解説を提供してください。\n\n" +
+            "ページタイトル: {{pageTitle}}\n" +
+            "ページURL: {{pageUrl}}\n" +
+            "ページ内容: {{pageContent}}\n\n" +
+            "以下のHTML構造で回答してください（HTMLタグのみで、マークダウンは使用しないでください）：\n\n" +
+            "<div class=\"vscode-analysis-content\">\n" +
+            "    <div class=\"analysis-section\">\n" +
+            "        <h3>📋 設定項目一覧</h3>\n" +
+            "        <div class=\"settings-group\">\n" +
+            "            <h4>主要設定</h4>\n" +
+            "            <div class=\"setting-item\">\n" +
+            "                <strong class=\"setting-name\">設定名</strong>\n" +
+            "                <code class=\"setting-value\">設定値の例</code>\n" +
+            "                <p class=\"setting-description\">設定の説明</p>\n" +
+            "            </div>\n" +
+            "        </div>\n" +
+            "        <div class=\"settings-group\">\n" +
+            "            <h4>追加設定（オプション）</h4>\n" +
+            "            <div class=\"setting-item\">\n" +
+            "                <strong class=\"setting-name\">設定名</strong>\n" +
+            "                <code class=\"setting-value\">設定値の例</code>\n" +
+            "                <p class=\"setting-description\">設定の説明</p>\n" +
+            "            </div>\n" +
+            "        </div>\n" +
+            "    </div>\n" +
+            "    \n" +
+            "    <div class=\"analysis-section\">\n" +
+            "        <h3>🛠️ サンプル設定ファイル (settings.json)</h3>\n" +
+            "        <pre class=\"settings-json\"><code>{\n" +
+            "    // 抽出された設定項目のJSON例\n" +
+            "}</code></pre>\n" +
+            "    </div>\n" +
+            "    \n" +
+            "    <div class=\"analysis-section\">\n" +
+            "        <h3>💡 使用方法</h3>\n" +
+            "        <ol class=\"usage-steps\">\n" +
+            "            <li>手順1の詳細説明</li>\n" +
+            "            <li>手順2の詳細説明</li>\n" +
+            "            <li>手順3の詳細説明</li>\n" +
+            "        </ol>\n" +
+            "    </div>\n" +
+            "    \n" +
+            "    <div class=\"analysis-section\">\n" +
+            "        <h3>⚠️ 注意点</h3>\n" +
+            "        <ul class=\"warnings-list\">\n" +
+            "            <li>注意点1の詳細</li>\n" +
+            "            <li>注意点2の詳細</li>\n" +
+            "        </ul>\n" +
+            "    </div>\n" +
+            "</div>\n\n" +
+            "重要: 必ずHTML構造で回答し、マークダウン記法は使用しないでください。VSCodeドキュメントの内容に基づいて、実用的で分かりやすい設定解説をHTML形式で提供してください。",
+
+        build: function (data) {
+            var prompt = this.template;
+            prompt = prompt.replace('{{pageTitle}}', data.pageTitle || '');
+            prompt = prompt.replace('{{pageUrl}}', data.pageUrl || '');
+            prompt = prompt.replace('{{pageContent}}', data.pageContent || '');
+            return prompt;
+        }
+    },
+
+    // プロンプト取得のメイン関数
+    getPrompt: function (type, data) {
+        switch (type) {
+            case 'vscode-analysis':
+                return this.VSCODE_ANALYSIS.build(data);
+            default:
+                return "要求された内容を日本語で分析してください。\n\n内容: " + (data.content || data.pageContent || '');
+        }
+    }
+};
+
 /**
  * セキュアなURL検証ユーティリティ
  * セキュリティ原則:
@@ -817,152 +893,12 @@ async function saveToHistory(entry) {
 }
 
 /**
- * ページ解析用プロンプト作成
+ * 履歴保存関数 (現在未使用)
+ * 将来の拡張のために保持
  */
-function createPageAnalysisPrompt(data) {
-    return `
-あなたは日本語で回答するAIアシスタントです。以下の指示に従って回答してください。
-
-【絶対に守るべきルール】
-- HTMLタグを一切使用しないでください
-- CSSコードを一切含めないでください
-- JavaScriptコードを含めないでください
-- プレーンテキストとMarkdown記法のみを使用してください
-- コードブロックや技術的なマークアップは使用しないでください
-- 日本語の自然な文章で回答してください
-- スタイル情報は絶対に含めないでください
-
-以下のWebページを要約・分析してください：
-
-ページタイトル: ${data.pageTitle || '(タイトルなし)'}
-URL: ${data.pageUrl || ''}
-ページ内容: ${data.pageContent || '(内容を取得中...)'}
-
-以下の形式で回答してください：
-## ページ要約
-- このページの主要な内容を3-5行で要約
-
-## 重要なポイント
-- 特に注目すべき情報やデータ(箇条書き)
-
-## ソフトウェア開発業務への関連性
-- ソフトウェア開発業務に役立つ情報があれば指摘
-- 特に関連がない場合は「直接的な関連性は低い」と記載
-
-## アクション提案
-- このページの情報を活用するための具体的な提案(あれば)
-`;
-}
-
 /**
- * 選択テキスト解析用プロンプト作成
- */
-function createSelectionAnalysisPrompt(data) {
-    return `
-あなたは日本語で回答するAIアシスタントです。以下の指示に従って回答してください。
-
-【絶対に守るべきルール】
-- HTMLタグを一切使用しないでください
-- CSSコードを一切含めないでください
-- JavaScriptコードを含めないでください
-- プレーンテキストとMarkdown記法のみを使用してください
-- コードブロックや技術的なマークアップは使用しないでください
-- 日本語の自然な文章で回答してください
-- スタイル情報は絶対に含めないでください
-
-以下の選択されたテキストを分析してください：
-
-ページタイトル: ${data.pageTitle || '(タイトルなし)'}
-URL: ${data.pageUrl || ''}
-選択されたテキスト:
-${data.selectedText || '(テキストなし)'}
-
-以下の形式で回答してください：
-## 選択テキストの要約
-- 選択された内容の要点を2-3行で要約
-
-## 詳細分析
-- 重要な情報やキーワードの解説
-- 背景情報や補足説明(必要に応じて)
-
-## ソフトウェア開発業務への活用
-- この情報がソフトウェア開発業務にどう役立つか
-- ソフトウェア開発関連業務での活用方法
-- 特に関連がない場合は「直接的な関連性は低い」と記載
-
-## 次のアクション
-- この情報を受けて取るべき行動があれば提案
-`;
-}
-function createAnalysisPrompt(emailData) {
-    return `
-あなたは日本語で回答するAIアシスタントです。以下の指示に従って回答してください。
-
-【絶対に守るべきルール】
-- HTMLタグを一切使用しないでください
-- CSSコードを一切含めないでください
-- JavaScriptコードを含めないでください
-- プレーンテキストとMarkdown記法のみを使用してください
-- コードブロックや技術的なマークアップは使用しないでください
-- 日本語の自然な文章で回答してください
-- スタイル情報は絶対に含めないでください
-
-以下のメールを分析してください：
-
-件名: ${emailData.subject || '(件名なし)'}
-送信者: ${emailData.sender || '(送信者不明)'}
-本文:
-${emailData.body || '(本文なし)'}
-
-以下の形式で回答してください：
-## メール要約
-- 主要な内容(2-3行)
-
-## 重要度
-重要度: 高/中/低
-
-## 必要なアクション
-- アクション項目(あれば)
-
-## ソフトウェア開発者観点でのコメント
-- ソフトウェア開発に関連する重要な情報や注意点
-`;
-}
-
-/**
- * メール作成用プロンプト作成
- */
-function createCompositionPrompt(requestData) {
-    const basePrompt = 'ソフトウェア開発活動に関するメールを作成してください。';
-
-    switch (requestData.type) {
-        case 'notice':
-            return `${basePrompt}
-内容: ${requestData.content}
-種類: お知らせメール
-要件: 丁寧で分かりやすい文面で、ソフトウェア開発者向けのお知らせを作成してください。`;
-
-        case 'reminder':
-            return `${basePrompt}
-内容: ${requestData.content}
-種類: リマインダーメール
-要件: 緊急度を適切に表現し、期限や重要な情報を強調してください。`;
-
-        case 'survey':
-            return `${basePrompt}
-内容: ${requestData.content}
-種類: アンケート依頼メール
-要件: 協力をお願いする丁寧な文面で、回答方法を明確に示してください。`;
-
-        default:
-            return `${basePrompt}
-内容: ${requestData.content}
-要件: ソフトウェア開発活動に適した丁寧な文面で作成してください。`;
-    }
-}
-
-/**
- * フォールバック: 直接fetchを試行（デバッグ・テスト用）
+ * AI API呼び出しのフォールバック処理
+ * 直接fetchを試行（デバッグ・テスト用）
  */
 async function fallbackDirectFetch(requestData) {
     console.log('フォールバック: 直接fetch実行');
@@ -1520,50 +1456,16 @@ async function handleAnalyzeVSCodeSettings(data, sendResponse) {
                 error: 'AI APIが設定されていません。設定画面でAPIキーを設定してください。'
             });
             return;
-        }        // VSCode設定解析用のプロンプト（コンテンツサイズ制限）
-        let pageContent = data.content || '';
-
-        // HTMLからテキストを抽出（HTMLタグを除去）
+        }        // VSCode設定解析用のプロンプト（HTML構造で返答）
+        let pageContent = data.content || '';        // HTMLからテキストを抽出（HTMLタグを除去）
         pageContent = extractTextFromHTML(pageContent, 20000);
 
-        const analysisPrompt = `あなたはVSCode設定の専門家です。以下のVSCodeドキュメントページから設定項目を抽出し、日本語で分かりやすく解説してください。
-
-ページタイトル: ${data.pageTitle || ''}
-ページURL: ${data.pageUrl || ''}
-ページ内容: ${pageContent}
-
-以下の形式で回答してください：
-
-## 📋 設定項目一覧
-
-### 主要設定
-[設定名]: [設定値の例]
-[説明]
-
-### 追加設定（オプション）
-[設定名]: [設定値の例]
-[説明]
-
-## 🛠️ サンプル設定ファイル (settings.json)
-
-\`\`\`json
-{
-    // 抽出された設定項目
-}
-\`\`\`
-
-## 💡 使用方法
-
-1. [手順1]
-2. [手順2]
-3. [手順3]
-
-## ⚠️ 注意点
-
-- [注意点1]
-- [注意点2]
-
-VSCodeドキュメントの内容に基づいて、実用的で分かりやすい設定解説を提供してください。`;
+        // プロンプト設定ファイルからVSCode解析用プロンプトを生成
+        const analysisPrompt = PromptManager.getPrompt('vscode-analysis', {
+            pageTitle: data.pageTitle || '',
+            pageUrl: data.pageUrl || '',
+            pageContent: pageContent
+        });
 
         console.log(`VSCode設定解析: プロンプト長 ${analysisPrompt.length} 文字`);
 
