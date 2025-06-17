@@ -35,9 +35,12 @@ var PromptManager = {
             "    \n" +
             "    <div class=\"analysis-section\">\n" +
             "        <h3>🛠️ サンプル設定ファイル (settings.json)</h3>\n" +
-            "        <pre class=\"settings-json\"><code>{\n" +
+            "        <div class=\"settings-json-container\">\n" +
+            "            <button class=\"copy-json-btn\" onclick=\"copySettingsJSON(this)\" title=\"設定JSONをコピー\">📋 コピー</button>\n" +
+            "            <pre class=\"settings-json\"><code>{\n" +
             "    // 抽出された設定項目のJSON例\n" +
             "}</code></pre>\n" +
+            "        </div>\n" +
             "    </div>\n" +
             "    \n" +
             "    <div class=\"analysis-section\">\n" +
@@ -397,10 +400,12 @@ async function handleUnifiedMessage(message, sender, sendResponse) {
 
             case 'addToCalendar':
                 await handleAddToCalendar(data, sendResponse);
+                break; case 'analyzeVSCodeSettings':
+                await handleAnalyzeVSCodeSettings(data, sendResponse);
                 break;
 
-            case 'analyzeVSCodeSettings':
-                await handleAnalyzeVSCodeSettings(data, sendResponse);
+            case 'openOptionsPage':
+                await handleOpenOptionsPage(sendResponse);
                 break;
 
             default:
@@ -1499,6 +1504,50 @@ async function handleAnalyzeVSCodeSettings(data, sendResponse) {
         sendResponse({
             success: false,
             error: `VSCode設定解析に失敗しました: ${errorMessage}`
+        });
+    }
+}
+
+/**
+ * オプションページを開く処理
+ */
+async function handleOpenOptionsPage(sendResponse) {
+    try {
+        // Service Worker環境ではchrome.runtime.openOptionsPageが使用可能
+        if (chrome.runtime.openOptionsPage) {
+            chrome.runtime.openOptionsPage(() => {
+                if (chrome.runtime.lastError) {
+                    console.error('オプションページの開放でエラー:', chrome.runtime.lastError);
+                    sendResponse({
+                        success: false,
+                        error: 'オプションページを開けませんでした: ' + chrome.runtime.lastError.message
+                    });
+                } else {
+                    console.log('オプションページを開きました');
+                    sendResponse({ success: true });
+                }
+            });
+        } else {
+            // フォールバック: 新しいタブでオプションページを開く
+            const optionsUrl = chrome.runtime.getURL('options/options.html');
+            chrome.tabs.create({ url: optionsUrl }, (tab) => {
+                if (chrome.runtime.lastError) {
+                    console.error('オプションページタブ作成でエラー:', chrome.runtime.lastError);
+                    sendResponse({
+                        success: false,
+                        error: 'オプションページを開けませんでした: ' + chrome.runtime.lastError.message
+                    });
+                } else {
+                    console.log('オプションページタブを作成しました:', tab.id);
+                    sendResponse({ success: true });
+                }
+            });
+        }
+    } catch (error) {
+        console.error('オプションページ開放処理でエラー:', error);
+        sendResponse({
+            success: false,
+            error: 'オプションページを開く処理でエラーが発生しました: ' + error.message
         });
     }
 }

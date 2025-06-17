@@ -80,6 +80,94 @@ const analysisPrompt = PromptManager.getPrompt("vscode-analysis", {
 });
 ```
 
+## 新機能: JSON コピーボタン
+
+### 概要
+
+VSCode 設定解析結果のサンプル設定ファイル（settings.json）にコピーボタンを追加しました。
+
+### 機能詳細
+
+#### 1. HTML プロンプトの更新
+
+- サンプル設定ファイルセクションにコピーボタンを含む HTML 構造を追加
+- ボタンはコードブロック右上に配置されます
+
+```html
+<div class="settings-json-container">
+  <button
+    class="copy-json-btn"
+    onclick="copySettingsJSON(this)"
+    title="設定JSONをコピー"
+  >
+    📋 コピー
+  </button>
+  <pre class="settings-json"><code>{ ... }</code></pre>
+</div>
+```
+
+#### 2. CSS スタイルの追加
+
+**ファイル**: `content/content.css`
+
+- レスポンシブなコピーボタンデザイン
+- ダークテーマ対応
+- 高コントラストモード対応
+- ホバー効果とクリック時のフィードバック
+
+#### 3. JavaScript 機能の実装
+
+**ファイル**: `content/content.js`
+
+- `copySettingsJSON(button)`: メイン コピー機能
+- `fallbackCopyToClipboard(text, button)`: 古いブラウザ対応
+- クリップボード API 使用（モダンブラウザ）
+- execCommand フォールバック（古いブラウザ）
+
+#### 4. ユーザーフィードバック
+
+**成功時:**
+
+- ボタンテキストが「✅ コピー完了!」に変更
+- 2 秒後に元の表示に戻る
+- コンソールにログ出力
+
+**エラー時:**
+
+- 自動的にフォールバック機能を試行
+- 最終的な失敗時はアラート表示
+
+#### 5. テーマ対応
+
+**ライトテーマ:**
+
+- 青色ベースのボタン (#2196f3)
+- 明るい背景色
+
+**ダークテーマ:**
+
+- 少し明るめの青色
+- 暗い背景色
+
+**高コントラストモード:**
+
+- システムの高コントラスト色を使用
+- Border と Shadow を調整
+
+### 使用方法
+
+1. VSCode 設定解析を実行
+2. 結果のサンプル設定ファイルセクションを確認
+3. 右上の「📋 コピー」ボタンをクリック
+4. JSON がクリップボードにコピーされます
+
+### 技術的詳細
+
+- Service Worker 環境での動作保証
+- ES5 互換性（var 宣言、文字列連結）
+- クロスブラウザ対応
+- アクセシビリティ考慮
+
 ## 利点
 
 ### 1. 保守性の向上

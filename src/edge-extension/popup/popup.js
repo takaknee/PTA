@@ -278,7 +278,49 @@ function clearHistory() {
  * 設定画面を開く
  */
 function openSettings() {
-    chrome.runtime.openOptionsPage();
+    try {
+        // Popup scriptからService Workerに要求を送信
+        chrome.runtime.sendMessage({
+            action: 'openOptionsPage'
+        }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('設定画面開放要求送信でエラー:', chrome.runtime.lastError);
+                // フォールバック: 直接新しいタブで開く
+                fallbackOpenSettings();
+            } else if (!response || !response.success) {
+                console.error('設定画面開放が失敗:', response);
+                fallbackOpenSettings();
+            } else {
+                console.log('設定画面を正常に開きました');
+                // ポップアップを閉じる
+                window.close();
+            }
+        });
+    } catch (error) {
+        console.error('設定画面を開く処理でエラー:', error);
+        fallbackOpenSettings();
+    }
+}
+
+/**
+ * フォールバック: 直接新しいタブで設定画面を開く
+ */
+function fallbackOpenSettings() {
+    try {
+        const optionsUrl = chrome.runtime.getURL('options/options.html');
+        chrome.tabs.create({ url: optionsUrl }, (tab) => {
+            if (chrome.runtime.lastError) {
+                console.error('設定画面タブ作成でエラー:', chrome.runtime.lastError);
+                alert('設定画面を開けませんでした。拡張機能の管理画面から設定してください。');
+            } else {
+                console.log('設定画面タブを作成しました:', tab.id);
+                window.close();
+            }
+        });
+    } catch (error) {
+        console.error('フォールバック設定画面開放でエラー:', error);
+        alert('設定画面を開けませんでした。拡張機能の管理画面から設定してください。');
+    }
 }
 
 /**

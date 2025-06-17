@@ -1697,7 +1697,27 @@ function composeReply() {
  * 設定画面を開く
  */
 function openSettings() {
-    chrome.runtime.openOptionsPage();
+    try {
+        // Content scriptからは直接openOptionsPageが使えないため、background scriptに依頼
+        chrome.runtime.sendMessage({
+            action: 'openOptionsPage'
+        }).catch(error => {
+            console.error('設定画面の開放要求送信に失敗:', error);
+            // フォールバック: 新しいタブで直接開く
+            const optionsUrl = chrome.runtime.getURL('options/options.html');
+            window.open(optionsUrl, '_blank');
+        });
+    } catch (error) {
+        console.error('設定画面を開く処理でエラー:', error);
+        // 最終フォールバック: 拡張機能のオプションページURLを推測して開く
+        try {
+            const optionsUrl = chrome.runtime.getURL('options/options.html');
+            window.open(optionsUrl, '_blank');
+        } catch (fallbackError) {
+            console.error('フォールバック処理も失敗:', fallbackError);
+            alert('設定画面を開けませんでした。拡張機能の管理画面から設定してください。');
+        }
+    }
 }
 
 /**
@@ -1966,6 +1986,8 @@ function sanitizeAIResponse(response) {
 
     // styleタグとその内容を除去
     sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+
+
 
     // scriptタグとその内容を除去
     sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
@@ -2402,67 +2424,108 @@ async function analyzeVSCodeSettings(dialog) {
 }
 
 /**
- * コンテキストメニューからのTeams転送ハンドラー
+ * JSONコピー機能（VSCode設定解析結果用）
+ * @param {HTMLElement} button - クリックされたコピーボタン
  */
-function handleForwardToTeamsFromContext(data) {
-    const pageData = {
-        pageTitle: data.pageTitle,
-        pageUrl: data.pageUrl,
-        pageContent: document.body.textContent || document.body.innerText || '',
-        currentService: currentService
-    };
-
-    createAiDialog(pageData);
-
-    // ダイアログが作成された後にTeams転送を実行
-    setTimeout(() => {
-        const dialog = document.getElementById('ai-dialog');
-        if (dialog) {
-            forwardToTeams(dialog);
+function copySettingsJSON(button) {
+    try {
+        // ボタンの親要素からコードブロックを取得
+        const container = button.closest('.settings-json-container');
+        if (!container) {
+            console.error('設定JSONコンテナが見つかりません');
+            return;
         }
-    }, 100);
+
+        const codeBlock = container.querySelector('.settings-json code');
+        if (!codeBlock) {
+            console.error('設定JSONコードブロックが見つかりません');
+            return;
+        }
+
+        // コードブロックのテキスト内容を取得
+        const jsonText = codeBlock.textContent || codeBlock.innerText;
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(jsonText).then(() => {
+            // 成功時の視覚的フィードバック
+            const originalText = button.textContent;
+            const originalClass = button.className;
+
+            button.textContent = '✅ コピー完了!';
+            button.classList.add('copied');
+
+            // 2秒後に元に戻す
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.className = originalClass;
+            }, 2000);
+
+            console.log('VSCode設定JSONをクリップボードにコピーしました');
+        }).catch(err => {
+            console.error('クリップボードへのコピーに失敗しました:', err);
+
+            // フォールバック: テキストエリアを使った古い方法
+            fallbackCopyToClipboard(jsonText, button);
+        });
+    } catch (error) {
+        console.error('JSONコピー処理中にエラーが発生しました:', error);
+        // エラー発生時もフォールバックを試行
+        try {
+            const container = button.closest('.settings-json-container');
+            const codeBlock = container?.querySelector('.settings-json code');
+            const jsonText = codeBlock?.textContent || codeBlock?.innerText || '';
+            fallbackCopyToClipboard(jsonText, button);
+        } catch (fallbackError) {
+            console.error('フォールバック処理でもエラー:', fallbackError);
+        }
+    }
 }
 
 /**
- * コンテキストメニューからの予定表追加ハンドラー
+ * フォールバック用のクリップボードコピー機能
+ * @param {string} text - コピーするテキスト
+ * @param {HTMLElement} button - フィードバック用のボタン
  */
-function handleAddToCalendarFromContext(data) {
-    const pageData = {
-        pageTitle: data.pageTitle,
-        pageUrl: data.pageUrl,
-        pageContent: document.body.textContent || document.body.innerText || '',
-        currentService: currentService
-    };
+function fallbackCopyToClipboard(text, button) {
+    try {
+        // 一時的なテキストエリアを作成
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
 
-    createAiDialog(pageData);
+        // テキストを選択してコピー
+        textArea.focus();
+        textArea.select();
 
-    // ダイアログが作成された後に予定表追加を実行
-    setTimeout(() => {
-        const dialog = document.getElementById('ai-dialog');
-        if (dialog) {
-            addToCalendar(dialog);
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        if (successful) {
+            // 成功時の視覚的フィードバック
+            const originalText = button.textContent;
+            const originalClass = button.className;
+
+            button.textContent = '✅ コピー完了!';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.className = originalClass;
+            }, 2000);
+
+            console.log('VSCode設定JSON（フォールバック）をクリップボードにコピーしました');
+        } else {
+            throw new Error('execCommandでのコピーに失敗しました');
         }
-    }, 100);
+    } catch (error) {
+        console.error('フォールバック コピー機能も失敗しました:', error);
+        // アラートでユーザーに通知
+        alert('クリップボードへのコピーに失敗しました。手動でテキストを選択してコピーしてください。');
+    }
 }
 
-/**
- * コンテキストメニューからのVSCode設定解析ハンドラー
- */
-function handleAnalyzeVSCodeSettingsFromContext(data) {
-    const pageData = {
-        pageTitle: data.pageTitle,
-        pageUrl: data.pageUrl,
-        pageContent: document.body.textContent || document.body.innerText || '',
-        currentService: currentService
-    };
-
-    createAiDialog(pageData);
-
-    // ダイアログが作成された後にVSCode設定解析を実行
-    setTimeout(() => {
-        const dialog = document.getElementById('ai-dialog');
-        if (dialog) {
-            analyzeVSCodeSettings(dialog);
-        }
-    }, 100);
-}
+// グローバル関数として公開（HTMLのonclick属性から呼び出されるため）
+window.copySettingsJSON = copySettingsJSON;
