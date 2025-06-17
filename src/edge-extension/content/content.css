@@ -876,3 +876,169 @@
     background-color: rgba(255, 255, 255, 0.3) !important;
     cursor: grabbing !important;
 }
+
+/* 結果表示用のテーマ対応スタイル */
+.ai-result-container {
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid;
+    margin: 8px 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 成功メッセージ（VSCode設定解析） */
+.ai-result-success {
+    background: var(--ai-success-bg, #f0f8ff);
+    color: var(--ai-success-text, #007ACC);
+    border-left-color: var(--ai-success-border, #007ACC);
+}
+
+/* エラーメッセージ */
+.ai-result-error {
+    background: var(--ai-error-bg, #ffebee);
+    color: var(--ai-error-text, #f44336);
+    border-left-color: var(--ai-error-border, #f44336);
+}
+
+/* 警告メッセージ */
+.ai-result-warning {
+    background: var(--ai-warning-bg, #fff3e0);
+    color: var(--ai-warning-text, #ff9800);
+    border-left-color: var(--ai-warning-border, #ff9800);
+}
+
+/* 情報メッセージ */
+.ai-result-info {
+    background: var(--ai-info-bg, #e3f2fd);
+    color: var(--ai-info-text, #2196F3);
+    border-left-color: var(--ai-info-border, #2196F3);
+}
+
+/* 結果ヘッダー */
+.ai-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.ai-result-header h3 {
+    margin: 0;
+    color: inherit;
+}
+
+/* コピーボタン */
+.ai-result-copy-btn {
+    background: var(--ai-primary-color, #007ACC);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s ease;
+}
+
+.ai-result-copy-btn:hover {
+    background: var(--ai-primary-hover, #005A9E);
+}
+
+/* ページ情報表示 */
+.ai-result-page-info {
+    margin-top: 12px;
+    padding: 8px;
+    background: var(--ai-page-info-bg, rgba(255,255,255,0.5));
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--ai-page-info-text, #666);
+}
+
+/* ダークテーマ対応 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --ai-success-bg: #0f2a2f;
+        --ai-success-text: #4fb3d9;
+        --ai-success-border: #4fb3d9;
+        
+        --ai-error-bg: #2f0f0f;
+        --ai-error-text: #ff6b6b;
+        --ai-error-border: #ff6b6b;
+        
+        --ai-warning-bg: #2f2010;
+        --ai-warning-text: #ffb74d;
+        --ai-warning-border: #ffb74d;
+        
+        --ai-info-bg: #0f1a2f;
+        --ai-info-text: #64b5f6;
+        --ai-info-border: #64b5f6;
+        
+        --ai-primary-color: #4fb3d9;
+        --ai-primary-hover: #6fc4e6;
+        
+        --ai-page-info-bg: rgba(0,0,0,0.3);
+        --ai-page-info-text: #ccc;
+    }
+}
+
+/* 高コントラストモード対応 */
+@media (forced-colors: active) {
+    .ai-result-container {
+        background: Canvas;
+        color: CanvasText;
+        border: 2px solid CanvasText;
+        border-left-width: 4px;
+    }
+    
+    .ai-result-copy-btn {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 1px solid ButtonText;
+    }
+    
+    .ai-result_copy-btn:hover {
+        background: Highlight;
+        color: HighlightText;
+    }
+    
+    .ai-result-page-info {
+        background: Canvas;
+        color: CanvasText;
+        border: 1px solid CanvasText;
+    }
+    
+    /* 新しい成功表示クラスも高コントラストモード対応 */
+    .ai-result-teams-success,
+    .ai-result-calendar-success {
+        background: Canvas;
+        color: CanvasText;
+        border: 2px solid CanvasText;
+        border-left-width: 4px;
+    }
+}
+
+/* Teams転送成功時の特別なスタイル */
+.ai-result-teams-success {
+    background: var(--ai-teams-success-bg, #e8f5e8);
+    color: var(--ai-teams-success-text, #2e7d32);
+    border-left-color: var(--ai-teams-success-border, #4caf50);
+}
+
+/* カレンダー追加成功時の特別なスタイル */
+.ai-result-calendar-success {
+    background: var(--ai-calendar-success-bg, #e3f2fd);
+    color: var(--ai-calendar-success-text, #1976d2);
+    border-left-color: var(--ai-calendar-success-border, #2196f3);
+}
+
+/* ダークテーマでの成功スタイル対応 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --ai-teams-success-bg: #0a2e0a;
+        --ai-teams-success-text: #81c784;
+        --ai-teams-success-border: #81c784;
+        
+        --ai-calendar-success-bg: #0f1a2f;
+        --ai-calendar-success-text: #64b5f6;
+        --ai-calendar-success-border: #64b5f6;
+    }
+}

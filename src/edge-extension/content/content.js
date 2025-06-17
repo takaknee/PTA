@@ -335,18 +335,14 @@ function createAiDialog(dialogData) {
         dialogText = '#333333';
         headerBg = 'linear-gradient(135deg, #2196F3, #1976D2)';
         borderColor = '#e0e0e0';
-    }
-
-    // テーマに応じた追加色設定
-    let textMuted, infoBg, headerTextColor;
+    }    // テーマに応じた追加色設定
+    let textMuted, headerTextColor;
 
     if (prefersDark) {
         textMuted = '#cccccc';
-        infoBg = '#404040';
         headerTextColor = '#ffffff';
     } else {
         textMuted = '#666666';
-        infoBg = '#f0f8ff';
         headerTextColor = '#ffffff';
     }
 
@@ -429,7 +425,7 @@ function createAiDialog(dialogData) {
             </div>
         </div>
         <div style="padding: 20px; overflow-y: auto; flex: 1;">
-            ${dialogData.selectedText ? `<div style="background: ${infoBg}; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px; color: ${dialogText};"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
+            ${dialogData.selectedText ? `<div class="ai-result-container ai-result-info"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
             
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
                 ${currentService === 'outlook' || currentService === 'gmail' ? `
@@ -1591,7 +1587,7 @@ function analyzeEmail() {
             showNotification('メール解析が完了しました', 'success');
         } else {
             const errorMessage = response ? response.error : '不明なエラーが発生しました';
-            showResult(`<div style="color: #f44336;">❌ エラー: ${errorMessage}</div>`);
+            showResult(`<div class="ai-result-container ai-result-error">❌ エラー: ${errorMessage}</div>`);
             showNotification('メール解析に失敗しました', 'error');
         }
     });
@@ -1637,7 +1633,7 @@ function analyzePage() {
             showNotification('ページ解析が完了しました', 'success');
         } else {
             const errorMessage = response ? response.error : '不明なエラーが発生しました';
-            showResult(`<div style="color: #f44336;">❌ エラー: ${errorMessage}</div>`);
+            showResult(`<div class="ai-result-container ai-result-error">❌ エラー: ${errorMessage}</div>`);
             showNotification('ページ解析に失敗しました', 'error');
         }
     });
@@ -1664,7 +1660,7 @@ function analyzeSelection() {
             showNotification('選択テキスト解析が完了しました', 'success');
         } else {
             const errorMessage = response ? response.error : '不明なエラーが発生しました';
-            showResult(`<div style="color: #f44336;">❌ エラー: ${errorMessage}</div>`);
+            showResult(`<div class="ai-result-container ai-result-error">❌ エラー: ${errorMessage}</div>`);
             showNotification('選択テキスト解析に失敗しました', 'error');
         }
     });
@@ -1691,7 +1687,7 @@ function composeReply() {
             showNotification('返信作成が完了しました', 'success');
         } else {
             const errorMessage = response ? response.error : '不明なエラーが発生しました';
-            showResult(`<div style="color: #f44336;">❌ エラー: ${errorMessage}</div>`);
+            showResult(`<div class="ai-result-container ai-result-error">❌ エラー: ${errorMessage}</div>`);
             showNotification('返信作成に失敗しました', 'error');
         }
     });
@@ -2254,26 +2250,23 @@ async function forwardToTeams(dialog) {
             }
         });
 
-        hideLoading();
-
-        if (response.success) {
-            showResult(`<div style="color: #4CAF50; padding: 16px; background: #f1f8e9; border-radius: 8px; border-left: 4px solid #4CAF50;">
+        hideLoading(); if (response.success) {
+            showResult(`<div class="ai-result-container ai-result-teams-success">
                 <h3>✅ Teams転送完了</h3>
                 <p>${response.message}</p>
                 ${response.method === 'web' ? '<p><small>💡 Teams Web版が開きます。チャット画面で内容を確認して送信してください。</small></p>' : ''}
             </div>`);
         } else {
-            showResult(`<div style="color: #f44336; padding: 16px; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
+            showResult(`<div class="ai-result-container ai-result-error">
                 <h3>❌ Teams転送エラー</h3>
                 <p>${response.error}</p>
                 <p><small>💡 Microsoft 365へのログインとTeamsへのアクセス権限が必要です。</small></p>
             </div>`);
         }
-
     } catch (error) {
         hideLoading();
         console.error('Teams転送エラー:', error);
-        showResult(`<div style="color: #f44336; padding: 16px; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
+        showResult(`<div class="ai-result-container ai-result-error">
             <h3>❌ 転送処理エラー</h3>
             <p>Teams転送中にエラーが発生しました: ${error.message}</p>
         </div>`);
@@ -2304,11 +2297,11 @@ async function addToCalendar(dialog) {
 
         if (response.success) {
             const eventInfo = response.event;
-            showResult(`<div style="color: #2196F3; padding: 16px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196F3;">
+            showResult(`<div class="ai-result-container ai-result-calendar-success">
                 <h3>📅 予定表追加完了</h3>
                 <p>${response.message}</p>
                 ${eventInfo ? `
-                    <div style="margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px;">
+                    <div class="ai-result-page-info">
                         <p><strong>件名:</strong> ${eventInfo.subject}</p>
                         <p><strong>開始時刻:</strong> ${new Date(eventInfo.startTime).toLocaleString('ja-JP')}</p>
                     </div>
@@ -2316,17 +2309,16 @@ async function addToCalendar(dialog) {
                 ${response.method === 'web' ? '<p><small>💡 Outlook Web版が開きます。予定の詳細を確認して保存してください。</small></p>' : ''}
             </div>`);
         } else {
-            showResult(`<div style="color: #f44336; padding: 16px; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
+            showResult(`<div class="ai-result-container ai-result-error">
                 <h3>❌ 予定表追加エラー</h3>
                 <p>${response.error}</p>
                 <p><small>💡 Microsoft 365へのログインとOutlookへのアクセス権限が必要です。</small></p>
             </div>`);
         }
-
     } catch (error) {
         hideLoading();
         console.error('予定表追加エラー:', error);
-        showResult(`<div style="color: #f44336; padding: 16px; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
+        showResult(`<div class="ai-result-container ai-result-error">
             <h3>❌ 予定表処理エラー</h3>
             <p>予定表追加中にエラーが発生しました: ${error.message}</p>
         </div>`);
@@ -2341,10 +2333,8 @@ async function analyzeVSCodeSettings(dialog) {
         const dialogData = dialog.dialogData;
 
         // VSCodeドキュメントページかチェック（セキュアなURL検証）
-        const isVSCodeDoc = window.UrlValidator && window.UrlValidator.isVSCodeDocumentPage(dialogData.pageUrl);
-
-        if (!isVSCodeDoc) {
-            showResult(`<div style="color: #ff9800; padding: 16px; background: #fff3e0; border-radius: 8px; border-left: 4px solid #ff9800;">
+        const isVSCodeDoc = window.UrlValidator && window.UrlValidator.isVSCodeDocumentPage(dialogData.pageUrl); if (!isVSCodeDoc) {
+            showResult(`<div class="ai-result-container ai-result-warning">
                 <h3>⚠️ VSCodeドキュメントページではありません</h3>
                 <p>この機能はVSCode関連のドキュメントページでのみ利用できます。</p>
                 <p>対象サイト: code.visualstudio.com, marketplace.visualstudio.com など</p>
@@ -2365,25 +2355,15 @@ async function analyzeVSCodeSettings(dialog) {
             }
         });
 
-        hideLoading();
-
-        if (response.success) {
-            // 解析結果を表示（コピーボタン付き）
-            const resultHtml = `<div style="padding: 16px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #007ACC;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <h3 style="margin: 0; color: #007ACC;">⚙️ VSCode設定解析結果</h3>
-                    <button onclick="copyVSCodeAnalysis()" style="
-                        background: #007ACC;
-                        color: white;
-                        border: none;
-                        padding: 6px 12px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 12px;
-                    ">📋 全体をコピー</button>
+        hideLoading(); if (response.success) {
+            // 解析結果を表示（テーマ対応・コピーボタン付き）
+            const resultHtml = `<div class="ai-result-container ai-result-success">
+                <div class="ai-result-header">
+                    <h3>⚙️ VSCode設定解析結果</h3>
+                    <button onclick="copyVSCodeAnalysis()" class="ai-result-copy-btn">📋 全体をコピー</button>
                 </div>
                 <div id="vscode-analysis-content">${response.analysis}</div>
-                <div style="margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px; font-size: 12px; color: #666;">
+                <div class="ai-result-page-info">
                     <strong>対象ページ:</strong> <a href="${response.pageInfo.url}" target="_blank">${response.pageInfo.title}</a>
                 </div>
             </div>`;
@@ -2404,19 +2384,17 @@ async function analyzeVSCodeSettings(dialog) {
                     showNotification('コピーに失敗しました', 'error');
                 }
             };
-
         } else {
-            showResult(`<div style="color: #f44336; padding: 16px; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
+            showResult(`<div class="ai-result-container ai-result-error">
                 <h3>❌ VSCode設定解析エラー</h3>
                 <p>${response.error}</p>
                 ${response.suggestion ? `<p><small>💡 ${response.suggestion}</small></p>` : ''}
             </div>`);
         }
-
     } catch (error) {
         hideLoading();
         console.error('VSCode設定解析エラー:', error);
-        showResult(`<div style="color: #f44336; padding: 16px; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
+        showResult(`<div class="ai-result-container ai-result-error">
             <h3>❌ 解析処理エラー</h3>
             <p>VSCode設定解析中にエラーが発生しました: ${error.message}</p>
         </div>`);
