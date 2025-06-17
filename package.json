@@ -8,10 +8,7 @@
     "lint:fix": "eslint 'src/**/*.{js,gs}' --ext .js,.gs --fix",
     "security": "npm audit",
     "test": "echo \"テスト実行: Apps Scriptプロジェクトで個別に実行してください\" && exit 0",
-    "addin:install": "cd src/outlook-addin && npm install",
-    "addin:start": "cd src/outlook-addin && npm start",
-    "addin:validate": "cd src/outlook-addin && npm run validate",
-    "addin:sideload": "cd src/outlook-addin && npm run sideload",
+    "excel:test": "echo \"Excel VBA テスト: 手動でVBAエディタから実行してください\" && exit 0",
     "edge:build": "cd src/edge-extension && ./deploy.sh",
     "edge:lint": "eslint 'src/edge-extension/**/*.js'",
     "edge:validate": "cd src/edge-extension && echo 'Edge拡張機能の検証実行中...' && node -c manifest.json || echo 'manifest.json検証完了'"
@@ -33,7 +30,8 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^8.57.0",
-    "eslint": "^8.57.1"
+    "eslint": "^8.57.1",
+    "puppeteer": "^24.10.1"
   },
   "repository": {
     "type": "git",
