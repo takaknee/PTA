@@ -855,3 +855,80 @@ body {
         border-top-color: #555;
     }
 }
+
+/* 高コントラストモード対応（標準のforced-colorsを使用） */
+@media (forced-colors: active) {
+    .popup-container {
+        background: Canvas;
+        color: CanvasText;
+        border: 1px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .popup-header {
+        background: ButtonFace;
+        color: ButtonText;
+        border-bottom: 1px solid ButtonText;
+    }
+    
+    .action-button, .primary-button, .secondary-button {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 2px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .action-button:hover, .primary-button:hover, .secondary-button:hover {
+        background: Highlight;
+        color: HighlightText;
+        border-color: HighlightText;
+    }
+    
+    .action-button:disabled, .primary-button:disabled, .secondary-button:disabled {
+        background: GrayText;
+        color: Canvas;
+        border-color: GrayText;
+    }
+    
+    .loading-spinner::before {
+        border-color: ButtonText transparent transparent transparent;
+    }
+    
+    .result-content {
+        background: Canvas;
+        color: CanvasText;
+        border: 1px solid ButtonText;
+    }
+    
+    .result-actions {
+        background: Canvas;
+        border-top: 1px solid ButtonText;
+    }
+    
+    .tab-button {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 1px solid ButtonText;
+    }
+    
+    .tab-button.active {
+        background: Highlight;
+        color: HighlightText;
+    }
+    
+    .section-title {
+        color: CanvasText;
+        border-bottom: 1px solid ButtonText;
+    }
+    
+    .dropdown-menu {
+        background: Canvas;
+        border: 2px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .dropdown-item:hover {
+        background: Highlight;
+        color: HighlightText;
+    }
+}

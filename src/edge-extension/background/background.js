@@ -534,8 +534,7 @@ async function callAIAPI(prompt, settings) {
             headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${apiKey}`
-            };
-            body = JSON.stringify({
+            }; body = JSON.stringify({
                 model: model,
                 messages: [
                     {
@@ -547,7 +546,7 @@ async function callAIAPI(prompt, settings) {
                         content: prompt
                     }
                 ],
-                max_tokens: 1500,
+                max_tokens: 32768, // GPT-4.1対応: 最大トークン数を増加
                 temperature: 0.7
             });
             break;
@@ -557,12 +556,11 @@ async function callAIAPI(prompt, settings) {
             if (!azureEndpoint) {
                 throw new Error('Azure エンドポイントが設定されていません。');
             }
-            endpoint = `${azureEndpoint}/openai/deployments/${model}/chat/completions?api-version=2024-02-15-preview`;
+            endpoint = `${azureEndpoint}/openai/deployments/${model}/chat/completions?api-version=2025-04-01-preview`;
             headers = {
                 'Content-Type': 'application/json',
                 'api-key': apiKey
-            };
-            body = JSON.stringify({
+            }; body = JSON.stringify({
                 messages: [
                     {
                         role: 'system',
@@ -573,7 +571,7 @@ async function callAIAPI(prompt, settings) {
                         content: prompt
                     }
                 ],
-                max_tokens: 1500,
+                max_tokens: 32768, // GPT-4.1対応: 最大トークン数を増加
                 temperature: 0.7
             });
             break;
@@ -609,15 +607,24 @@ async function fetchWithOffscreen(requestData) {
         return await performAPICall(requestData);
 
     } catch (error) {
-        console.error('fetchWithOffscreen エラー:', error);
-
-        // デバッグ用：フォールバック処理の詳細ログ
+        console.error('fetchWithOffscreen エラー:', error);        // デバッグ用：フォールバック処理の詳細ログ
         console.log('フォールバック処理を開始します...');
         try {
-            return await fallbackDirectFetch(requestData);
+            const fallbackResult = await fallbackDirectFetch(requestData);
+            if (fallbackResult.success) {
+                return fallbackResult;
+            } else {
+                return {
+                    success: false,
+                    error: `主処理とフォールバック処理の両方が失敗しました:\n主処理: ${error.message}\nフォールバック: ${fallbackResult.error}`
+                };
+            }
         } catch (fallbackError) {
             console.error('フォールバック処理も失敗:', fallbackError);
-            throw new Error(`主処理とフォールバック処理の両方が失敗しました:\n主処理: ${error.message}\nフォールバック: ${fallbackError.message}`);
+            return {
+                success: false,
+                error: `主処理とフォールバック処理の両方が失敗しました:\n主処理: ${error.message}\nフォールバック: ${fallbackError.message}`
+            };
         }
     }
 }
@@ -682,40 +689,53 @@ async function performAPICall(requestData) {
 
         console.log('Background: JSON解析中...');
         const data = await response.json();
-        console.log('Background API成功:', data);
-
-        // OpenAI/Azure OpenAI の応答解析
+        console.log('Background API成功:', data);        // OpenAI/Azure OpenAI の応答解析
         if (provider === 'openai' || provider === 'azure') {
             if (data.choices && data.choices.length > 0) {
                 const content = data.choices[0].message.content.trim();
                 console.log('Background: AI応答コンテンツ取得成功:', content.substring(0, 100) + '...');
-                return content;
+
+                // 統一された形式で返す
+                return {
+                    success: true,
+                    content: content
+                };
             } else {
                 console.error('Background: 無効なAI応答形式:', data);
-                throw new Error('AIからの有効な応答が得られませんでした');
+                return {
+                    success: false,
+                    error: 'AIからの有効な応答が得られませんでした'
+                };
             }
         }
 
         console.error('Background: 予期しないAPI応答形式:', data);
-        throw new Error('予期しないAPI応答形式です');
-
+        return {
+            success: false,
+            error: '予期しないAPI応答形式です'
+        };
     } catch (error) {
         console.error('Background API fetch エラー:', error);
         console.error('Background API fetch エラー詳細:', error.stack);
 
+        // 統一された形式でエラーを返す
+        let errorMessage = error.message;
+
         // TypeError: Failed to fetch の詳細化
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            throw new Error(
+            errorMessage =
                 'ネットワーク接続エラー（Background Script内）:\n' +
                 '• インターネット接続を確認してください\n' +
                 '• APIエンドポイントURLが正しいか確認してください\n' +
                 '• プロキシまたはファイアウォール設定を確認してください\n' +
                 '• VPNやセキュリティソフトの影響も考慮してください\n' +
-                `詳細: ${error.message}`
-            );
+                `詳細: ${error.message}`;
         }
 
-        throw error;
+        return {
+            success: false,
+            error: errorMessage
+        };
     }
 }
 
@@ -964,21 +984,31 @@ async function fallbackDirectFetch(requestData) {
 
         if (response.ok) {
             const data = await response.json();
-            console.log('直接fetch成功（CORS有効）:', data);
-
-            // OpenAI/Azure OpenAI の応答解析
+            console.log('直接fetch成功（CORS有効）:', data);            // OpenAI/Azure OpenAI の応答解析
             if (provider === 'openai' || provider === 'azure') {
                 if (data.choices && data.choices.length > 0) {
-                    return data.choices[0].message.content.trim();
+                    return {
+                        success: true,
+                        content: data.choices[0].message.content.trim()
+                    };
                 } else {
-                    throw new Error('AIからの有効な応答が得られませんでした');
+                    return {
+                        success: false,
+                        error: 'AIからの有効な応答が得られませんでした'
+                    };
                 }
             }
 
-            return data;
+            return {
+                success: true,
+                content: data
+            };
         } else {
             const errorText = await response.text();
-            throw new Error(`API呼び出しエラー (${response.status}): ${errorText}`);
+            return {
+                success: false,
+                error: `API呼び出しエラー (${response.status}): ${errorText}`
+            };
         }
 
     } catch (corsError) {
@@ -992,18 +1022,19 @@ async function fallbackDirectFetch(requestData) {
                 headers: headers,
                 body: body,
                 mode: 'no-cors', // CORSを無効化（レスポンスは opaque になる）
-            });
-
-            // no-corsモードでは詳細なレスポンス情報を取得できない
+            });            // no-corsモードでは詳細なレスポンス情報を取得できない
             console.log('フォールバック fetch完了（no-corsモード）');
-            throw new Error('no-corsモードでは応答内容を確認できません。適切なCORS設定またはOffscreen documentが必要です。');
-
+            return {
+                success: false,
+                error: 'no-corsモードでは応答内容を確認できません。適切なCORS設定またはOffscreen documentが必要です。'
+            };
         } catch (noCorsError) {
             console.error('フォールバック fetch エラー:', noCorsError);
 
             // 詳細なエラー情報を提供
+            let errorMessage = corsError.message;
             if (corsError.name === 'TypeError' && corsError.message.includes('Failed to fetch')) {
-                throw new Error(
+                errorMessage =
                     'ネットワーク接続エラーが発生しました:\n\n' +
                     '■ 考えられる原因:\n' +
                     '• インターネット接続の問題\n' +
@@ -1016,11 +1047,13 @@ async function fallbackDirectFetch(requestData) {
                     '• 拡張機能を一度無効化→有効化\n' +
                     '• ブラウザを再起動\n' +
                     '• 設定画面でAPIキーとエンドポイントを再確認\n\n' +
-                    `詳細エラー: ${corsError.message}`
-                );
+                    `詳細エラー: ${corsError.message}`;
             }
 
-            throw new Error(`API呼び出しに失敗しました: ${corsError.message}`);
+            return {
+                success: false,
+                error: errorMessage
+            };
         }
     }
 }
@@ -1030,11 +1063,14 @@ async function fallbackDirectFetch(requestData) {
  */
 async function handleTranslateSelection(data, sendResponse) {
     try {
-        console.log('Background: 選択テキスト翻訳開始:', data);
-
-        if (!data.selectedText) {
+        console.log('Background: 選択テキスト翻訳開始:', data); if (!data.selectedText) {
             throw new Error('翻訳するテキストが選択されていません');
-        }        // 翻訳用のプロンプト
+        }        // 選択テキストからHTMLタグを除去してクリーンアップ（共通関数使用）
+        const selectedText = extractTextFromHTML(data.selectedText, 10000);
+
+        console.log(`選択テキスト翻訳: 処理後テキスト長 ${selectedText.length} 文字`);
+
+        // 翻訳用のプロンプト
         const prompt = `以下のテキストを日本語に翻訳してください。既に日本語の場合は英語に翻訳してください。
 
 【重要】回答の際は以下を厳守してください：
@@ -1044,7 +1080,7 @@ async function handleTranslateSelection(data, sendResponse) {
 - 説明や補足は不要です
 
 原文:
-${data.selectedText}
+${selectedText}
 
 翻訳:`;
 
@@ -1175,11 +1211,11 @@ URL: ${data.url}
 
 /**
  * Microsoft Graph APIの認証トークンを取得
+ * Edge対応版: chrome.identity APIが未対応のため代替手段を使用
  */
 async function getMicrosoftGraphToken() {
-    try {
-        // Chrome identityAPIを使用してMicrosoft Graph認証を実行
-        // 開発版では単純化されたアプローチを使用
+    try {        // Chrome環境でのみ呼び出されるため、直接chrome.identity APIを使用
+        console.log('Chrome環境: 標準のchrome.identity APIを使用');
         const tokenResponse = await chrome.identity.getAuthToken({
             interactive: true,
             scopes: [
@@ -1203,38 +1239,58 @@ async function handleForwardToTeams(data, sendResponse) {
     try {
         console.log('Background: Teams転送処理開始:', data);
 
-        // Microsoft Graph認証を試行
-        let authToken;
-        try {
-            authToken = await getMicrosoftGraphToken();
-        } catch (error) {
-            // 認証失敗時は、代替手段としてTeams Web版を開く
-            const teamsUrl = `https://teams.microsoft.com/l/chat/0/0?message=${encodeURIComponent(
-                `📄 **${data.pageTitle || 'ページ情報'}**\n\n🔗 ${data.pageUrl || ''}\n\n📝 ${data.content || ''}`
-            )}`;
+        // 共通コンテンツ生成
+        const sharedContent = generateContentForSharing(data);
+
+        // ブラウザ判定: Edgeの場合は直接Web版を使用
+        const isEdge = navigator.userAgent.includes('Edg/');
+
+        if (isEdge) {
+            console.log('Edge環境: 直接Teams Web版を使用');
+            const teamsUrl = `https://teams.microsoft.com/l/chat/0/0?message=${encodeURIComponent(sharedContent.plainText)}`;
 
             await chrome.tabs.create({ url: teamsUrl });
 
             sendResponse({
                 success: true,
-                message: 'Teams Web版を開きました。チャットウィンドウから送信してください。',
+                message: 'Microsoft Edge では Teams Web版を開きました。チャットウィンドウから送信してください。',
                 method: 'web'
             });
             return;
         }
 
-        // Microsoft Graph APIでTeamsチャットに投稿
+        // Chrome環境: Microsoft Graph認証を試行
+        let authToken;
+        try {
+            authToken = await getMicrosoftGraphToken();
+        } catch (error) {
+            // Edge未対応エラーの特別処理
+            let fallbackMessage = 'Teams Web版を開きました。チャットウィンドウから送信してください。';
+
+            if (error.message === 'EDGE_AUTH_UNSUPPORTED') {
+                fallbackMessage = 'Microsoft Edge では Graph API認証が未対応のため、Teams Web版を開きました。チャットウィンドウから送信してください。';
+                console.log('Edge環境: Teams Web版にフォールバック');
+            }
+
+            // 認証失敗時は、代替手段としてTeams Web版を開く
+            const teamsUrl = `https://teams.microsoft.com/l/chat/0/0?message=${encodeURIComponent(sharedContent.plainText)}`;
+
+            await chrome.tabs.create({ url: teamsUrl });
+
+            sendResponse({
+                success: true,
+                message: fallbackMessage,
+                method: 'web'
+            });
+            return;
+        }        // Microsoft Graph APIでTeamsチャットに投稿
         // ユーザー自身への投稿（Self chat）
         // Note: 簡単化のため、チャット作成のみ実装。実際のメッセージ投稿は将来の機能拡張で対応
         /*
         const messagePayload = {
             body: {
                 contentType: 'html',
-                content: `<h3>📄 ${data.pageTitle || 'ページ情報'}</h3>
-                         <p><strong>🔗 URL:</strong> <a href="${data.pageUrl || ''}">${data.pageUrl || ''}</a></p>
-                         <p><strong>📝 内容:</strong></p>
-                         <div>${data.content || ''}</div>
-                         <p><em>AI業務支援ツールから転送</em></p>`
+                content: sharedContent.html
             }
         };
         */
@@ -1247,7 +1303,7 @@ async function handleForwardToTeams(data, sendResponse) {
             },
             body: JSON.stringify({
                 chatType: 'oneOnOne',
-                topic: `AI支援ツール - ${data.pageTitle || 'ページ転送'}`,
+                topic: `AI支援ツール - ${sharedContent.title}`,
                 members: [
                     {
                         '@odata.type': '#microsoft.graph.aadUserConversationMember',
@@ -1286,25 +1342,55 @@ async function handleAddToCalendar(data, sendResponse) {
     try {
         console.log('Background: 予定表追加処理開始:', data);
 
-        // Microsoft Graph認証を試行
-        let authToken;
-        try {
-            authToken = await getMicrosoftGraphToken();
-        } catch (error) {
-            // 認証失敗時は、代替手段としてOutlook Web版を開く
+        // 共通コンテンツ生成
+        const sharedContent = generateContentForSharing(data);
+
+        // ブラウザ判定: Edgeの場合は直接Web版を使用
+        const isEdge = navigator.userAgent.includes('Edg/');
+
+        if (isEdge) {
+            console.log('Edge環境: 直接Outlook Web版を使用');
             const now = new Date();
             const startTime = encodeURIComponent(now.toISOString());
             const endTime = encodeURIComponent(new Date(now.getTime() + 60 * 60 * 1000).toISOString()); // 1時間後
 
-            const outlookUrl = `https://outlook.office.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(data.pageTitle || 'ページレビュー')}&startdt=${startTime}&enddt=${endTime}&body=${encodeURIComponent(
-                `📄 ページレビュー\n\n🔗 URL: ${data.pageUrl || ''}\n\n📝 内容:\n${data.content || ''}\n\n---\nAI業務支援ツールから追加`
-            )}`;
+            const outlookUrl = `https://outlook.office.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(sharedContent.title)}&startdt=${startTime}&enddt=${endTime}&body=${encodeURIComponent(sharedContent.plainText)}`;
 
             await chrome.tabs.create({ url: outlookUrl });
 
             sendResponse({
                 success: true,
-                message: 'Outlook Web版を開きました。予定の詳細を確認して保存してください。',
+                message: 'Microsoft Edge では Outlook Web版を開きました。予定の詳細を確認して保存してください。',
+                method: 'web'
+            });
+            return;
+        }
+
+        // Chrome環境: Microsoft Graph認証を試行
+        let authToken;
+        try {
+            authToken = await getMicrosoftGraphToken();
+        } catch (error) {
+            // Edge未対応エラーの特別処理
+            let fallbackMessage = 'Outlook Web版を開きました。予定の詳細を確認して保存してください。';
+
+            if (error.message === 'EDGE_AUTH_UNSUPPORTED') {
+                fallbackMessage = 'Microsoft Edge では Graph API認証が未対応のため、Outlook Web版を開きました。予定の詳細を確認して保存してください。';
+                console.log('Edge環境: Outlook Web版にフォールバック');
+            }
+
+            // 認証失敗時は、代替手段としてOutlook Web版を開く
+            const now = new Date();
+            const startTime = encodeURIComponent(now.toISOString());
+            const endTime = encodeURIComponent(new Date(now.getTime() + 60 * 60 * 1000).toISOString()); // 1時間後
+
+            const outlookUrl = `https://outlook.office.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(sharedContent.title)}&startdt=${startTime}&enddt=${endTime}&body=${encodeURIComponent(sharedContent.plainText)}`;
+
+            await chrome.tabs.create({ url: outlookUrl });
+
+            sendResponse({
+                success: true,
+                message: fallbackMessage,
                 method: 'web'
             });
             return;
@@ -1313,7 +1399,7 @@ async function handleAddToCalendar(data, sendResponse) {
         // 現在日時で予定表イベントを作成
         const now = new Date();
         const eventPayload = {
-            subject: data.pageTitle || 'ページレビュー',
+            subject: sharedContent.title,
             start: {
                 dateTime: now.toISOString(),
                 timeZone: 'Asia/Tokyo'
@@ -1324,11 +1410,7 @@ async function handleAddToCalendar(data, sendResponse) {
             },
             body: {
                 contentType: 'html',
-                content: `<h3>📄 ページレビュー</h3>
-                         <p><strong>🔗 URL:</strong> <a href="${data.pageUrl || ''}">${data.pageUrl || ''}</a></p>
-                         <p><strong>📝 内容:</strong></p>
-                         <div>${data.content || ''}</div>
-                         <p><em>AI業務支援ツールから追加</em></p>`
+                content: sharedContent.html
             },
             location: {
                 displayName: 'オンライン'
@@ -1372,8 +1454,46 @@ async function handleAddToCalendar(data, sendResponse) {
 }
 
 /**
- * VSCodeドキュメントの設定解析処理
+ * Teams転送・予定表追加用のコンテンツを生成
+ * @param {Object} data - ページデータ
+ * @returns {Object} フォーマットされたコンテンツ
  */
+function generateContentForSharing(data) {
+    const pageTitle = data.pageTitle || 'ページ情報';
+    const pageUrl = data.pageUrl || '';
+
+    // AI要約結果があるかチェック
+    const hasSummary = data.summary && data.summary.trim().length > 0;
+
+    let content;
+    let htmlContent;
+
+    if (hasSummary) {
+        // 要約がある場合：ページリンク + ページ要約
+        content = `📄 **${pageTitle}**\n\n🔗 ${pageUrl}\n\n📝 要約:\n${data.summary}\n\n---\nAI業務支援ツールから転送`;
+        htmlContent = `<h3>📄 ${pageTitle}</h3>
+                      <p><strong>🔗 URL:</strong> <a href="${pageUrl}">${pageUrl}</a></p>
+                      <p><strong>📝 要約:</strong></p>
+                      <div>${data.summary}</div>
+                      <p><em>AI業務支援ツールから転送</em></p>`;
+    } else {
+        // 要約がない場合：ページリンク + ページタイトルのみ
+        content = `📄 **${pageTitle}**\n\n🔗 ${pageUrl}\n\n---\nAI業務支援ツールから転送`;
+        htmlContent = `<h3>📄 ${pageTitle}</h3>
+                      <p><strong>🔗 URL:</strong> <a href="${pageUrl}">${pageUrl}</a></p>
+                      <p><em>AI業務支援ツールから転送</em></p>`;
+    }
+
+    return {
+        plainText: content,
+        html: htmlContent,
+        title: pageTitle,
+        url: pageUrl,
+        hasSummary: hasSummary
+    };
+}
+
+// VSCode設定解析処理
 async function handleAnalyzeVSCodeSettings(data, sendResponse) {
     try {
         console.log('Background: VSCode設定解析処理開始:', data);
@@ -1400,14 +1520,17 @@ async function handleAnalyzeVSCodeSettings(data, sendResponse) {
                 error: 'AI APIが設定されていません。設定画面でAPIキーを設定してください。'
             });
             return;
-        }
+        }        // VSCode設定解析用のプロンプト（コンテンツサイズ制限）
+        let pageContent = data.content || '';
 
-        // VSCode設定解析用のプロンプト
+        // HTMLからテキストを抽出（HTMLタグを除去）
+        pageContent = extractTextFromHTML(pageContent, 20000);
+
         const analysisPrompt = `あなたはVSCode設定の専門家です。以下のVSCodeドキュメントページから設定項目を抽出し、日本語で分かりやすく解説してください。
 
 ページタイトル: ${data.pageTitle || ''}
 ページURL: ${data.pageUrl || ''}
-ページ内容: ${data.content || ''}
+ページ内容: ${pageContent}
 
 以下の形式で回答してください：
 
@@ -1442,10 +1565,11 @@ async function handleAnalyzeVSCodeSettings(data, sendResponse) {
 
 VSCodeドキュメントの内容に基づいて、実用的で分かりやすい設定解説を提供してください。`;
 
-        // AI APIを呼び出してOffscreen Documentで処理
-        const aiResult = await callAIAPI(analysisPrompt, aiSettings);
+        console.log(`VSCode設定解析: プロンプト長 ${analysisPrompt.length} 文字`);
 
-        if (aiResult.success) {
+        // AI APIを呼び出してOffscreen Documentで処理
+        const aiResult = await callAIAPI(analysisPrompt, aiSettings); if (aiResult.success) {
+            console.log('VSCode設定解析: AI解析成功');
             sendResponse({
                 success: true,
                 analysis: aiResult.content,
@@ -1455,14 +1579,53 @@ VSCodeドキュメントの内容に基づいて、実用的で分かりやす�
                 }
             });
         } else {
+            console.error('VSCode設定解析: AI解析失敗', aiResult);
             throw new Error(aiResult.error || 'AI解析に失敗しました');
         }
 
     } catch (error) {
         console.error('Background: VSCode設定解析エラー:', error);
+
+        // エラーの詳細な情報を提供
+        let errorMessage = error.message;
+        if (error.message.includes('token') || error.message.includes('limit')) {
+            errorMessage = 'コンテンツサイズが大きすぎます。より短いページで試してください。';
+        } else if (error.message.includes('API')) {
+            errorMessage = 'AI APIの設定に問題があります。設定を確認してください。';
+        }
+
         sendResponse({
             success: false,
-            error: `VSCode設定解析に失敗しました: ${error.message}`
+            error: `VSCode設定解析に失敗しました: ${errorMessage}`
         });
     }
+}
+
+/**
+ * HTMLコンテンツからプレーンテキストを抽出する共通関数
+ */
+function extractTextFromHTML(content, maxLength = 20000) {
+    if (!content) return '';
+
+    let text = content;
+
+    // HTMLタグが含まれている場合のみ処理
+    if (content.includes('<') && content.includes('>')) {
+        console.log('HTMLコンテンツを検出、テキスト抽出を実行');
+        text = content
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // スクリプトタグ除去
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')   // スタイルタグ除去
+            .replace(/<[^>]+>/g, ' ')                         // 残りのHTMLタグ除去
+            .replace(/\s+/g, ' ')                             // 連続する空白を単一スペースに
+            .trim();
+    }
+
+    // 文字数制限
+    if (text.length > maxLength) {
+        text = text.substring(0, maxLength) + '\n\n[注意: コンテンツが長いため、先頭部分のみを処理対象としています]';
+        console.log(`テキスト抽出: サイズ制限を適用（${maxLength}文字）`);
+    }
+
+    console.log(`テキスト抽出: 処理後テキスト長 ${text.length} 文字`);
+    return text;
 }

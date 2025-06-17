@@ -77,8 +77,55 @@
         color: ButtonText;
         border: 1px solid ButtonText;
     }
+      .ai-action-button:hover {
+        background: Highlight;
+        color: HighlightText;
+    }
     
-    .ai-action-button:hover {
+    .ai-dialog-overlay {
+        background: rgba(0, 0, 0, 0.8) !important;
+    }
+    
+    .ai-dialog-content {
+        background: Canvas;
+        color: CanvasText;
+        border: 2px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .ai-dialog-body {
+        background: Canvas;
+        color: CanvasText;
+    }
+    
+    .ai-result-content {
+        background: Field;
+        color: FieldText;
+        border: 1px solid ButtonText;
+    }
+    
+    .ai-loading-spinner::before {
+        border-color: ButtonText transparent transparent transparent;
+    }
+    
+    .ai-input, .ai-textarea {
+        background: Field;
+        color: FieldText;
+        border: 2px solid ButtonText;
+    }
+    
+    .ai-input:focus, .ai-textarea:focus {
+        border-color: Highlight;
+        outline: 2px solid Highlight;
+    }
+    
+    .ai-dropdown-menu {
+        background: Canvas;
+        border: 2px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .ai-dropdown-item:hover {
         background: Highlight;
         color: HighlightText;
     }
