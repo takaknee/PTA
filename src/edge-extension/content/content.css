@@ -195,6 +195,11 @@
     border-bottom: 1px solid var(--ai-border-color, #e0e0e0);
     background: var(--ai-header-bg, linear-gradient(135deg, #f5f5f5, #e8e8e8));
     border-radius: 12px 12px 0 0;
+    user-select: none !important;
+}
+
+.ai-dialog-header:hover {
+    cursor: move !important;
 }
 
 .ai-dialog-header h2 {
@@ -1139,4 +1144,59 @@
     .settings-json code {
         color: CanvasText;
     }
+}
+
+/* ダイアログのドラッグ・リサイズ機能 */
+.ai-dialog-header {
+    user-select: none !important;
+}
+
+.ai-dialog-header:hover {
+    cursor: move !important;
+}
+
+/* リサイズハンドル（右下角） */
+.ai-dialog .ai-dialog-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(-45deg, 
+        transparent 0%, 
+        transparent 40%, 
+        var(--ai-border-color, #e0e0e0) 40%, 
+        var(--ai-border-color, #e0e0e0) 60%, 
+        transparent 60%,
+        transparent 70%,
+        var(--ai-border-color, #e0e0e0) 70%,
+        var(--ai-border-color, #e0e0e0) 90%,
+        transparent 90%
+    );
+    cursor: nw-resize;
+    pointer-events: auto;
+}
+
+/* ダークテーマでのリサイズハンドル */
+@media (prefers-color-scheme: dark) {
+    .ai-dialog .ai-dialog-content::after {
+        background: linear-gradient(-45deg, 
+            transparent 0%, 
+            transparent 40%, 
+            #555555 40%, 
+            #555555 60%, 
+            transparent 60%,
+            transparent 70%,
+            #555555 70%,
+            #555555 90%,
+            transparent 90%
+        );
+    }
+}
+
+/* ダイアログの位置固定スタイル */
+.ai-dialog .ai-dialog-content {
+    position: fixed !important;
+    z-index: 2147483647 !important;
 }

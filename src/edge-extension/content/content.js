@@ -291,9 +291,7 @@ function createAiDialog(dialogData) {
     // ダイアログコンテナを作成
     const dialog = document.createElement('div');
     dialog.id = 'ai-dialog';
-    dialog.dialogData = dialogData; // データを保存
-
-    // 強制的にモーダルスタイル適用
+    dialog.dialogData = dialogData; // データを保存    // 強制的にモーダルスタイル適用（オーバーレイなし、右側固定位置）
     dialog.style.cssText = `
         position: fixed !important;
         top: 0 !important;
@@ -301,12 +299,14 @@ function createAiDialog(dialogData) {
         width: 100% !important;
         height: 100% !important;
         z-index: 2147483647 !important;
-        background: rgba(0, 0, 0, 0.7) !important;
+        background: transparent !important;
         display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        align-items: flex-start !important;
+        justify-content: flex-end !important;
+        padding: 20px !important;
         font-family: 'Segoe UI', sans-serif !important;
-    `;    // テーマを検出
+        pointer-events: none !important;
+    `;// テーマを検出
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
 
@@ -336,30 +336,40 @@ function createAiDialog(dialogData) {
         headerBg = 'linear-gradient(135deg, #2196F3, #1976D2)';
         borderColor = '#e0e0e0';
     }    // テーマに応じた追加色設定
-    let textMuted, headerTextColor;
+    let textMuted, infoBg, headerTextColor;
 
     if (prefersDark) {
         textMuted = '#cccccc';
+        infoBg = '#404040';
         headerTextColor = '#ffffff';
     } else {
         textMuted = '#666666';
+        infoBg = '#f0f8ff';
         headerTextColor = '#ffffff';
-    }
-
-    // ダイアログコンテンツを作成
+    }// ダイアログコンテンツを作成
     const content = document.createElement('div');
-    content.style.cssText = `
+
+    // 保存された位置とサイズを取得
+    const savedDialogSettings = getSavedDialogSettings(); content.style.cssText = `
         background: ${dialogBg} !important;
         color: ${dialogText} !important;
         border-radius: 12px !important;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-        max-width: 600px !important;
-        width: 90% !important;
-        max-height: 80vh !important;
-        overflow-y: auto !important;
-        position: relative !important;
-    `;
-    content.innerHTML = `        <div class="ai-dialog-header" style="
+        width: ${savedDialogSettings.width}px !important;
+        height: ${savedDialogSettings.height}px !important;
+        position: fixed !important;
+        top: ${savedDialogSettings.top}px !important;
+        right: ${savedDialogSettings.right}px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        resize: both !important;
+        min-width: 400px !important;
+        min-height: 300px !important;
+        max-width: ${window.innerWidth - 40}px !important;
+        max-height: ${window.innerHeight - 40}px !important;
+        pointer-events: auto !important;
+    `; content.innerHTML = `        <div class="ai-dialog-header" style="
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -371,6 +381,7 @@ function createAiDialog(dialogData) {
             position: sticky;
             top: 0;
             z-index: 10;
+            cursor: move;
         ">
             <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
                 <span style="font-size: 18px;">🏫</span>
@@ -383,7 +394,7 @@ function createAiDialog(dialogData) {
                         overflow: hidden; 
                         text-overflow: ellipsis;
                         max-width: 300px;
-                        cursor: pointer;
+                        cursor: move;
                     " title="${dialogData.pageTitle || 'タイトル不明'}\n${dialogData.pageUrl || ''}">${dialogData.pageTitle || 'AI支援ツール'}</span>
                     <button class="ai-copy-page-link-btn" style="
                         background: rgba(255, 255, 255, 0.1);
@@ -422,10 +433,14 @@ function createAiDialog(dialogData) {
                     justify-content: center;
                     border-radius: 50%;
                 ">×</button>
-            </div>
-        </div>
-        <div style="padding: 20px; overflow-y: auto; flex: 1;">
-            ${dialogData.selectedText ? `<div class="ai-result-container ai-result-info"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
+            </div>        </div>
+        <div class="ai-dialog-body" style="
+            padding: 20px; 
+            overflow-y: auto; 
+            flex: 1;
+            max-height: calc(100% - 60px);
+        ">
+            ${dialogData.selectedText ? `<div style="background: ${infoBg}; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px; color: ${dialogText};"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
             
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
                 ${currentService === 'outlook' || currentService === 'gmail' ? `
@@ -605,22 +620,26 @@ function createAiDialog(dialogData) {
     console.log('ダイアログHTML:', content.innerHTML);
 
     // CSP準拠のイベントリスナー設定
-    setupDialogEventListeners(dialog);
-
-    // オーバーレイクリックで閉じる
+    setupDialogEventListeners(dialog);    // 背景クリック処理（無効化 - ダイアログは背景クリックで閉じない）
     dialog.addEventListener('click', (e) => {
-        if (e.target === dialog) {
-            closeAiDialog();
-        }
+        // 背景クリックでは閉じないようにする
+        e.stopPropagation();
     });
 
     // ESCキーで閉じる
-    document.addEventListener('keydown', handleEscapeKey);
-
-    // ダイアログにテーマクラスを適用
+    document.addEventListener('keydown', handleEscapeKey);    // ダイアログにテーマクラスを適用
     applyThemeToDialog(dialog);
 
-    console.log('AIダイアログを作成しました（モーダル表示）');
+    // ドラッグ機能を有効化
+    const header = content.querySelector('.ai-dialog-header');
+    if (header) {
+        makeDialogDraggable(content, header);
+    }
+
+    // リサイズ監視を開始
+    observeDialogResize(content);
+
+    console.log('AIダイアログを作成しました（移動・リサイズ可能）');
 }
 
 /**
@@ -2231,6 +2250,185 @@ function getSavedButtonPositionSync() {
     }
 
     return defaultPosition;
+}
+
+/**
+ * ダイアログの設定を保存
+ * @param {Object} settings - 設定情報 {top, right, width, height}
+ */
+function saveDialogSettings(settings) {
+    try {
+        chrome.storage.local.set({
+            'aiDialogSettings': settings
+        }, () => {
+            console.log('ダイアログ設定を保存しました:', settings);
+        });
+    } catch (error) {
+        console.error('ダイアログ設定の保存に失敗:', error);
+        // フォールバック: localStorageを使用
+        try {
+            localStorage.setItem('aiDialogSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error('localStorageでの保存も失敗:', e);
+        }
+    }
+}
+
+/**
+ * 保存されたダイアログ設定を取得
+ * @returns {Object} 設定情報 {top, right, width, height}
+ */
+function getSavedDialogSettings() {
+    const defaultSettings = {
+        top: 20,
+        right: 20,
+        width: 600,
+        height: 500
+    };
+
+    try {
+        // まずlocalStorageから取得を試行
+        const saved = localStorage.getItem('aiDialogSettings');
+        if (saved) {
+            const settings = JSON.parse(saved);
+
+            // 数値チェックとデフォルト値設定
+            const validSettings = {
+                top: isNaN(settings.top) ? defaultSettings.top : settings.top,
+                right: isNaN(settings.right) ? defaultSettings.right : settings.right,
+                width: isNaN(settings.width) ? defaultSettings.width : settings.width,
+                height: isNaN(settings.height) ? defaultSettings.height : settings.height
+            };
+
+            // 画面サイズが変わった場合の調整
+            validSettings.top = Math.max(0, Math.min(window.innerHeight - 100, validSettings.top));
+            validSettings.right = Math.max(0, Math.min(window.innerWidth - 100, validSettings.right));
+            validSettings.width = Math.max(400, Math.min(window.innerWidth - 40, validSettings.width));
+            validSettings.height = Math.max(300, Math.min(window.innerHeight - 40, validSettings.height));
+
+            return validSettings;
+        }
+    } catch (error) {
+        console.error('ダイアログ設定の取得に失敗:', error);
+    }
+
+    return defaultSettings;
+}
+
+/**
+ * ダイアログをドラッグ可能にする
+ * @param {HTMLElement} dialog - ダイアログ要素
+ * @param {HTMLElement} header - ドラッグハンドル要素
+ */
+function makeDialogDraggable(dialog, header) {
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startTop = 0;
+    let startRight = 0;
+
+    header.addEventListener('mousedown', (e) => {
+        // 設定ボタンや閉じるボタンのクリックは除外
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+            return;
+        }
+
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        const rect = dialog.getBoundingClientRect();
+        startRight = window.innerWidth - rect.right;
+        startTop = rect.top;
+
+        // ドラッグ中のスタイル変更
+        dialog.style.transition = 'none';
+        header.style.cursor = 'grabbing';
+        dialog.style.opacity = '0.9';
+
+        // ドキュメント全体でマウスイベントを監視
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+
+        e.preventDefault();
+    });
+
+    function onMouseMove(e) {
+        if (!isDragging) return;
+
+        // マウスの移動量を計算
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        // 新しい位置を計算（画面の境界を考慮）
+        const newTop = Math.max(0, Math.min(window.innerHeight - dialog.offsetHeight, startTop + deltaY));
+        const newRight = Math.max(0, Math.min(window.innerWidth - dialog.offsetWidth, startRight - deltaX));
+
+        // 位置を更新
+        dialog.style.top = newTop + 'px';
+        dialog.style.right = newRight + 'px';
+    }
+
+    function onMouseUp() {
+        if (isDragging) {
+            isDragging = false;
+
+            // スタイルを元に戻す
+            dialog.style.transition = 'all 0.3s ease';
+            header.style.cursor = 'move';
+            dialog.style.opacity = '1';
+
+            // 現在の位置を保存
+            const rect = dialog.getBoundingClientRect();
+            const settings = {
+                top: rect.top,
+                right: window.innerWidth - rect.right,
+                width: rect.width,
+                height: rect.height
+            };
+            saveDialogSettings(settings);
+
+            // イベントリスナーを削除
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+    }
+}
+
+/**
+ * ダイアログのリサイズイベントを監視
+ * @param {HTMLElement} dialog - ダイアログ要素
+ */
+function observeDialogResize(dialog) {
+    let resizeTimeout;
+
+    // ResizeObserverでサイズ変更を監視
+    if (window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver(entries => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                for (let entry of entries) {
+                    const rect = entry.target.getBoundingClientRect();
+                    const settings = {
+                        top: rect.top,
+                        right: window.innerWidth - rect.right,
+                        width: rect.width,
+                        height: rect.height
+                    };
+                    saveDialogSettings(settings);
+                }
+            }, 300); // 300ms後に保存（連続リサイズを考慮）
+        });
+
+        resizeObserver.observe(dialog);
+
+        // ダイアログが削除されたときにObserverをクリーンアップ
+        const originalRemove = dialog.remove;
+        dialog.remove = function () {
+            resizeObserver.disconnect();
+            originalRemove.call(this);
+        };
+    }
 }
 
 /**
