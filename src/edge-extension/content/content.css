@@ -209,6 +209,12 @@
     font-weight: 600;
 }
 
+/* ダイアログヘッダーの明示的なスタイル */
+.ai-dialog-header h2 {
+    color: #e3f2fd !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
 .ai-close-button {
     background: none;
     border: none;
@@ -247,6 +253,7 @@
     margin: 0 0 12px 0;
     color: var(--ai-info-title, #333333);
     font-size: 16px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .ai-content-info p {
@@ -328,6 +335,7 @@
     margin: 0 0 12px 0;
     color: var(--ai-result-title, #333333);
     font-size: 16px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .ai-result pre {
@@ -503,25 +511,30 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --ai-dialog-bg: #2d2d2d;
-        --ai-dialog-text: #ffffff;
-        --ai-border-color: #555555;
+        --ai-dialog-text: #ffffff;        --ai-border-color: #555555;
         --ai-header-bg: linear-gradient(135deg, #3a3a3a, #2d2d2d);
-        --ai-header-text: #ffffff;
+        --ai-header-text: #e3f2fd;
         --ai-close-btn-color: #cccccc;
         --ai-close-btn-hover-bg: #404040;
         --ai-close-btn-hover-text: #ffffff;
         --ai-info-bg: #3a3a3a;
-        --ai-info-text: #cccccc;
-        --ai-info-title: #ffffff;
+        --ai-info-text: #cccccc;        --ai-info-title: #e3f2fd;
         --ai-info-strong: #ffffff;
         --ai-result-bg: #3a3a3a;
-        --ai-result-title: #ffffff;
+        --ai-result-title: #e3f2fd;
         --ai-result-text: #ffffff;
         --ai-success-bg: #c6fdca;
         --ai-error-bg: #b71c1c;
         --ai-loading-text: #cccccc;
         --ai-spinner-color: #555555;
-        --ai-spinner-active: #64b5f6;
+        --ai-spinner-active: #64b5f6;        /* 見出し色のダークモード設定 */
+        --ai-heading-color: #64b5f6;
+        --ai-subheading-color: #bbbbbb;
+        --ai-result-title: #e3f2fd;
+        --ai-info-title: #e3f2fd;
+        --ai-json-bg-dark: #2d2d2d;
+        --ai-json-text-dark: #f0f0f0;
+        --ai-json-border-dark: #555;
     }
     
     .ai-dialog-overlay {
@@ -581,7 +594,7 @@
     --ai-dialog-text: #ffffff !important;
     --ai-border-color: #555555 !important;
     --ai-header-bg: linear-gradient(135deg, #3a3a3a, #2d2d2d) !important;
-    --ai-header-text: #ffffff !important;
+    --ai-header-text: #e3f2fd !important;
 }
 
 .ai-dialog.ai-theme-high-contrast .ai-dialog-content,
@@ -595,11 +608,10 @@
 
 .ai-dialog.ai-theme-high-contrast.ai-theme-dark .ai-dialog-content,
 .ai-dialog.ai-theme-high-contrast.ai-theme-dark .ai-dialog-overlay ~ * {
-    --ai-dialog-bg: #000000 !important;
-    --ai-dialog-text: #ffffff !important;
+    --ai-dialog-bg: #000000 !important;    --ai-dialog-text: #ffffff !important;
     --ai-border-color: #ffffff !important;
     --ai-header-bg: #000000 !important;
-    --ai-header-text: #ffffff !important;
+    --ai-header-text: #90caf9 !important;
 }
 
 /* テーマクラス用の詳細なスタイリング */
@@ -636,11 +648,10 @@
     .ai-page-info {
         background: #3a3a3a;
         color: #fff;
-    }
-    
-    .ai-email-info h3,
+    }      .ai-email-info h3,
     .ai-page-info h3 {
-        color: #fff;
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
     }
     
     .ai-email-info p,
@@ -658,9 +669,28 @@
         border-color: #555;
         color: #fff;
     }
+      .ai-result h3 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+      /* 分析セクションの見出しのダークモード対応 */
+    .analysis-section h3 {
+        color: #64b5f6 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
     
-    .ai-result h3 {
-        color: #fff;
+    .analysis-section h4 {
+        color: #bbbbbb !important;
+    }
+      /* その他の見出し要素のダークモード対応 */
+    .ai-content-info h3 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .ai-result-header h3 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
     }
     
     .ai-result pre {
@@ -672,6 +702,44 @@
     }
 }
 
+/* ページ要約・AI結果内のすべての見出しのダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    .ai-dialog h1,
+    .ai-dialog h2,
+    .ai-dialog h3,
+    .ai-dialog h4,
+    .ai-dialog h5,
+    .ai-dialog h6 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .ai-result-content h1,
+    .ai-result-content h2,
+    .ai-result-content h3,
+    .ai-result-content h4,
+    .ai-result-content h5,
+    .ai-result-content h6 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    /* 特に明るい青色で見出しを強調 */
+    .ai-result-content h1 {
+        color: #90caf9 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .ai-result-content h2 {
+        color: #81c784 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .ai-result-content h3 {
+        color: #64b5f6 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+}
 /* 拡大表示モーダル */
 .ai-modal-overlay {
     position: fixed;
@@ -929,7 +997,8 @@
 
 .ai-result-header h3 {
     margin: 0;
-    color: inherit;
+    color: var(--ai-result-title, #333333);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* コピーボタン */
@@ -978,6 +1047,7 @@
     font-size: 18px;
     font-weight: 600;
     color: var(--ai-heading-color, #1976d2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .analysis-section h4 {
@@ -1246,5 +1316,97 @@
         background: Field;
         color: FieldText;
         border-color: FieldText;
+    }
+}
+
+/* 見出し要素の高コントラストモード対応 */
+@media (forced-colors: active) {
+    .ai-dialog h1,
+    .ai-dialog h2,
+    .ai-dialog h3,
+    .ai-dialog h4,
+    .ai-dialog h5,
+    .ai-dialog h6,
+    .ai-result-content h1,
+    .ai-result-content h2,
+    .ai-result-content h3,
+    .ai-result-content h4,
+    .ai-result-content h5,
+    .ai-result-content h6,
+    .analysis-section h3,
+    .analysis-section h4,
+    .ai-content-info h3,
+    .ai-result h3,
+    .ai-result-header h3 {
+        color: CanvasText !important;
+        text-shadow: none !important;
+    }
+
+    .ai-dialog-header h2 {
+        color: ButtonText !important;
+        text-shadow: none !important;
+    }
+}
+
+/* ダークテーマでの全てのh3要素に対する強力な色指定 */
+@media (prefers-color-scheme: dark) {
+    /* すべてのAI関連のh3要素を対象 */
+    .ai-dialog h3,
+    .ai-dialog-content h3,
+    .ai-dialog-body h3,
+    .ai-result h3,
+    .ai-result-content h3,
+    .ai-content-info h3,
+    .ai-result-header h3,
+    .ai-email-info h3,
+    .ai-page-info h3,
+    .analysis-section h3,
+    .ai-analysis h3,
+    .ai-summary h3,
+    h3.ai-heading,
+    [class*="ai-"] h3 {
+        color: #90caf9 !important;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+        font-weight: 600 !important;
+    }
+
+    /* 特定セクションの色分け */
+    .analysis-section h3 {
+        color: #64b5f6 !important;
+    }
+    
+    .ai-result-content h3 {
+        color: #81c784 !important;
+    }
+}
+
+/* 最高優先度でのh3色指定（すべてのケースをカバー） */
+[id*="ai-"] h3,
+[class*="ai-"] h3,
+div[id="ai-dialog"] h3,
+div[id="ai-dialog"] * h3 {
+    color: inherit !important;
+}
+
+/* ダークテーマ検出時の最高優先度指定 */
+@media (prefers-color-scheme: dark) {
+    [id*="ai-"] h3,
+    [class*="ai-"] h3,
+    div[id="ai-dialog"] h3,
+    div[id="ai-dialog"] * h3 {
+        color: #90caf9 !important;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+        font-weight: 600 !important;
+    }
+    
+    /* 特定セクションの色分け（最高優先度） */
+    [class*="analysis"] h3,
+    .analysis-section h3 {
+        color: #64b5f6 !important;
+    }
+    
+    [class*="result-content"] h3,
+    .ai-result-content h3 {
+        color: #81c784 !important;
     }
 }

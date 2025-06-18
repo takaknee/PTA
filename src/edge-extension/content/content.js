@@ -297,12 +297,23 @@ function createAiDialog(dialogData) {
     const existingDialog = document.getElementById('ai-dialog');
     if (existingDialog) {
         existingDialog.remove();
-    }
-
-    // ダイアログコンテナを作成
+    }    // ダイアログコンテナを作成
     const dialog = document.createElement('div');
     dialog.id = 'ai-dialog';
-    dialog.dialogData = dialogData; // データを保存    // 強制的にモーダルスタイル適用（オーバーレイなし、右側固定位置）
+    dialog.dialogData = dialogData; // データを保存
+
+    // テーマクラスを適用
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+
+    dialog.className = 'ai-dialog';
+    if (isHighContrast) {
+        dialog.classList.add('ai-theme-high-contrast');
+    } else if (isDark) {
+        dialog.classList.add('ai-theme-dark');
+    } else {
+        dialog.classList.add('ai-theme-light');
+    }// 強制的にモーダルスタイル適用（オーバーレイなし、右側固定位置）
     dialog.style.cssText = `
         position: fixed !important;
         top: 0 !important;
