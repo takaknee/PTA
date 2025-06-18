@@ -1214,3 +1214,37 @@
     position: fixed !important;
     z-index: 2147483647 !important;
 }
+
+/* JSON表示用スタイル */
+.ai-result-json {
+    background: var(--ai-json-bg, #f5f5f5);
+    color: var(--ai-json-text, #333);
+    border: 1px solid var(--ai-json-border, #ddd);
+    border-radius: 4px;
+    padding: 12px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+/* ダークモードでのJSON表示 */
+@media (prefers-color-scheme: dark) {
+    .ai-result-json {
+        background: var(--ai-json-bg-dark, #2d2d2d);
+        color: var(--ai-json-text-dark, #f0f0f0);
+        border-color: var(--ai-json-border-dark, #555);
+    }
+}
+
+/* 高コントラストモードでのJSON表示 */
+@media (forced-colors: active) {
+    .ai-result-json {
+        background: Field;
+        color: FieldText;
+        border-color: FieldText;
+    }
+}

@@ -51,6 +51,9 @@ if (document.readyState === 'loading') {
 function initialize() {
     console.log('AI支援ツール初期化開始:', currentService);
 
+    // サニタイザーの初期化状態を確認
+    checkSanitizerStatus();
+
     // テーマ検出と適用（最初に実行）
     detectAndApplyTheme();
 
@@ -66,6 +69,14 @@ function initialize() {
 
     // URLの変更を監視（SPA対応）
     observeUrlChanges();
+}
+
+/**
+ * セキュリティチェックの初期化状態を確認
+ */
+function checkSanitizerStatus() {
+    console.log('[Content Script] 軽量セキュリティチェック（検知重視モード）を使用します');
+    console.log('[Content Script] AI応答は基本的にそのまま表示され、異常パターンは検知・ログ記録されます');
 }
 
 /**
@@ -999,7 +1010,16 @@ function hideLoading() {
 function showResult(result) {
     const resultElement = document.getElementById('ai-result');
     const resultContentElement = document.getElementById('ai-result-content');
-    const copyStructuredBtn = document.querySelector('.ai-copy-structured-result-btn');
+    const copyStructuredBtn = document.querySelector('.ai-copy-structured-result-btn');    // デバッグ用：resultの型と内容をログ出力
+    console.log('[Content Script] showResult called with:', {
+        type: typeof result,
+        value: result,
+        isString: typeof result === 'string',
+        isNull: result === null,
+        isUndefined: result === undefined,
+        isObject: typeof result === 'object' && result !== null,
+        objectKeys: typeof result === 'object' && result !== null ? Object.keys(result) : null
+    });
 
     if (resultElement && resultContentElement) {
         // エラーメッセージの場合はそのまま表示
@@ -1022,19 +1042,82 @@ function showResult(result) {
 }
 
 /**
- * HTML応答の基本的なサニタイズ（セキュリティ対策）
+ * HTML応答の軽量サニタイズ（検知重視）
+ * AI応答をそのまま表示し、異常なパターンを検知・ログ記録する
  */
 function sanitizeHtmlResponse(html) {
-    // 危険なタグやJavaScriptコードを除去
-    const sanitized = html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // <script>タグを除去
-        .replace(/on\w+="[^"]*"/gi, '') // onclick等のイベントハンドラーを除去
-        .replace(/javascript:/gi, '') // javascript:を除去
-        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // <iframe>を除去
-        .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '') // <object>を除去
-        .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, ''); // <embed>を除去
+    // 型チェックと初期検証
+    if (html === null || html === undefined) {
+        console.warn('sanitizeHtmlResponse: 入力がnullまたはundefinedです');
+        return '';
+    }    // 文字列以外の場合は適切に変換
+    let htmlString;
+    if (typeof html !== 'string') {
+        console.warn('sanitizeHtmlResponse: 入力が文字列ではありません。型:', typeof html, '値:', html);
+        try {
+            // 新しいオブジェクト変換関数を使用
+            htmlString = objectToHtml(html);
+        } catch (error) {
+            console.error('sanitizeHtmlResponse: 文字列変換に失敗しました:', error);
+            return `<div class="ai-result-error">表示エラー: データ変換に失敗しました (型: ${typeof html})</div>`;
+        }
+    } else {
+        htmlString = html;
+    }
 
-    return sanitized;
+    // 危険なパターンの検知とログ記録（除去はしない）
+    detectSuspiciousPatterns(htmlString);
+
+    // AI応答をそのまま返す（基本的にはHTMLとして表示）
+    return htmlString;
+}
+
+/**
+ * 危険なパターンの検知とログ記録
+ */
+function detectSuspiciousPatterns(html) {
+    const suspiciousPatterns = [
+        { name: 'script タグ', pattern: /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi },
+        { name: 'javascript プロトコル', pattern: /javascript:/gi },
+        { name: 'イベントハンドラー', pattern: /on\w+\s*=/gi },
+        { name: 'iframe タグ', pattern: /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi },
+        { name: 'object タグ', pattern: /<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi },
+        { name: 'embed タグ', pattern: /<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi }
+    ];
+
+    const detectedPatterns = [];
+
+    suspiciousPatterns.forEach(pattern => {
+        const matches = html.match(pattern.pattern);
+        if (matches && matches.length > 0) {
+            detectedPatterns.push({
+                name: pattern.name,
+                count: matches.length,
+                examples: matches.slice(0, 3) // 最初の3つの例を記録
+            });
+        }
+    });
+
+    if (detectedPatterns.length > 0) {
+        console.warn('🚨 疑わしいパターンを検知しました:', detectedPatterns);
+        // 必要に応じて、ここでユーザーに警告表示やログ送信などを行う
+        showSecurityWarning(detectedPatterns);
+    } else {
+        console.log('✅ セキュリティチェック: 疑わしいパターンは検出されませんでした');
+    }
+}
+
+/**
+ * セキュリティ警告の表示
+ */
+function showSecurityWarning(detectedPatterns) {
+    const warningMessage = `セキュリティ注意: AI応答に潜在的に危険なパターンが含まれています:\n${detectedPatterns.map(p => `- ${p.name}: ${p.count}件`).join('\n')
+        }`;
+
+    console.warn(warningMessage);
+
+    // 必要に応じてユーザーに視覚的な警告を表示
+    // showNotification(warningMessage, 'warning');
 }
 
 /**
@@ -2953,8 +3036,47 @@ function copySettingsJSON(buttonElement) {
     }
 }
 
-// グローバル関数として公開
-window.copyAIResult = copyAIResult;
-window.copyVSCodeAnalysis = copyVSCodeAnalysis;
-window.copySettingsJSON = copySettingsJSON;
-window.handleCopyButtonClick = handleCopyButtonClick;
+/**
+ * オブジェクトをHTMLに変換
+ */
+function objectToHtml(obj) {
+    try {
+        if (obj === null || obj === undefined) {
+            return '<div class="ai-result-error">データがありません</div>';
+        }
+
+        if (typeof obj === 'string') {
+            return obj;
+        }
+
+        if (typeof obj === 'object') {
+            // よく使われるプロパティから優先的に取得
+            const priorityKeys = ['message', 'content', 'result', 'data', 'text', 'response'];
+
+            for (const key of priorityKeys) {
+                if (obj.hasOwnProperty(key) && obj[key]) {
+                    console.log(`オブジェクトから '${key}' プロパティを使用:`, obj[key]);
+                    return String(obj[key]);
+                }
+            }
+
+            // 優先プロパティがない場合は整形されたJSONを表示
+            const jsonString = JSON.stringify(obj, null, 2);
+            return `<pre class="ai-result-json">${escapeHtml(jsonString)}</pre>`;
+        }
+
+        return String(obj);
+    } catch (error) {
+        console.error('オブジェクトからHTMLへの変換に失敗:', error);
+        return `<div class="ai-result-error">表示エラー: ${error.message}</div>`;
+    }
+}
+
+/**
+ * HTMLエスケープ
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
