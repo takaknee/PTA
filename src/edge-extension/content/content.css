@@ -1155,43 +1155,57 @@
     cursor: move !important;
 }
 
-/* リサイズハンドル（右下角） */
-.ai-dialog .ai-dialog-content::after {
-    content: '';
+/* カスタムリサイズハンドル */
+.resize-handle {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(-45deg, 
-        transparent 0%, 
-        transparent 40%, 
-        var(--ai-border-color, #e0e0e0) 40%, 
-        var(--ai-border-color, #e0e0e0) 60%, 
-        transparent 60%,
-        transparent 70%,
-        var(--ai-border-color, #e0e0e0) 70%,
-        var(--ai-border-color, #e0e0e0) 90%,
-        transparent 90%
-    );
+    z-index: 10;
+    transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+    background-color: rgba(33, 150, 243, 0.3) !important;
+}
+
+.resize-handle-right {
+    top: 0;
+    right: -5px;
+    width: 10px;
+    height: 100%;
+    cursor: ew-resize;
+}
+
+.resize-handle-bottom {
+    left: 0;
+    bottom: -5px;
+    width: 100%;
+    height: 10px;
+    cursor: ns-resize;
+}
+
+.resize-handle-corner {
+    right: -5px;
+    bottom: -5px;
+    width: 15px;
+    height: 15px;
     cursor: nw-resize;
-    pointer-events: auto;
+    border-radius: 0 0 12px 0;
 }
 
 /* ダークテーマでのリサイズハンドル */
 @media (prefers-color-scheme: dark) {
-    .ai-dialog .ai-dialog-content::after {
-        background: linear-gradient(-45deg, 
-            transparent 0%, 
-            transparent 40%, 
-            #555555 40%, 
-            #555555 60%, 
-            transparent 60%,
-            transparent 70%,
-            #555555 70%,
-            #555555 90%,
-            transparent 90%
-        );
+    .resize-handle:hover {
+        background-color: rgba(100, 150, 255, 0.4) !important;
+    }
+    
+    .resize-handle-corner {
+        background-color: #555 !important;
+    }
+}
+
+/* ライトテーマでのリサイズハンドル */
+@media (prefers-color-scheme: light) {
+    .resize-handle-corner {
+        background-color: #ccc !important;
     }
 }
 

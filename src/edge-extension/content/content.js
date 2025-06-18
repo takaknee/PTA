@@ -363,7 +363,7 @@ function createAiDialog(dialogData) {
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
-        resize: both !important;
+        resize: none !important;
         min-width: 400px !important;
         min-height: 300px !important;
         max-width: ${window.innerWidth - 40}px !important;
@@ -592,11 +592,41 @@ function createAiDialog(dialogData) {
                         cursor: pointer;
                         font-size: 11px;
                         display: none;
-                    " title="構造的にコピー">📋</button>
-                    <div id="ai-result-content"></div>
+                    " title="構造的にコピー">📋</button>                    <div id="ai-result-content"></div>
                 </div>
             </div>
         </div>
+        
+        <!-- リサイズハンドル -->
+        <div class="resize-handle resize-handle-right" style="
+            position: absolute;
+            top: 0;
+            right: -5px;
+            width: 10px;
+            height: 100%;
+            cursor: ew-resize;
+            z-index: 10;
+        "></div>
+        <div class="resize-handle resize-handle-bottom" style="
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            width: 100%;
+            height: 10px;
+            cursor: ns-resize;
+            z-index: 10;
+        "></div>
+        <div class="resize-handle resize-handle-corner" style="
+            position: absolute;
+            right: -5px;
+            bottom: -5px;
+            width: 15px;
+            height: 15px;
+            cursor: nw-resize;
+            z-index: 11;
+            background: ${prefersDark ? '#555' : '#ccc'};
+            border-radius: 0 0 12px 0;
+        "></div>
     `;
 
     dialog.appendChild(content);
@@ -634,10 +664,8 @@ function createAiDialog(dialogData) {
     const header = content.querySelector('.ai-dialog-header');
     if (header) {
         makeDialogDraggable(content, header);
-    }
-
-    // リサイズ監視を開始
-    observeDialogResize(content);
+    }    // リサイズハンドルを設定
+    setupResizeHandles(content);
 
     console.log('AIダイアログを作成しました（移動・リサイズ可能）');
 }
@@ -2396,38 +2424,108 @@ function makeDialogDraggable(dialog, header) {
 }
 
 /**
- * ダイアログのリサイズイベントを監視
+ * カスタムリサイズハンドルを設定
  * @param {HTMLElement} dialog - ダイアログ要素
  */
-function observeDialogResize(dialog) {
-    let resizeTimeout;
+function setupResizeHandles(dialog) {
+    const rightHandle = dialog.querySelector('.resize-handle-right');
+    const bottomHandle = dialog.querySelector('.resize-handle-bottom');
+    const cornerHandle = dialog.querySelector('.resize-handle-corner');
 
-    // ResizeObserverでサイズ変更を監視
-    if (window.ResizeObserver) {
-        const resizeObserver = new ResizeObserver(entries => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                for (let entry of entries) {
-                    const rect = entry.target.getBoundingClientRect();
-                    const settings = {
-                        top: rect.top,
-                        right: window.innerWidth - rect.right,
-                        width: rect.width,
-                        height: rect.height
-                    };
-                    saveDialogSettings(settings);
-                }
-            }, 300); // 300ms後に保存（連続リサイズを考慮）
-        });
+    // 右端のリサイズハンドル
+    if (rightHandle) {
+        setupResizeHandle(dialog, rightHandle, 'right');
+    }
 
-        resizeObserver.observe(dialog);
+    // 下端のリサイズハンドル
+    if (bottomHandle) {
+        setupResizeHandle(dialog, bottomHandle, 'bottom');
+    }
 
-        // ダイアログが削除されたときにObserverをクリーンアップ
-        const originalRemove = dialog.remove;
-        dialog.remove = function () {
-            resizeObserver.disconnect();
-            originalRemove.call(this);
-        };
+    // 右下角のリサイズハンドル
+    if (cornerHandle) {
+        setupResizeHandle(dialog, cornerHandle, 'corner');
+    }
+}
+
+/**
+ * リサイズハンドルのイベントを設定
+ * @param {HTMLElement} dialog - ダイアログ要素
+ * @param {HTMLElement} handle - リサイズハンドル要素
+ * @param {string} type - リサイズの種類（'right', 'bottom', 'corner'）
+ */
+function setupResizeHandle(dialog, handle, type) {
+    let isResizing = false;
+    let startX = 0;
+    let startY = 0;
+    let startWidth = 0;
+    let startHeight = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startWidth = dialog.offsetWidth;
+        startHeight = dialog.offsetHeight;
+
+        // リサイズ中のスタイル変更
+        dialog.style.transition = 'none';
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = handle.style.cursor;
+
+        // ドキュメント全体でマウスイベントを監視
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    function onMouseMove(e) {
+        if (!isResizing) return;
+
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        let newWidth = startWidth;
+        let newHeight = startHeight;
+
+        // リサイズの種類に応じて計算
+        if (type === 'right' || type === 'corner') {
+            newWidth = Math.max(400, Math.min(window.innerWidth - 40, startWidth + deltaX));
+        }
+        if (type === 'bottom' || type === 'corner') {
+            newHeight = Math.max(300, Math.min(window.innerHeight - 40, startHeight + deltaY));
+        }
+
+        // サイズを適用
+        dialog.style.width = newWidth + 'px';
+        dialog.style.height = newHeight + 'px';
+    }
+
+    function onMouseUp() {
+        if (isResizing) {
+            isResizing = false;
+
+            // スタイルを元に戻す
+            dialog.style.transition = 'all 0.3s ease';
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+
+            // 現在のサイズと位置を保存
+            const rect = dialog.getBoundingClientRect();
+            const settings = {
+                top: rect.top,
+                right: window.innerWidth - rect.right,
+                width: rect.width,
+                height: rect.height
+            };
+            saveDialogSettings(settings);
+
+            // イベントリスナーを削除
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
     }
 }
 
