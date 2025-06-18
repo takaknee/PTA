@@ -1589,13 +1589,15 @@ function createSecureHTMLTextExtractor() {
                 // 自己完結タグ
                 const regex2 = new RegExp(`<${tag}\\s*[^>]*\\s*/?>`, 'gi');
                 sanitized = sanitized.replace(regex2, '');
-            });
-
-            // 2. コメントと特殊なセクションの除去
-            sanitized = sanitized
-                .replace(/<!--[\s\S]*?-->/g, '')           // コメント
-                .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '')  // CDATA
-                .replace(/<\?[\s\S]*?\?>/g, '');           // 処理命令
+            });            // 2. コメントと特殊なセクションの除去（完全除去のためループ処理）
+            let previousLength;
+            do {
+                previousLength = sanitized.length;
+                sanitized = sanitized
+                    .replace(/<!--[\s\S]*?-->/g, '')           // コメント
+                    .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '')  // CDATA
+                    .replace(/<\?[\s\S]*?\?>/g, '');           // 処理命令
+            } while (sanitized.length !== previousLength && sanitized.length > 0);
 
             // 3. 残りのHTMLタグから属性をチェックして除去
             sanitized = sanitized.replace(/<[^>]+>/g, (match) => {

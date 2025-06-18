@@ -38,6 +38,7 @@ temp/
 .vs/PTA/CopilotIndices/
 .vs/PTA/v17/
 .vs/CopilotSnapshots/
+src/outlook-vsto/.vs/OutlookPTAAddin/v17/
 
 # OS生成ファイル
 .DS_Store
