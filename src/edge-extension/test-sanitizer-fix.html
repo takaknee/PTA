@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>型安全性テスト - PTA Edge拡張機能</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>PTA Edge拡張機能 - 型安全性とサニタイザーテスト</h1>
+    
+    <div class="test-section">
+        <h2>1. サニタイザー初期化テスト</h2>
+        <button onclick="testSanitizerInitialization()">サニタイザー初期化を確認</button>
+        <div id="sanitizer-init-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 型安全性テスト</h2>
+        <button onclick="testTypeSafety()">型安全性テストを実行</button>
+        <div id="type-safety-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. showResult関数テスト</h2>
+        <button onclick="testShowResultFunction()">showResult関数をテスト</button>
+        <div id="show-result-test" class="test-result"></div>
+        <div id="ai-result" style="display: none;">
+            <div id="ai-result-content"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. 総合テスト</h2>
+        <button onclick="runAllTests()">すべてのテストを実行</button>
+        <div id="all-tests-result" class="test-result"></div>
+    </div>
+
+    <script>
+        // インライン版のsanitizeHtmlResponse関数（テスト用）
+        function sanitizeHtmlResponse(html) {
+            // 型チェックと初期検証
+            if (html === null || html === undefined) {
+                console.warn('sanitizeHtmlResponse: 入力がnullまたはundefinedです');
+                return '';
+            }
+            
+            // 文字列以外の場合は文字列に変換
+            let htmlString;
+            if (typeof html !== 'string') {
+                console.warn('sanitizeHtmlResponse: 入力が文字列ではありません。型:', typeof html);
+                try {
+                    htmlString = String(html);
+                } catch (error) {
+                    console.error('sanitizeHtmlResponse: 文字列変換に失敗しました:', error);
+                    return '';
+                }
+            } else {
+                htmlString = html;
+            }
+
+            // 統一されたサニタイザーが利用可能か確認
+            if (typeof window.PTASanitizer !== 'undefined') {
+                try {
+                    return window.PTASanitizer.sanitize(htmlString);
+                } catch (error) {
+                    console.warn('統一サニタイザー（PTASanitizer）の使用に失敗、フォールバック処理を実行:', error);
+                }
+            }
+
+            // フォールバック: 基本的なサニタイズ処理
+            try {
+                const sanitized = htmlString
+                    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // <script>タグを除去
+                    .replace(/on\w+="[^"]*"/gi, '') // onclick等のイベントハンドラーを除去
+                    .replace(/javascript:/gi, '') // javascript:を除去
+                    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // <iframe>を除去
+                    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '') // <object>を除去
+                    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, ''); // <embed>を除去
+
+                return sanitized;
+            } catch (error) {
+                console.error('sanitizeHtmlResponse: サニタイズ処理中にエラーが発生しました:', error);
+                return '';  // エラー時は空文字列を返す
+            }
+        }
+
+        // インライン版のshowResult関数（テスト用）
+        function showResult(result) {
+            // デバッグ用：resultの型と内容をログ出力
+            console.log('[Test] showResult called with:', {
+                type: typeof result,
+                value: result,
+                isString: typeof result === 'string',
+                isNull: result === null,
+                isUndefined: result === undefined
+            });
+
+            const resultElement = document.getElementById('ai-result');
+            const resultContentElement = document.getElementById('ai-result-content');
+
+            if (resultElement && resultContentElement) {
+                // エラーメッセージの場合はそのまま表示
+                if (typeof result === 'string' && result.includes('❌ エラー:')) {
+                    resultContentElement.innerHTML = result;
+                } else {
+                    // AI応答をHTML形式でそのまま表示
+                    // 基本的なサニタイズを実行（セキュリティ対策）
+                    const sanitizedResult = sanitizeHtmlResponse(result);
+                    resultContentElement.innerHTML = sanitizedResult;
+                }
+
+                resultElement.style.display = 'block';
+            }
+        }
+
+        function testSanitizerInitialization() {
+            const resultDiv = document.getElementById('sanitizer-init-result');
+            let html = '<div class="info">';
+            
+            if (typeof window.PTASanitizer !== 'undefined') {
+                html += '<h4>✅ PTASanitizer が利用可能です</h4>';
+                html += '<p>メソッド: ' + Object.keys(window.PTASanitizer).join(', ') + '</p>';
+                
+                try {
+                    const testResult = window.PTASanitizer.sanitize('<p>テスト</p><script>alert("test")</script>');
+                    html += '<p>テスト結果: ' + testResult + '</p>';
+                } catch (error) {
+                    html += '<p>❌ テスト失敗: ' + error.message + '</p>';
+                }
+            } else {
+                html += '<h4>⚠️ PTASanitizer が利用できません</h4>';
+                html += '<p>フォールバックロジックが使用されます</p>';
+            }
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testTypeSafety() {
+            const resultDiv = document.getElementById('type-safety-result');
+            let html = '<div>';
+            
+            const testCases = [
+                { name: '文字列', value: '<p>テスト</p>' },
+                { name: 'null', value: null },
+                { name: 'undefined', value: undefined },
+                { name: '数値', value: 123 },
+                { name: 'オブジェクト', value: { test: 'value' } },
+                { name: '配列', value: ['test'] },
+                { name: 'boolean', value: true }
+            ];
+
+            html += '<h4>型安全性テスト結果:</h4>';
+            
+            testCases.forEach(testCase => {
+                try {
+                    const result = sanitizeHtmlResponse(testCase.value);
+                    html += `<p class="success">✅ ${testCase.name}: "${result}" (型: ${typeof result})</p>`;
+                } catch (error) {
+                    html += `<p class="error">❌ ${testCase.name}: エラー - ${error.message}</p>`;
+                }
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testShowResultFunction() {
+            const resultDiv = document.getElementById('show-result-test');
+            let html = '<div>';
+            
+            const testCases = [
+                { name: '正常な文字列', value: '<p>正常なテスト</p>' },
+                { name: 'エラーメッセージ', value: '❌ エラー: テストエラー' },
+                { name: 'null値', value: null },
+                { name: 'オブジェクト', value: { message: 'test' } }
+            ];
+
+            html += '<h4>showResult関数テスト結果:</h4>';
+            
+            testCases.forEach(testCase => {
+                try {
+                    showResult(testCase.value);
+                    html += `<p class="success">✅ ${testCase.name}: 正常に処理されました</p>`;
+                } catch (error) {
+                    html += `<p class="error">❌ ${testCase.name}: エラー - ${error.message}</p>`;
+                }
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function runAllTests() {
+            const resultDiv = document.getElementById('all-tests-result');
+            resultDiv.innerHTML = '<div class="info"><h4>すべてのテストを実行中...</h4></div>';
+            
+            setTimeout(() => {
+                testSanitizerInitialization();
+                testTypeSafety();
+                testShowResultFunction();
+                
+                resultDiv.innerHTML = '<div class="success"><h4>✅ すべてのテストが完了しました</h4><p>各セクションの結果を確認してください。</p></div>';
+            }, 100);
+        }
+
+        // ページ読み込み時に初期テストを実行
+        window.addEventListener('load', () => {
+            console.log('テストページが読み込まれました');
+            testSanitizerInitialization();
+        });
+    </script>
+
+    <!-- 拡張機能のスクリプトをロード（manifest.jsonで定義されている順序で） -->
+    <script src="infrastructure/html-sanitizer.js"></script>
+</body>
+</html>
