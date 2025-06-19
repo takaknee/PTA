@@ -442,28 +442,10 @@ function removeHTMLCommentsSafely(input) {
   let iter = 0;
 
   while (changed && iter < maxIterations) {
-    const before = result.length;
-
-    // 1. 正規のHTMLコメントを除去（<!--...-->）
-    result = result.replace(/<!--[\s\S]*?-->/g, '');
-
-    // 2. 不正な形式のコメント開始タグを除去
-    result = result.replace(/<!--/g, '');
-
-    // 3. 不正な形式のコメント終了タグを除去
-    // -->, --!>, -!>, その他の変形パターン
-    result = result.replace(/--!?>/g, '');
-    result = result.replace(/-!>/g, '');
-    result = result.replace(/--\w>/g, ''); // --a>, --b> など
-
-    // 4. その他の潜在的な不正パターンを除去
-    result = result.replace(/<!-+/g, ''); // <!-, <!--, <!---, etc.
-    result = result.replace(/-+>/g, ''); // ->, -->, --->, etc.
-
-    // 5. 不完全なコメント構造の除去
-    result = result.replace(/<!-[\s\S]*?>/g, ''); // <!-any content>
-
-    changed = (result.length !== before);
+    const before = result;
+    // Consolidated and repeated sanitization logic
+    result = result.replace(/<!--[\s\S]*?-->|<!--|--!?>|-!>|--\w>|<!-+|-+>|<!-[\s\S]*?>/g, '');
+    changed = (result !== before);
     iter++;
   }
 
