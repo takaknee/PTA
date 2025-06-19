@@ -1,3 +1,13 @@
+/*
+ * AI業務支援ツール - コンテンツスクリプト用CSS
+ * 注意: このCSSは外部サイトに注入されるため、既存のページスタイルへの影響を最小限に抑制
+ */
+
+/* 
+ * すべてのAI関連スタイルは特定のクラス・ID内でのみ適用されるよう設計
+ * 既存ページの要素（例: #home-feature-title）には影響しません
+ */
+
 /* AI支援ボタン - テーマ対応 */
 .ai-support-button {
     background: linear-gradient(135deg, #2196F3, #1976D2);
@@ -1351,8 +1361,7 @@
 /* ダークテーマでの全てのh3要素に対する強力な色指定 */
 @media (prefers-color-scheme: dark) {
     /* すべてのAI関連のh3要素を対象 */
-    .ai-dialog h3,
-    .ai-dialog-content h3,
+    .ai-dialog h3,    .ai-dialog-content h3,
     .ai-dialog-body h3,
     .ai-result h3,
     .ai-result-content h3,
@@ -1360,18 +1369,17 @@
     .ai-result-header h3,
     .ai-email-info h3,
     .ai-page-info h3,
-    .analysis-section h3,
-    .ai-analysis h3,
-    .ai-summary h3,
-    h3.ai-heading,
-    [class*="ai-"] h3 {
+    .ai-dialog .analysis-section h3,
+    .ai-dialog .ai-analysis h3,
+    .ai-dialog .ai-summary h3,
+    .ai-dialog h3.ai-heading {
         color: #90caf9 !important;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
         font-weight: 600 !important;
     }
 
     /* 特定セクションの色分け */
-    .analysis-section h3 {
+    .ai-dialog .analysis-section h3 {
         color: #64b5f6 !important;
     }
     
@@ -1380,33 +1388,37 @@
     }
 }
 
-/* 最高優先度でのh3色指定（すべてのケースをカバー） */
-[id*="ai-"] h3,
-[class*="ai-"] h3,
-div[id="ai-dialog"] h3,
-div[id="ai-dialog"] * h3 {
+/* AI専用要素のh3色指定（限定的なセレクタに変更） */
+.ai-dialog h3,
+.ai-support-button h3,
+.ai-modal h3,
+.ai-result-container h3 {
     color: inherit !important;
 }
 
-/* ダークテーマ検出時の最高優先度指定 */
+/* ダークテーマ検出時のAI専用要素指定 */
 @media (prefers-color-scheme: dark) {
-    [id*="ai-"] h3,
-    [class*="ai-"] h3,
-    div[id="ai-dialog"] h3,
-    div[id="ai-dialog"] * h3 {
+    .ai-dialog h3,
+    .ai-support-button h3,
+    .ai-modal h3,
+    .ai-result-container h3,
+    .ai-dialog .ai-result-header h3,
+    .ai-dialog .ai-email-info h3,
+    .ai-dialog .ai-page-info h3,
+    .ai-dialog .analysis-section h3,
+    .ai-dialog .ai-analysis h3,
+    .ai-dialog .ai-summary h3 {
         color: #90caf9 !important;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
         font-weight: 600 !important;
     }
     
-    /* 特定セクションの色分け（最高優先度） */
-    [class*="analysis"] h3,
-    .analysis-section h3 {
+    /* AI専用セクションの色分け（限定的に適用） */
+    .ai-dialog .analysis-section h3 {
         color: #64b5f6 !important;
     }
     
-    [class*="result-content"] h3,
-    .ai-result-content h3 {
+    .ai-dialog .ai-result-content h3 {
         color: #81c784 !important;
     }
 }
