@@ -1059,17 +1059,17 @@ function showResult(result) {
 function sanitizeHtmlResponse(html) {
     // 型チェックと初期検証
     if (html === null || html === undefined) {
-        console.warn('sanitizeHtmlResponse: 入力がnullまたはundefinedです');
+        console.log('sanitizeHtmlResponse: 入力がnullまたはundefinedです');
         return '';
     }    // 文字列以外の場合は適切に変換
     let htmlString;
     if (typeof html !== 'string') {
-        console.warn('sanitizeHtmlResponse: 入力が文字列ではありません。型:', typeof html, '値:', html);
+        console.log('sanitizeHtmlResponse: 入力が文字列ではありません。型:', typeof html, '値:', html);
         try {
             // 新しいオブジェクト変換関数を使用
             htmlString = objectToHtml(html);
         } catch (error) {
-            console.error('sanitizeHtmlResponse: 文字列変換に失敗しました:', error);
+            console.warn('sanitizeHtmlResponse: 文字列変換に失敗しました:', error);
             return `<div class="ai-result-error">表示エラー: データ変換に失敗しました (型: ${typeof html})</div>`;
         }
     } else {
@@ -1110,8 +1110,6 @@ function detectSuspiciousPatterns(html) {
     });
 
     if (detectedPatterns.length > 0) {
-        console.warn('🚨 疑わしいパターンを検知しました:', detectedPatterns);
-        // 必要に応じて、ここでユーザーに警告表示やログ送信などを行う
         showSecurityWarning(detectedPatterns);
     } else {
         console.log('✅ セキュリティチェック: 疑わしいパターンは検出されませんでした');
@@ -1125,10 +1123,8 @@ function showSecurityWarning(detectedPatterns) {
     const warningMessage = `セキュリティ注意: AI応答に潜在的に危険なパターンが含まれています:\n${detectedPatterns.map(p => `- ${p.name}: ${p.count}件`).join('\n')
         }`;
 
-    console.warn(warningMessage);
+    console.log(warningMessage);
 
-    // 必要に応じてユーザーに視覚的な警告を表示
-    // showNotification(warningMessage, 'warning');
 }
 
 /**
@@ -2017,7 +2013,7 @@ function extractPageContent() {
     try {
         // 基本的な要素の存在チェック
         if (!document || !document.body) {
-            console.warn('Document または body が存在しません');
+            console.log('Document または body が存在しません');
             return 'ページが正常に読み込まれていません';
         }
 
@@ -2101,7 +2097,7 @@ function extractPageContent() {
         // 最終チェック
         if (!pageContent || !pageContent.trim()) {
             pageContent = `（ページコンテンツを取得できませんでした）\nURL: ${window.location.href}\nタイトル: ${document.title || '不明'}`;
-            console.warn('ページコンテンツが空です');
+            console.log('ページコンテンツが空です');
         }
 
     } catch (error) {
@@ -3065,7 +3061,7 @@ function objectToHtml(obj) {
             const priorityKeys = ['message', 'content', 'result', 'data', 'text', 'response'];
 
             for (const key of priorityKeys) {
-                if (obj.hasOwnProperty(key) && obj[key]) {
+                if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key]) {
                     console.log(`オブジェクトから '${key}' プロパティを使用:`, obj[key]);
                     return String(obj[key]);
                 }
