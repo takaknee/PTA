@@ -94,66 +94,29 @@ function sanitizeMultiCharacterPatterns(input) {
   const maxIterations = 100; // 無限ループ防止
 
   // 各パターンを個別に処理（より安全な方式）
-  const patterns = [
-    {
-      name: 'HTMLコメント',
-      regex: /<!--[\s\S]*?-->/g,
-      // 段階的除去：まず開始タグ、次に終了タグ
-      safeAlternative: (str) => {
-        let result = str;
-        let changed = true;
-        let iter = 0;
-
-        while (changed && iter < maxIterations) {
-          const before = result.length;
-          result = result.replace(/<!--/g, '').replace(/-->/g, '');
-          changed = (result.length !== before);
-          iter++;
-        }
-        return result;
-      }
-    },
-    {
-      name: 'CDATA',
-      regex: /<!\[CDATA\[[\s\S]*?\]\]>/g,
-      safeAlternative: (str) => {
-        let result = str;
-        let changed = true;
-        let iter = 0;
-
-        while (changed && iter < maxIterations) {
-          const before = result.length;
-          result = result.replace(/<!\[CDATA\[/g, '').replace(/\]\]>/g, '');
-          changed = (result.length !== before);
-          iter++;
-        }
-        return result;
-      }
-    },
-    {
-      name: '処理命令',
-      regex: /<\?[\s\S]*?\?>/g,
-      safeAlternative: (str) => {
-        let result = str;
-        let changed = true;
-        let iter = 0;
-
-        while (changed && iter < maxIterations) {
-          const before = result.length;
-          result = result.replace(/<\?/g, '').replace(/\?>/g, '');
-          changed = (result.length !== before);
-          iter++;
-        }
-        return result;
-      }
-    },
-    {
-      name: 'DOCTYPE宣言',
-      regex: /<!DOCTYPE[\s\S]*?>/gi,
-      safeAlternative: (str) => {
-        return str.replace(/<!DOCTYPE/gi, '').replace(/>/g, '');
-      }
-    }
+  const patterns = [{
+    name: 'HTMLコメント',
+    regex: /<!--[\s\S]*?-->/g,
+    // 専用の安全な関数を使用してHTMLコメントを除去
+    safeAlternative: (str) => removeHTMLCommentsSafely(str)
+  }, {
+    name: 'CDATA',
+    regex: /<!\[CDATA\[[\s\S]*?\]\]>/g,
+    // 専用の安全な関数を使用してCDATAを除去
+    safeAlternative: (str) => removeCDATASafely(str)
+  },
+  {
+    name: '処理命令',
+    regex: /<\?[\s\S]*?\?>/g,
+    // 専用の安全な関数を使用して処理命令を除去
+    safeAlternative: (str) => removeProcessingInstructionsSafely(str)
+  },
+  {
+    name: 'DOCTYPE宣言',
+    regex: /<!DOCTYPE[\s\S]*?>/gi,
+    // 専用の安全な関数を使用してDOCTYPE宣言を除去
+    safeAlternative: (str) => removeDOCTYPESafely(str)
+  }
   ];
 
   // 各パターンに対して安全な除去処理を実行
@@ -234,11 +197,9 @@ function removeDangerousAttributes(html) {
       if (lowerMatch.includes(attr)) {
         return ' '; // 危険な属性を含むタグは完全除去
       }
-    }
-
-    // style属性の特別処理（CSSインジェクション対策）
+    }    // style属性の特別処理（CSSインジェクション対策）
     if (lowerMatch.includes('style=')) {
-      return match.replace(/style\s*=\s*["'][^"']*["']/gi, '');
+      return removeStyleAttributesSafely(match);
     }
 
     return ' '; // 最終的にはタグを除去してテキスト化
@@ -462,6 +423,219 @@ function testSanitization() {
   console.log(`総合結果: ${allPassed ? '✅ 全テスト合格' : '❌ 一部テスト不合格'}`);
 
   return allPassed;
+}
+
+/**
+ * HTMLコメント専用の安全な除去処理
+ * CodeQL脆弱性「js/bad-tag-filter」への対応
+ * 不正な形式のコメント終了タグ（--!>など）も適切に処理
+ * 
+ * @param {string} input - 処理対象の文字列
+ * @returns {string} - HTMLコメントが安全に除去された文字列
+ */
+function removeHTMLCommentsSafely(input) {
+  if (!input || typeof input !== 'string') return '';
+
+  let result = input;
+  const maxIterations = 100; // 無限ループ防止
+  let changed = true;
+  let iter = 0;
+
+  while (changed && iter < maxIterations) {
+    const before = result.length;
+
+    // 1. 正規のHTMLコメントを除去（<!--...-->）
+    result = result.replace(/<!--[\s\S]*?-->/g, '');
+
+    // 2. 不正な形式のコメント開始タグを除去
+    result = result.replace(/<!--/g, '');
+
+    // 3. 不正な形式のコメント終了タグを除去
+    // -->, --!>, -!>, その他の変形パターン
+    result = result.replace(/--!?>/g, '');
+    result = result.replace(/-!>/g, '');
+    result = result.replace(/--\w>/g, ''); // --a>, --b> など
+
+    // 4. その他の潜在的な不正パターンを除去
+    result = result.replace(/<!-+/g, ''); // <!-, <!--, <!---, etc.
+    result = result.replace(/-+>/g, ''); // ->, -->, --->, etc.
+
+    // 5. 不完全なコメント構造の除去
+    result = result.replace(/<!-[\s\S]*?>/g, ''); // <!-any content>
+
+    changed = (result.length !== before);
+    iter++;
+  }
+
+  return result;
+}
+
+/**
+ * CDATA専用の安全な除去処理
+ * CodeQL脆弱性「js/bad-tag-filter」への対応
+ * 不正な形式のCDATA終了タグも適切に処理
+ * 
+ * @param {string} input - 処理対象の文字列
+ * @returns {string} - CDATAが安全に除去された文字列
+ */
+function removeCDATASafely(input) {
+  if (!input || typeof input !== 'string') return '';
+
+  let result = input;
+  const maxIterations = 100; // 無限ループ防止
+  let changed = true;
+  let iter = 0;
+
+  while (changed && iter < maxIterations) {
+    const before = result.length;
+
+    // 1. 正規のCDATAを除去（<![CDATA[...]]>）
+    result = result.replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '');
+
+    // 2. 不正な形式のCDATA開始タグを除去
+    result = result.replace(/<!\[CDATA\[/g, '');
+
+    // 3. 不正な形式のCDATA終了タグを除去
+    result = result.replace(/\]\]>/g, '');
+    result = result.replace(/\]!>/g, ''); // ]!> のような変形
+    result = result.replace(/\]\w>/g, ''); // ]a>, ]b> など
+
+    // 4. その他の潜在的な不正パターンを除去
+    result = result.replace(/<!\[\w*\[/g, ''); // <![CDATA[, <![DATA[, etc.
+    result = result.replace(/\]+>/g, ''); // ]>, ]]>, ]]]>, etc.
+
+    changed = (result.length !== before);
+    iter++;
+  }
+
+  return result;
+}
+
+/**
+ * 処理命令専用の安全な除去処理
+ * CodeQL脆弱性「js/bad-tag-filter」への対応
+ * 不正な形式の処理命令終了タグも適切に処理
+ * 
+ * @param {string} input - 処理対象の文字列
+ * @returns {string} - 処理命令が安全に除去された文字列
+ */
+function removeProcessingInstructionsSafely(input) {
+  if (!input || typeof input !== 'string') return '';
+
+  let result = input;
+  const maxIterations = 100; // 無限ループ防止
+  let changed = true;
+  let iter = 0;
+
+  while (changed && iter < maxIterations) {
+    const before = result.length;
+
+    // 1. 正規の処理命令を除去（<?...?>）
+    result = result.replace(/<\?[\s\S]*?\?>/g, '');
+
+    // 2. 不正な形式の処理命令開始タグを除去
+    result = result.replace(/<\?/g, '');
+
+    // 3. 不正な形式の処理命令終了タグを除去
+    result = result.replace(/\?>/g, '');
+    result = result.replace(/\?!>/g, ''); // ?!> のような変形
+    result = result.replace(/\?\w>/g, ''); // ?a>, ?b> など
+
+    // 4. その他の潜在的な不正パターンを除去
+    result = result.replace(/<\?\w*/g, ''); // <?php, <?xml, etc.
+    result = result.replace(/\?+>/g, ''); // ?>, ??>, ???>, etc.
+
+    changed = (result.length !== before);
+    iter++;
+  }
+
+  return result;
+}
+
+/**
+ * DOCTYPE宣言専用の安全な除去処理
+ * CodeQL脆弱性「js/bad-tag-filter」への対応
+ * 不正な形式のDOCTYPE宣言も適切に処理
+ * 
+ * @param {string} input - 処理対象の文字列
+ * @returns {string} - DOCTYPE宣言が安全に除去された文字列
+ */
+function removeDOCTYPESafely(input) {
+  if (!input || typeof input !== 'string') return '';
+
+  let result = input;
+  const maxIterations = 100; // 無限ループ防止
+  let changed = true;
+  let iter = 0;
+
+  while (changed && iter < maxIterations) {
+    const before = result.length;
+
+    // 1. 正規のDOCTYPE宣言を除去（<!DOCTYPE...>）
+    result = result.replace(/<!DOCTYPE[\s\S]*?>/gi, '');
+
+    // 2. 不正な形式のDOCTYPE開始を除去
+    result = result.replace(/<!DOCTYPE/gi, '');
+
+    // 3. 孤立した > タグの除去（より安全な方式）
+    // 単純な > 除去ではなく、DOCTYPE関連のみに限定
+    result = result.replace(/<!doctype[\s\S]*?>/gi, ''); // 小文字版
+    result = result.replace(/<!Doctype[\s\S]*?>/gi, ''); // 混在版
+
+    // 4. その他の潜在的な不正パターンを除去
+    result = result.replace(/<!doc\w*/gi, ''); // <!doctype, <!document, etc.
+
+    changed = (result.length !== before);
+    iter++;
+  }
+
+  return result;
+}
+
+/**
+ * Style属性専用の安全な除去処理
+ * CodeQL脆弱性「js/bad-tag-filter」への対応
+ * 複雑な引用符パターンや不正なエスケープにも対応
+ * 
+ * @param {string} input - 処理対象の文字列
+ * @returns {string} - style属性が安全に除去された文字列
+ */
+function removeStyleAttributesSafely(input) {
+  if (!input || typeof input !== 'string') return '';
+
+  let result = input;
+  const maxIterations = 100; // 無限ループ防止
+  let changed = true;
+  let iter = 0;
+
+  while (changed && iter < maxIterations) {
+    const before = result.length;
+
+    // 1. 正規のstyle属性を除去（様々な引用符パターンに対応）
+    result = result.replace(/style\s*=\s*"[^"]*"/gi, '');
+    result = result.replace(/style\s*=\s*'[^']*'/gi, '');
+    result = result.replace(/style\s*=\s*[^"'\s>][^\s>]*/gi, ''); // 引用符なし
+
+    // 2. 不正なエスケープを含むstyle属性
+    result = result.replace(/style\s*=\s*"[^"]*\\["'][^"]*"/gi, '');
+    result = result.replace(/style\s*=\s*'[^']*\\['"][^']*'/gi, '');
+
+    // 3. 混在した引用符パターン
+    result = result.replace(/style\s*=\s*"[^"]*'[^"]*"/gi, '');
+    result = result.replace(/style\s*=\s*'[^']*"[^']*'/gi, '');    // 4. CSSインジェクション対策：危険なCSS関数の除去
+    result = result.replace(/expression\s*\([^)]*\)/gi, '');
+    result = result.replace(/javascript\s*:/gi, '');
+    result = result.replace(/data\s*:/gi, '');
+    result = result.replace(/url\s*\(\s*["']?javascript:/gi, '');
+
+    // 5. style属性の不正な形式の除去
+    result = result.replace(/style\s*=/gi, ''); // 孤立したstyle=
+
+    changed = (result.length !== before);
+    iter++;
+  }
+
+  return result;
 }
 
 // エクスポート（Service Worker環境対応）
