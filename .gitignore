@@ -51,3 +51,5 @@ config/secrets.*
 *.key
 *.pem
 *.p12
+.vs/PTA/CopilotIndices/
+.vs/PTA/v17/
