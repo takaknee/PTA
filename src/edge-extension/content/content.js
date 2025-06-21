@@ -22,30 +22,54 @@ function initializeSanitizer() {
         return;
     }
 
-    console.warn('HTMLサニタイザーモジュールが見つかりません。フォールバック版を使用します。');
+    console.warn('HTMLサニタイザーモジュールが見つかりません。統一フォールバック版を使用します。');
 
-    // フォールバック: 基本的なHTMLエスケープ機能を提供
+    // 統一フォールバック: PTASanitizerが利用できない場合の最小限の実装
     PTASanitizer = {
         extractSafeText: function (input) {
             if (!input || typeof input !== 'string') return '';
+
+            // 統一サニタイザーがグローバルに利用可能かチェック
+            if (typeof globalThis !== 'undefined' &&
+                typeof globalThis.PTASanitizer !== 'undefined' &&
+                typeof globalThis.PTASanitizer.extractSafeText === 'function') {
+
+                console.log('Content: グローバル統一PTASanitizerを使用');
+                return globalThis.PTASanitizer.extractSafeText(input);
+            }
+
+            // 最小限のフォールバック処理
+            console.warn('Content: 最小限のサニタイゼーションを実行');
             return input
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#x27;')
-                .replace(/\//g, '&#x2F;')
-                .substring(0, 1000); // 長さ制限
+                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // scriptタグ除去
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')   // styleタグ除去
+                .replace(/<[^>]*>/g, ' ')                          // すべてのHTMLタグを空白に
+                .replace(/javascript:/gi, '')                     // javascript:プロトコル除去
+                .replace(/\s+/g, ' ')                             // 連続空白を統合
+                .trim()
+                .substring(0, 1000);                              // 長さ制限
         },
+
         stripHTMLTags: function (input) {
             if (!input || typeof input !== 'string') return '';
 
+            // 統一サニタイザーがグローバルに利用可能かチェック
+            if (typeof globalThis !== 'undefined' &&
+                typeof globalThis.PTASanitizer !== 'undefined' &&
+                typeof globalThis.PTASanitizer.fastStripTags === 'function') {
+
+                return globalThis.PTASanitizer.fastStripTags(input);
+            }
+
+            // 最小限のフォールバック処理
+            let sanitized = input;
             let previous;
             do {
-                previous = input;
-                input = input.replace(/<[^>]*>/g, '');
-            } while (input !== previous);
-            return input.trim().substring(0, 1000);
+                previous = sanitized;
+                sanitized = sanitized.replace(/<[^>]*>/g, '');
+            } while (sanitized !== previous);
+
+            return sanitized.trim().substring(0, 1000);
         }
     };
     console.log('フォールバック版HTMLサニタイザーを初期化しました');
