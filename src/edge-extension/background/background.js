@@ -461,9 +461,6 @@ async function handleUnifiedMessage(message, sender, sendResponse) {
                 break;
 
             case 'testConnection':
-                await handleConnectionTest(data, sendResponse);
-                break;
-
             case 'testApiConnection':
                 await handleConnectionTest(data, sendResponse);
                 break;
@@ -474,7 +471,9 @@ async function handleUnifiedMessage(message, sender, sendResponse) {
 
             case 'addToCalendar':
                 await handleAddToCalendar(data, sendResponse);
-                break; case 'analyzeVSCodeSettings':
+                break;
+
+            case 'analyzeVSCodeSettings':
                 await handleAnalyzeVSCodeSettings(data, sendResponse);
                 break;
 
@@ -766,20 +765,10 @@ async function fetchWithOffscreen(requestData) {
         console.log('フォールバック処理を開始します...');
         try {
             const fallbackResult = await fallbackDirectFetch(requestData);
-            if (fallbackResult.success) {
-                return fallbackResult;
-            } else {
-                return {
-                    success: false,
-                    error: `主処理とフォールバック処理の両方が失敗しました:\n主処理: ${error.message}\nフォールバック: ${fallbackResult.error}`
-                };
-            }
+            return fallbackResult;
         } catch (fallbackError) {
             console.error('フォールバック処理も失敗:', fallbackError);
-            return {
-                success: false,
-                error: `主処理とフォールバック処理の両方が失敗しました:\n主処理: ${error.message}\nフォールバック: ${fallbackError.message}`
-            };
+            throw new Error(`主処理とフォールバック処理の両方が失敗しました:\n主処理: ${error.message}\nフォールバック: ${fallbackError.message}`);
         }
     }
 }
@@ -850,30 +839,20 @@ async function performAPICall(requestData) {
                 const content = data.choices[0].message.content.trim();
                 console.log('Background: AI応答コンテンツ取得成功:', content.substring(0, 100) + '...');
 
-                // 統一された形式で返す
-                return {
-                    success: true,
-                    content: content
-                };
+                return content;
             } else {
                 console.error('Background: 無効なAI応答形式:', data);
-                return {
-                    success: false,
-                    error: 'AIからの有効な応答が得られませんでした'
-                };
+                throw new Error('AIからの有効な応答が得られませんでした');
             }
         }
 
         console.error('Background: 予期しないAPI応答形式:', data);
-        return {
-            success: false,
-            error: '予期しないAPI応答形式です'
-        };
+        throw new Error('予期しないAPI応答形式です');
     } catch (error) {
         console.error('Background API fetch エラー:', error);
         console.error('Background API fetch エラー詳細:', error.stack);
 
-        // 統一された形式でエラーを返す
+        // エラーメッセージの詳細化
         let errorMessage = error.message;
 
         // TypeError: Failed to fetch の詳細化
@@ -887,10 +866,7 @@ async function performAPICall(requestData) {
                 `詳細: ${error.message}`;
         }
 
-        return {
-            success: false,
-            error: errorMessage
-        };
+        throw new Error(errorMessage);
     }
 }
 
@@ -948,10 +924,8 @@ async function getSettings() {
 }
 
 /**
- * 履歴保存関数 (現在未使用)
- * 将来の拡張のために保持
+ * 履歴保存関数 (将来の拡張用、現在は未使用)
  */
-/*
 async function saveToHistory(entry) {
     return new Promise((resolve) => {
         chrome.storage.local.get(['ai_history'], (result) => {
@@ -972,12 +946,6 @@ async function saveToHistory(entry) {
         });
     });
 }
-*/
-
-/**
- * 履歴保存関数 (現在未使用)
- * 将来の拡張のために保持
- */
 /**
  * AI API呼び出しのフォールバック処理
  * 直接fetchを試行（デバッグ・テスト用）
@@ -989,7 +957,7 @@ async function fallbackDirectFetch(requestData) {
     const { endpoint, headers, body, provider } = requestData;
 
     try {
-        // まずはCORSありで試行
+        // CORSありで試行
         console.log('CORS有効でのfetch試行中...');
         let response = await fetch(endpoint, {
             method: 'POST',
@@ -1002,35 +970,27 @@ async function fallbackDirectFetch(requestData) {
 
         if (response.ok) {
             const data = await response.json();
-            console.log('直接fetch成功（CORS有効）:', data);            // OpenAI/Azure OpenAI の応答解析
+            console.log('直接fetch成功（CORS有効）:', data);
+
+            // OpenAI/Azure OpenAI の応答解析
             if (provider === 'openai' || provider === 'azure') {
                 if (data.choices && data.choices.length > 0) {
-                    return {
-                        success: true,
-                        content: data.choices[0].message.content.trim()
-                    };
+                    return data.choices[0].message.content.trim();
                 } else {
-                    return {
-                        success: false,
-                        error: 'AIからの有効な応答が得られませんでした'
-                    };
+                    throw new Error('AIからの有効な応答が得られませんでした');
                 }
             }
 
-            return {
-                success: true,
-                content: data
-            };
+            return data;
         } else {
             const errorText = await response.text();
-            return {
-                success: false,
-                error: `API呼び出しエラー (${response.status}): ${errorText}`
-            };
+            throw new Error(`API呼び出しエラー (${response.status}): ${errorText}`);
         }
 
     } catch (corsError) {
-        console.log('CORS有効でのfetch失敗:', corsError.message);        // CORS無効で再試行
+        console.log('CORS有効でのfetch失敗:', corsError.message);
+
+        // CORS無効で再試行
         try {
             console.log('CORS無効でのfetch試行中...');
             await fetch(endpoint, {
@@ -1042,10 +1002,7 @@ async function fallbackDirectFetch(requestData) {
 
             // no-corsモードでは詳細なレスポンス情報を取得できない
             console.log('フォールバック fetch完了（no-corsモード）');
-            return {
-                success: false,
-                error: 'no-corsモードでは応答内容を確認できません。適切なCORS設定またはOffscreen documentが必要です。'
-            };
+            throw new Error('no-corsモードでは応答内容を確認できません。適切なCORS設定またはOffscreen documentが必要です。');
         } catch (noCorsError) {
             console.error('フォールバック fetch エラー:', noCorsError);
 
@@ -1068,22 +1025,23 @@ async function fallbackDirectFetch(requestData) {
                     `詳細エラー: ${corsError.message}`;
             }
 
-            return {
-                success: false,
-                error: errorMessage
-            };
+            throw new Error(errorMessage);
         }
     }
 }
 
 /**
- * 新機能: 選択テキスト翻訳処理
+ * 選択テキスト翻訳処理
  */
 async function handleTranslateSelection(data, sendResponse) {
     try {
-        console.log('Background: 選択テキスト翻訳開始:', data); if (!data.selectedText) {
+        console.log('Background: 選択テキスト翻訳開始:', data);
+
+        if (!data.selectedText) {
             throw new Error('翻訳するテキストが選択されていません');
-        }        // 選択テキストからHTMLタグを除去してクリーンアップ（共通関数使用）
+        }
+
+        // 選択テキストからHTMLタグを除去してクリーンアップ
         const selectedText = extractTextFromHTML(data.selectedText, 10000);
 
         console.log(`選択テキスト翻訳: 処理後テキスト長 ${selectedText.length} 文字`);
@@ -1102,8 +1060,9 @@ ${selectedText}
 
 翻訳:`;
 
-        // AI APIを呼び出し
-        const result = await callAIAPI(prompt);
+        // 設定を取得してAI APIを呼び出し
+        const settings = await getSettings();
+        const result = await callAIAPI(prompt, settings);
 
         sendResponse({
             success: true,
@@ -1122,7 +1081,7 @@ ${selectedText}
 }
 
 /**
- * 新機能: ページ翻訳処理
+ * ページ翻訳処理
  */
 async function handleTranslatePage(data, sendResponse) {
     try {
@@ -1135,7 +1094,9 @@ async function handleTranslatePage(data, sendResponse) {
         // コンテンツが長すぎる場合は最初の2000文字に制限
         const content = data.content.length > 2000 ?
             data.content.substring(0, 2000) + '...' :
-            data.content;        // 翻訳用のプロンプト
+            data.content;
+
+        // 翻訳用のプロンプト
         const prompt = `以下のWebページのコンテンツを日本語に翻訳してください。既に日本語の場合は英語に翻訳してください。
 
 【重要】回答の際は以下を厳守してください：
@@ -1152,8 +1113,9 @@ ${content}
 
 翻訳:`;
 
-        // AI APIを呼び出し
-        const result = await callAIAPI(prompt);
+        // 設定を取得してAI APIを呼び出し
+        const settings = await getSettings();
+        const result = await callAIAPI(prompt, settings);
 
         sendResponse({
             success: true,
@@ -1172,15 +1134,13 @@ ${content}
 }
 
 /**
- * 新機能: URL抽出処理
+ * URL抽出処理
  */
 async function handleExtractUrls(data, sendResponse) {
     try {
         console.log('Background: URL抽出開始:', data);
 
-        // content scriptからURLリストを取得するためのメッセージ送信は不要
-        // 実際の抽出処理はcontent scriptで行われる
-
+        // URL抽出処理はcontent scriptで実行される
         sendResponse({
             success: true,
             message: 'URL抽出処理を開始しました'
@@ -1196,23 +1156,13 @@ async function handleExtractUrls(data, sendResponse) {
 }
 
 /**
- * 新機能: ページ情報コピー処理
+ * ページ情報コピー処理
  */
 async function handleCopyPageInfo(data, sendResponse) {
     try {
-        console.log('Background: ページ情報コピー開始:', data);        // ページの要約をAIで生成（将来の拡張用）
-        /* 
-        const prompt = `以下のWebページの内容を簡潔に要約してください（200文字以内）:
+        console.log('Background: ページ情報コピー開始:', data);
 
-ページタイトル: ${data.title}
-URL: ${data.url}
-
-要約:`;
-        */
-
-        // AI APIを呼び出し（オプション）
-        // content scriptで簡単な要約を作成するため、ここではスキップ
-
+        // ページ情報コピー処理はcontent scriptで実行される
         sendResponse({
             success: true,
             message: 'ページ情報コピー処理を開始しました'
@@ -1229,10 +1179,9 @@ URL: ${data.url}
 
 /**
  * Microsoft Graph APIの認証トークンを取得
- * Edge対応版: chrome.identity APIが未対応のため代替手段を使用
  */
 async function getMicrosoftGraphToken() {
-    try {        // Chrome環境でのみ呼び出されるため、直接chrome.identity APIを使用
+    try {
         console.log('Chrome環境: 標準のchrome.identity APIを使用');
         const tokenResponse = await chrome.identity.getAuthToken({
             interactive: true,
@@ -1529,17 +1478,18 @@ async function handleAnalyzeVSCodeSettings(data, sendResponse) {
         }
 
         // AI APIを使用して設定を解析
-        const settings = await chrome.storage.local.get(['ai_settings']);
-        const aiSettings = settings.ai_settings;
+        const settings = await getSettings();
 
-        if (!aiSettings || !aiSettings.apiKey) {
+        if (!settings || !settings.apiKey) {
             sendResponse({
                 success: false,
                 error: 'AI APIが設定されていません。設定画面でAPIキーを設定してください。'
             });
             return;
-        }        // VSCode設定解析用のプロンプト（HTML構造で返答）
-        let pageContent = data.content || '';        // HTMLからテキストを抽出（HTMLタグを除去）
+        }
+
+        // HTMLからテキストを抽出（HTMLタグを除去）
+        let pageContent = data.content || '';
         pageContent = extractTextFromHTML(pageContent, 20000);
 
         // プロンプト設定ファイルからVSCode解析用プロンプトを生成
@@ -1552,20 +1502,17 @@ async function handleAnalyzeVSCodeSettings(data, sendResponse) {
         console.log(`VSCode設定解析: プロンプト長 ${analysisPrompt.length} 文字`);
 
         // AI APIを呼び出してOffscreen Documentで処理
-        const aiResult = await callAIAPI(analysisPrompt, aiSettings); if (aiResult.success) {
-            console.log('VSCode設定解析: AI解析成功');
-            sendResponse({
-                success: true,
-                analysis: aiResult.content,
-                pageInfo: {
-                    title: data.pageTitle,
-                    url: data.pageUrl
-                }
-            });
-        } else {
-            console.error('VSCode設定解析: AI解析失敗', aiResult);
-            throw new Error(aiResult.error || 'AI解析に失敗しました');
-        }
+        const aiResult = await callAIAPI(analysisPrompt, settings);
+
+        console.log('VSCode設定解析: AI解析成功');
+        sendResponse({
+            success: true,
+            analysis: aiResult,
+            pageInfo: {
+                title: data.pageTitle,
+                url: data.pageUrl
+            }
+        });
 
     } catch (error) {
         console.error('Background: VSCode設定解析エラー:', error);
@@ -1667,8 +1614,18 @@ function createSecureHTMLTextExtractor() {
                 sanitized = sanitized.replace(regex2, '');
             });
 
-            // 2. コメントと特殊なセクションの除去（セキュリティ強化版）
-            sanitized = sanitizeMultiCharacterPatterns(sanitized);
+            // 2. コメントと特殊なセクションの除去
+            sanitized = sanitized
+                // HTMLコメント除去
+                .replace(/<!--[\s\S]*?-->/g, '')
+                // CDATA セクション除去
+                .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '')
+                // DOCTYPE宣言除去
+                .replace(/<!DOCTYPE[^>]*>/gi, '')
+                // XML宣言除去
+                .replace(/<\?xml[^>]*\?>/gi, '')
+                // Processing Instructions除去
+                .replace(/<\?[^>]*\?>/g, '');
 
             // 3. 残りのHTMLタグから属性をチェックして除去
             sanitized = sanitized.replace(/<[^>]+>/g, (match) => {
@@ -1733,29 +1690,15 @@ function createSecureHTMLTextExtractor() {
                     .replace(/data:/gi, '')         // data: プロトコル除去
                     .replace(/[\r\n\t]/g, ' ')      // 制御文字を空白に
                     .replace(/\s+/g, ' ')           // 連続空白を統合
-                    .trim(); console.warn('フォールバック処理によるサニタイゼーションを実行しました');
+                    .trim();
+
+                console.warn('フォールバック処理によるサニタイゼーションを実行しました');
                 return fallbackSanitized;
 
             } catch (fallbackError) {
                 console.error('フォールバック処理も失敗:', fallbackError);
                 // 最後の手段：空文字列を返す
                 return '';
-            }
-        }
-    }; return {
-        extractSafeText: (html) => {
-            // 共通サニタイゼーションモジュールを使用
-            try {
-                if (globalThis.PTASanitizer) {
-                    return globalThis.PTASanitizer.extractSafeText(html);
-                } else {
-                    console.warn('PTASanitizerが利用できません。フォールバック処理を実行します。');
-                    return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-                }
-            } catch (error) {
-                console.error('HTMLサニタイゼーション処理中にエラー:', error);
-                // フォールバック処理
-                return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
             }
         }
     };
@@ -1789,8 +1732,7 @@ function extractTextFromHTML(content, maxLength = 20000) {
     return text;
 }
 
-// 共通HTMLサニタイゼーションモジュールを使用するため、
-// 古い重複した関数は削除しました
+
 
 // 開発環境でのみテスト実行（本番環境では無効）
 if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) {
