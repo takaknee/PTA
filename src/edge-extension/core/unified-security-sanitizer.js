@@ -257,9 +257,9 @@ class UnifiedSecuritySanitizer {
         text = text
             .replace(/&lt;/g, '<')
             .replace(/&gt;/g, '>')
-            .replace(/&amp;/g, '&')
             .replace(/&quot;/g, '"')
-            .replace(/&#x27;/g, "'");
+            .replace(/&#x27;/g, "'")
+            .replace(/&amp;/g, '&');
         // 危険なプロトコルの除去（改良版）
         text = text
             .replace(/javascript\s*:/gi, '')
