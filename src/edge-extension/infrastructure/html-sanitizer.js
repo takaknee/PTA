@@ -12,6 +12,11 @@
  * - CodeQL セキュリティ要件準拠
  * - Chrome Extension セキュリティポリシー準拠
  * 
+ * 【重要】セキュリティ方針変更：
+ * - DOMPurifyを必須要件とする
+ * - フォールバックサニタイザーは廃止（セキュリティリスク軽減）
+ * - DOMPurifyが利用できない場合はエラーを投げる
+ * 
  * Service Worker対応：
  * - importScripts() で読み込み可能
  * - globalThis.PTASanitizer で利用可能
@@ -40,7 +45,8 @@
 
 /**
  * DOMPurifyベースの統一サニタイザー実装
- * 全てのextractSafeText機能をここに統一
+ * セキュリティを最優先とし、DOMPurifyを必須要件とする
+ * フォールバック実装は廃止（セキュリティリスク軽減のため）
  */
 function createUnifiedSanitizer() {
   'use strict';
@@ -56,9 +62,15 @@ function createUnifiedSanitizer() {
    * DOMPurifyを使用した安全なHTMLサニタイゼーション
    * @param {string} html - サニタイズするHTML文字列
    * @returns {string} - サニタイズされた安全な文字列
+   * @throws {Error} DOMPurifyが利用できない場合
    */
   function extractSafeTextWithDOMPurify(html) {
     if (!html || typeof html !== 'string') return '';
+
+    // DOMPurifyの必須チェック
+    if (!isDOMPurifyAvailable()) {
+      throw new Error('DOMPurifyが必要です。ライブラリを読み込んでください。');
+    }
 
     try {
       // DOMPurifyの設定
@@ -82,75 +94,64 @@ function createUnifiedSanitizer() {
 
     } catch (error) {
       console.error('DOMPurifyサニタイゼーション中にエラー:', error);
-      return fallbackSanitizer(html);
-    }
-  }
-
-  /**
-   * フォールバック用カスタムサニタイザー
-   * DOMPurifyが利用できない場合の安全な実装
-   */
-  function fallbackSanitizer(html) {
-    if (!html || typeof html !== 'string') return '';
-
-    try {
-      // 基本的な危険要素の除去
-      let sanitized = html
-        // すべてのHTMLタグを除去
-        .replace(/<[^>]*>/g, '')
-        // HTMLエンティティを安全にデコード
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&')
-        .replace(/&quot;/g, '"')
-        .replace(/&#x27;/g, "'")
-        .replace(/&#x2F;/g, '/')
-        // 危険なプロトコルを除去
-        .replace(/javascript:/gi, '')
-        .replace(/vbscript:/gi, '')
-        .replace(/data:/gi, '')
-        // 制御文字を正規化
-        .replace(/[\r\n\t]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .substring(0, 10000);
-
-      return sanitized;
-
-    } catch (error) {
-      console.error('フォールバックサニタイザーでもエラー:', error);
-      return ''; // 最終的に安全な空文字列を返す
+      throw new Error(`サニタイゼーション処理に失敗しました: ${error.message}`);
     }
   }
 
   /**
    * 統一されたextractSafeText関数
-   * DOMPurifyが利用可能な場合はそれを使用、そうでなければフォールバック
+   * DOMPurifyを必須要件とし、セキュリティを最優先
+   * @param {string} html - サニタイズするHTML文字列
+   * @returns {string} - サニタイズされた安全な文字列
+   * @throws {Error} DOMPurifyが利用できない場合
    */
   function extractSafeText(html) {
     console.log('統一サニタイザー: extractSafeText実行開始');
 
-    if (isDOMPurifyAvailable()) {
-      console.log('DOMPurify使用可能 - DOMPurifyベースのサニタイゼーションを実行');
-      return extractSafeTextWithDOMPurify(html);
-    } else {
-      console.warn('DOMPurify利用不可 - フォールバックサニタイザーを使用');
-      return fallbackSanitizer(html);
+    if (!isDOMPurifyAvailable()) {
+      const errorMsg = 'DOMPurifyが必要です。セキュリティ上の理由により、DOMPurifyなしでの実行はサポートされていません。';
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
+
+    console.log('DOMPurify使用可能 - DOMPurifyベースのサニタイゼーションを実行');
+    return extractSafeTextWithDOMPurify(html);
   }
 
   /**
    * 高速なHTMLタグ除去（軽量版）
-   * パフォーマンスが要求される場合の簡易版
+   * DOMPurifyを使用した安全な実装
+   * @param {string} html - 処理するHTML文字列
+   * @returns {string} - 処理された安全な文字列
+   * @throws {Error} DOMPurifyが利用できない場合
    */
   function fastStripTags(html) {
     if (!html || typeof html !== 'string') return '';
 
-    return html
-      .replace(/<[^>]*>/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .substring(0, 1000);
+    if (!isDOMPurifyAvailable()) {
+      throw new Error('DOMPurifyが必要です。fastStripTagsにはDOMPurifyが必須です。');
+    }
+
+    try {
+      // DOMPurifyの高速設定
+      const config = {
+        ALLOWED_TAGS: [],
+        ALLOWED_ATTR: [],
+        KEEP_CONTENT: true,
+        RETURN_DOM: false
+      };
+
+      const sanitized = globalThis.DOMPurify.sanitize(html, config);
+
+      return sanitized
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 1000);
+
+    } catch (error) {
+      console.error('fastStripTags処理中にエラー:', error);
+      throw new Error(`高速タグ除去処理に失敗しました: ${error.message}`);
+    }
   }
 
   // 公開インターフェース
@@ -172,10 +173,14 @@ if (typeof globalThis !== 'undefined') {
   globalThis.PTASanitizer = PTAUnifiedSanitizer;
   console.log('✅ PTASanitizer（統一版）がグローバルスコープで利用可能になりました');
 
-  // 初期化テスト
+  // 初期化テスト（DOMPurify必須チェック含む）
   try {
-    const testResult = globalThis.PTASanitizer.extractSafeText('<p>テスト<script>alert("XSS")</script></p>');
-    console.log('✅ 統一サニタイザー初期化テスト成功:', testResult);
+    if (!globalThis.PTASanitizer.isDOMPurifyAvailable()) {
+      console.warn('⚠️ DOMPurifyが利用できません。このライブラリはDOMPurifyを必要とします。');
+    } else {
+      const testResult = globalThis.PTASanitizer.extractSafeText('<p>テスト<script>alert("XSS")</script></p>');
+      console.log('✅ 統一サニタイザー初期化テスト成功:', testResult);
+    }
   } catch (error) {
     console.error('❌ 統一サニタイザー初期化テスト失敗:', error);
   }
