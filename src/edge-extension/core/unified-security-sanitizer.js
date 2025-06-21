@@ -241,20 +241,27 @@ class UnifiedSecuritySanitizer {
      */
     fallbackExtractPlainText(html, options = {}) {
         // 段階的な安全なHTML除去
-        let text = html
-            // 危険なコンテンツの除去
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-            .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
-            // HTMLタグの除去（改良版）
-            .replace(/<[^>]+>/g, ' ')
-            // HTMLエンティティのデコード（安全な文字のみ）
+        let text = html;
+        let previous;
+        // 危険なコンテンツの除去（繰り返し処理）
+        do {
+            previous = text;
+            text = text
+                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '');
+        } while (text !== previous);
+        // HTMLタグの除去（改良版）
+        text = text.replace(/<[^>]+>/g, ' ');
+        // HTMLエンティティのデコード（安全な文字のみ）
+        text = text
             .replace(/&lt;/g, '<')
             .replace(/&gt;/g, '>')
             .replace(/&amp;/g, '&')
             .replace(/&quot;/g, '"')
-            .replace(/&#x27;/g, "'")
-            // 危険なプロトコルの除去（改良版）
+            .replace(/&#x27;/g, "'");
+        // 危険なプロトコルの除去（改良版）
+        text = text
             .replace(/javascript\s*:/gi, '')
             .replace(/vbscript\s*:/gi, '')
             .replace(/data\s*:/gi, '');
