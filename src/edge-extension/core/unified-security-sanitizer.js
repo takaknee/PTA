@@ -79,12 +79,14 @@ class UnifiedSecuritySanitizer {
                 const sanitizer = this.domPurifyAvailable === true ? DOMPurify : globalThis.DOMPurify;
                 return sanitizer.sanitize(html, config);
             } else {
-                // フォールバック: 改良された安全な正規表現処理
-                return this.fallbackSanitizeHTML(html, options);
+                // DOMPurifyが利用できない場合は処理を中断
+                console.error('❌ DOMPurifyが利用できません。セキュリティサニタイゼーションを中断します。');
+                throw new Error('DOMPurifyが利用できないため、HTMLサニタイゼーションを実行できません。不完全なサニタイゼーションによるセキュリティ脆弱性を防止するため、処理を中断します。');
             }
         } catch (error) {
             console.error('UnifiedSecuritySanitizer: サニタイゼーションエラー:', error);
-            return this.fallbackSanitizeHTML(html, options);
+            // フォールバックを使用せず、エラーを再投げ
+            throw error;
         }
     }
 
@@ -113,12 +115,14 @@ class UnifiedSecuritySanitizer {
 
                 return this.normalizeWhitespace(cleaned, options);
             } else {
-                // フォールバック処理
-                return this.fallbackExtractPlainText(html, options);
+                // DOMPurifyが利用できない場合は処理を中断
+                console.error('❌ DOMPurifyが利用できません。プレーンテキスト抽出を中断します。');
+                throw new Error('DOMPurifyが利用できないため、プレーンテキスト抽出を実行できません。不完全なサニタイゼーションによるセキュリティ脆弱性を防止するため、処理を中断します。');
             }
         } catch (error) {
             console.error('UnifiedSecuritySanitizer: テキスト抽出エラー:', error);
-            return this.fallbackExtractPlainText(html, options);
+            // フォールバックを使用せず、エラーを再投げ
+            throw error;
         }
     }
 
@@ -212,64 +216,6 @@ class UnifiedSecuritySanitizer {
     }
 
     /**
-     * フォールバック用HTMLサニタイゼーション
-     * DOMPurifyが利用できない場合の安全な代替処理
-     */
-    fallbackSanitizeHTML(html, options = {}) {
-        // 危険なタグを除去（より安全な正規表現使用）
-        let cleaned = html
-            // スクリプト系タグの完全除去
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-            .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
-            .replace(/<object[^>]*>[\s\S]*?<\/object>/gi, '')
-            .replace(/<embed[^>]*>[\s\S]*?<\/embed>/gi, '')
-            .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
-            // 危険な属性の除去
-            .replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
-            .replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '')
-            // 危険なプロトコルの除去
-            .replace(/javascript:/gi, 'javascript-removed:')
-            .replace(/vbscript:/gi, 'vbscript-removed:')
-            .replace(/data:/gi, 'data-removed:');
-
-        return this.normalizeWhitespace(cleaned, options);
-    }
-
-    /**
-     * フォールバック用プレーンテキスト抽出
-     */
-    fallbackExtractPlainText(html, options = {}) {
-        // 段階的な安全なHTML除去
-        let text = html;
-        let previous;
-        // 危険なコンテンツの除去（繰り返し処理）
-        do {
-            previous = text;
-            text = text
-                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-                .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '');
-        } while (text !== previous);
-        // HTMLタグの除去（改良版）
-        text = text.replace(/<[^>]+>/g, ' ');
-        // HTMLエンティティのデコード（安全な文字のみ）
-        text = text
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&#x27;/g, "'")
-            .replace(/&amp;/g, '&');
-        // 危険なプロトコルの除去（改良版）
-        text = text
-            .replace(/javascript\s*:/gi, '')
-            .replace(/vbscript\s*:/gi, '')
-            .replace(/data\s*:/gi, '');
-
-        return this.normalizeWhitespace(text, options);
-    }
-
-    /**
      * 空白文字の正規化
      */
     normalizeWhitespace(text, options = {}) {
@@ -351,13 +297,29 @@ class UnifiedSecuritySanitizer {
 // グローバルインスタンスの作成
 const unifiedSanitizer = new UnifiedSecuritySanitizer();
 
+/**
+ * 統一セキュリティサニタイザーインスタンスを取得
+ * プロジェクト全体で統一された安全なサニタイゼーション処理を提供
+ * 
+ * @returns {UnifiedSecuritySanitizer} - 統一サニタイザーインスタンス
+ * @throws {Error} - DOMPurifyが利用できない場合
+ */
+function getSecuritySanitizer() {
+    if (!unifiedSanitizer.domPurifyAvailable) {
+        console.error('❌ 統一セキュリティサニタイザーでDOMPurifyが利用できません');
+        throw new Error('DOMPurifyが利用できないため、セキュリティサニタイザーを提供できません。安全性確保のため処理を中断します。');
+    }
+    return unifiedSanitizer;
+}
+
 // 後方互換性のための統一エクスポート
 globalThis.UnifiedSecuritySanitizer = UnifiedSecuritySanitizer;
 globalThis.unifiedSanitizer = unifiedSanitizer;
+globalThis.getSecuritySanitizer = getSecuritySanitizer;
 
 // Service Worker環境での利用を考慮した複数の公開方法
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { UnifiedSecuritySanitizer, unifiedSanitizer };
+    module.exports = { UnifiedSecuritySanitizer, unifiedSanitizer, getSecuritySanitizer };
 }
 
 console.log('✅ 統一セキュリティサニタイザーモジュールが初期化されました');

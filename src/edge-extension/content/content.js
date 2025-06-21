@@ -456,16 +456,16 @@ function createAiDialog(dialogData) {
     `;
 
     // XSS脆弱性対策: DOM要素を直接作成してユーザー入力を安全に設定
-    const safePageTitle = PTASanitizer ? 
-        PTASanitizer.extractSafeText(dialogData.pageTitle || 'AI支援ツール') : 
+    const safePageTitle = PTASanitizer ?
+        PTASanitizer.extractSafeText(dialogData.pageTitle || 'AI支援ツール') :
         (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })();
-    const safePageUrl = PTASanitizer ? 
-        PTASanitizer.extractSafeText(dialogData.pageUrl || '') : 
+    const safePageUrl = PTASanitizer ?
+        PTASanitizer.extractSafeText(dialogData.pageUrl || '') :
         (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })();
-    const safeSelectedText = dialogData.selectedText ? 
-        (PTASanitizer ? 
-            PTASanitizer.extractSafeText(dialogData.selectedText.substring(0, 100)) : 
-            (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })()) : 
+    const safeSelectedText = dialogData.selectedText ?
+        (PTASanitizer ?
+            PTASanitizer.extractSafeText(dialogData.selectedText.substring(0, 100)) :
+            (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })()) :
         '';
 
     // ヘッダー部分を作成
@@ -2525,7 +2525,7 @@ function sanitizeAIResponse(response) {
                 allowedTags: ['p', 'br', 'strong', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'div', 'span', 'code', 'pre'],
                 allowedAttributes: ['class', 'id']
             });
-            
+
             console.log('🧼 AIレスポンスサニタイズ完了（統一サニタイザー使用):', {
                 originalLength: response.length,
                 sanitizedLength: sanitized.length

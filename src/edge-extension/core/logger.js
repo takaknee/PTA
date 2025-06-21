@@ -22,7 +22,7 @@ try {
  */
 function sanitizeLogData(data) {
     if (!sanitizer || !data) return data;
-    
+
     try {
         if (typeof data === 'string') {
             return sanitizer.escapeUserInput(data);
@@ -89,11 +89,11 @@ class PTALogger {
      */
     _createLogEntry(level, message, data = null) {
         const timestamp = new Date().toISOString();
-        
+
         // セキュリティ: ログデータのサニタイゼーション
         const sanitizedMessage = sanitizeLogData(message);
         const sanitizedData = sanitizeLogData(data);
-        
+
         const entry = {
             timestamp,
             level,
