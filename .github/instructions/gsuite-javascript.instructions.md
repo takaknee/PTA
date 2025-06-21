@@ -38,31 +38,33 @@ text.replace('{{var}}', userInput) // 直接置換（エスケープなし）
 `テンプレート: ${userInput}`       // エスケープなし挿入
 ```
 
-### 必須実装：統一セキュリティサニタイザーの使用
+### 【重要】DOMPurify必須アーキテクチャ実装
 
 ```javascript
-// ✅ 推奨：統一セキュリティサニタイザーの使用
-const sanitizer = getSecuritySanitizer();
+// ✅ 推奨：DOMPurify必須の統一サニタイザー使用
+const sanitizer = globalThis.PTASanitizer; // DOMPurify必須
+
+// 必須：DOMPurify利用可能性チェック
+if (!sanitizer.isDOMPurifyAvailable()) {
+    throw new Error('DOMPurifyが必要です。ライブラリを読み込んでください。');
+}
 
 // HTMLサニタイゼーション（DOMPurifyベース）
-const cleanHTML = sanitizer.sanitizeHTML(htmlContent, options);
+const cleanHTML = sanitizer.sanitizeHTML(htmlContent);
 
 // プレーンテキスト抽出
-const plainText = sanitizer.extractPlainText(htmlContent);
+const plainText = sanitizer.extractSafeText(htmlContent);
 
-// 安全なユーザー入力エスケープ
-const safeInput = sanitizer.escapeUserInput(userInput);
-
-// 安全なプロンプトテンプレート構築
-const securePrompt = sanitizer.buildSecurePrompt(template, variables);
+// 高速タグ除去
+const fastStrip = sanitizer.fastStripTags(htmlContent);
 ```
 
-### コード生成時の必須チェック項目
+### コード生成時の必須チェック項目（更新版）
 1. **全ての外部入力**（ユーザー入力、API応答、ページコンテンツ）は統一サニタイザー経由で処理
-2. **プロンプトテンプレート**では `buildSecurePrompt()` を使用
-3. **正規表現による直接HTML処理は禁止**
-4. **文字列置換は `escapeUserInput()` 後に実行**
-5. **DOMPurifyが利用できない環境でも安全に動作するフォールバック実装**
+2. **DOMPurifyが必須依存関係として含まれていること**
+3. **正規表現による直接HTML処理は絶対禁止**
+4. **フォールバック実装は作成しないこと**（セキュリティリスク）
+5. **DOMPurify利用不可時は適切にエラーハンドリングすること**
 6. **未使用変数・インポートの完全除去**
 7. **デッドコード・一時的デバッグコードの削除**
 
@@ -89,8 +91,9 @@ function handler(event, _metadata) {
 }
 ```
 
-### VSCodeエラー対応
-"incomplete multi-character sanitization" 警告を回避するため：
-- 複数文字の正規表現パターンは統一サニタイザー内で適切に処理
-- 文字列置換処理は必ずエスケープ処理後に実行
-- グローバル置換は `split().join()` または統一サニタイザーの `buildSecurePrompt()` を使用
+### VSCodeエラー対応（DOMPurify必須版）
+"incomplete multi-character sanitization" 警告の根本的解決：
+- **DOMPurifyを必須として使用**し、複雑な正規表現処理を排除
+- **フォールバック実装は作成禁止**（セキュリティリスク）
+- **文字列置換処理はDOMPurify処理後に実行**
+- **DOMPurify利用不可時は安全にエラーを投げる**

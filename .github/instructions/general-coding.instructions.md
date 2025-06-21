@@ -55,27 +55,60 @@ function eventHandler(event, _unusedContext) {
 
 ## 【重要】HTML/テキストサニタイゼーション要件
 
+### 【新方針】DOMPurify必須アーキテクチャ
+**セキュリティ最優先の設計変更により、以下の方針を採用：**
+- **DOMPurifyを必須要件とする**
+- **フォールバックサニタイザーは完全廃止**（セキュリティリスク軽減）
+- **DOMPurifyが利用できない場合はエラーを投げる**（安全優先）
+
 ### 不完全サニタイゼーション問題の防止
-以下の実装は**セキュリティ脆弱性の原因**となるため禁止：
+以下の実装は**セキュリティ脆弱性の原因**となるため絶対禁止：
 
 ```javascript
 // ❌ 危険：不完全な正規表現サニタイゼーション
 .replace(/<[^>]*>/g, '')           // HTMLタグ除去（バイパス可能）
 .replace(/javascript:/gi, '')      // プロトコル除去（不完全）
 .replace('{{placeholder}}', input) // 直接置換（エスケープなし）
+
+// ❌ 危険：フォールバック実装の作成
+function fallbackSanitizer(html) {  // 複雑で脆弱性を含むため禁止
+    // カスタムサニタイザーは作成しないこと
+}
 ```
 
-### 必須：統一セキュリティサニタイザーの使用
+### 必須：DOMPurifyベースの統一サニタイザーの使用
 ```javascript
-// ✅ 安全：DOMPurifyベースの統一サニタイザー
-const sanitizer = getSecuritySanitizer();
+// ✅ 安全：DOMPurify必須の統一サニタイザー
+const sanitizer = globalThis.PTASanitizer; // DOMPurify必須
+
+// DOMPurify必須チェック
+if (!sanitizer.isDOMPurifyAvailable()) {
+    throw new Error('DOMPurifyが必要です。ライブラリを読み込んでください。');
+}
+
+// 安全なサニタイゼーション実行
 const safeHTML = sanitizer.sanitizeHTML(input);
-const plainText = sanitizer.extractPlainText(input);
-const securePrompt = sanitizer.buildSecurePrompt(template, variables);
+const plainText = sanitizer.extractSafeText(input);
+const fastStrip = sanitizer.fastStripTags(input);
 ```
 
-### コード品質チェック
-- 全ての外部入力は統一サニタイザー経由で処理すること
-- 正規表現による直接HTML処理は禁止
-- プロンプトテンプレート構築では `buildSecurePrompt()` を使用
-- "incomplete multi-character sanitization" 警告の回避を徹底
+### DOMPurify必須環境の構築
+```javascript
+// ✅ 推奨：DOMPurifyの事前確認と読み込み
+// Service Worker環境の例
+importScripts('/path/to/dompurify.min.js');
+importScripts('/path/to/html-sanitizer.js');
+
+// 初期化確認
+if (!globalThis.PTASanitizer.isDOMPurifyAvailable()) {
+    throw new Error('DOMPurifyの読み込みに失敗しました');
+}
+```
+
+### コード品質チェック（更新版）
+- **DOMPurifyが必須依存関係として含まれていること**
+- **全ての外部入力は統一サニタイザー経由で処理すること**
+- **フォールバック実装は作成しないこと**（セキュリティリスク）
+- **DOMPurify利用不可時は適切にエラーハンドリングすること**
+- **正規表現による直接HTML処理は禁止**
+- **"incomplete multi-character sanitization" 警告の回避を徹底**
