@@ -39,7 +39,13 @@ function initializeSanitizer() {
         },
         stripHTMLTags: function (input) {
             if (!input || typeof input !== 'string') return '';
-            return input.replace(/<[^>]*>/g, '').trim().substring(0, 1000);
+
+            let previous;
+            do {
+                previous = input;
+                input = input.replace(/<[^>]*>/g, '');
+            } while (input !== previous);
+            return input.trim().substring(0, 1000);
         }
     };
     console.log('フォールバック版HTMLサニタイザーを初期化しました');
@@ -815,9 +821,9 @@ function createAiDialog(dialogData) {
     applyThemeToDialog(dialog);
 
     // ドラッグ機能を有効化
-    const header = content.querySelector('.ai-dialog-header');
-    if (header) {
-        makeDialogDraggable(content, header);
+    const dialogHeader = content.querySelector('.ai-dialog-header');
+    if (dialogHeader) {
+        makeDialogDraggable(content, dialogHeader);
     }    // リサイズハンドルを設定
     setupResizeHandles(content);
 
