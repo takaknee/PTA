@@ -15,8 +15,25 @@
     },
     "github.copilot.editor.enableCodeActions": true,
     "github.copilot.renameSuggestions.triggerAutomatically": true,
+    // インライン提案のタイミング制御設定
+    "github.copilot.editor.iterativeFixing": true,
+    "github.copilot.editor.enableCopilotImplicitInvocations": true,
+    // 自動受け入れとタイミング設定
+    "editor.inlineSuggest.enabled": true,
+    "editor.inlineSuggest.showToolbar": "onHover",
+    "editor.inlineSuggest.suppressSuggestions": false,
+    "editor.quickSuggestions": {
+        "other": "on",
+        "comments": "off",
+        "strings": "off"
+    },
+    "editor.quickSuggestionsDelay": 100,
+    "editor.suggestOnTriggerCharacters": true,
+    "editor.wordBasedSuggestions": "matchingDocuments",
     "github.copilot.advanced": {
-        "inlineSuggestCount": 3
+        "inlineSuggestCount": 3,
+        "debounceMs": 75,
+        "listCount": 10
     },
     "github.copilot.chat.agent.autoFix": true,
     "github.copilot.chat.agent.runTasks": true,
@@ -68,6 +85,16 @@
     ],
     "github.copilot.nextEditSuggestions.enabled": true,
     "github.copilot.nextEditSuggestions.fixes": true,
+    // 時間ベースの自動受け入れ設定
+    "editor.acceptSuggestionOnCommitCharacter": true,
+    "editor.acceptSuggestionOnEnter": "on",
+    "editor.tabCompletion": "on",
+    "editor.suggest.showStatusBar": true,
+    "editor.suggest.preview": true,
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    // 自動保存とCopilot連携
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
     "github.copilot.chat.codeGeneration.useInstructionFiles": true,
     "github.copilot.chat.codeGeneration.instructions": [
         {
