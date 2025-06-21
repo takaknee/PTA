@@ -8,6 +8,7 @@ yarn-error.log*
 dist/
 build/
 *.min.js
+obj/
 
 # 環境変数・設定ファイル
 .env
@@ -32,6 +33,13 @@ temp/
 *.swo
 *~
 
+.vs/PTA/copilot-chat/
+.vs/PTA/FileContentIndex/
+.vs/PTA/CopilotIndices/
+.vs/PTA/v17/
+.vs/CopilotSnapshots/
+src/outlook-vsto/.vs/OutlookPTAAddin/v17/
+
 # OS生成ファイル
 .DS_Store
 .DS_Store?
@@ -51,3 +59,5 @@ config/secrets.*
 *.key
 *.pem
 *.p12
+.vs/PTA/CopilotIndices/
+.vs/PTA/v17/

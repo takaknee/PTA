@@ -1,3 +1,13 @@
+/*
+ * AI業務支援ツール - コンテンツスクリプト用CSS
+ * 注意: このCSSは外部サイトに注入されるため、既存のページスタイルへの影響を最小限に抑制
+ */
+
+/* 
+ * すべてのAI関連スタイルは特定のクラス・ID内でのみ適用されるよう設計
+ * 既存ページの要素（例: #home-feature-title）には影響しません
+ */
+
 /* AI支援ボタン - テーマ対応 */
 .ai-support-button {
     background: linear-gradient(135deg, #2196F3, #1976D2);
@@ -77,8 +87,55 @@
         color: ButtonText;
         border: 1px solid ButtonText;
     }
+      .ai-action-button:hover {
+        background: Highlight;
+        color: HighlightText;
+    }
     
-    .ai-action-button:hover {
+    .ai-dialog-overlay {
+        background: rgba(0, 0, 0, 0.8) !important;
+    }
+    
+    .ai-dialog-content {
+        background: Canvas;
+        color: CanvasText;
+        border: 2px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .ai-dialog-body {
+        background: Canvas;
+        color: CanvasText;
+    }
+    
+    .ai-result-content {
+        background: Field;
+        color: FieldText;
+        border: 1px solid ButtonText;
+    }
+    
+    .ai-loading-spinner::before {
+        border-color: ButtonText transparent transparent transparent;
+    }
+    
+    .ai-input, .ai-textarea {
+        background: Field;
+        color: FieldText;
+        border: 2px solid ButtonText;
+    }
+    
+    .ai-input:focus, .ai-textarea:focus {
+        border-color: Highlight;
+        outline: 2px solid Highlight;
+    }
+    
+    .ai-dropdown-menu {
+        background: Canvas;
+        border: 2px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .ai-dropdown-item:hover {
         background: Highlight;
         color: HighlightText;
     }
@@ -148,6 +205,11 @@
     border-bottom: 1px solid var(--ai-border-color, #e0e0e0);
     background: var(--ai-header-bg, linear-gradient(135deg, #f5f5f5, #e8e8e8));
     border-radius: 12px 12px 0 0;
+    user-select: none !important;
+}
+
+.ai-dialog-header:hover {
+    cursor: move !important;
 }
 
 .ai-dialog-header h2 {
@@ -155,6 +217,12 @@
     color: var(--ai-header-text, #333333);
     font-size: 18px;
     font-weight: 600;
+}
+
+/* ダイアログヘッダーの明示的なスタイル */
+.ai-dialog-header h2 {
+    color: #e3f2fd !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .ai-close-button {
@@ -195,6 +263,7 @@
     margin: 0 0 12px 0;
     color: var(--ai-info-title, #333333);
     font-size: 16px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .ai-content-info p {
@@ -276,6 +345,7 @@
     margin: 0 0 12px 0;
     color: var(--ai-result-title, #333333);
     font-size: 16px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .ai-result pre {
@@ -451,25 +521,30 @@
 @media (prefers-color-scheme: dark) {
     :root {
         --ai-dialog-bg: #2d2d2d;
-        --ai-dialog-text: #ffffff;
-        --ai-border-color: #555555;
+        --ai-dialog-text: #ffffff;        --ai-border-color: #555555;
         --ai-header-bg: linear-gradient(135deg, #3a3a3a, #2d2d2d);
-        --ai-header-text: #ffffff;
+        --ai-header-text: #e3f2fd;
         --ai-close-btn-color: #cccccc;
         --ai-close-btn-hover-bg: #404040;
         --ai-close-btn-hover-text: #ffffff;
         --ai-info-bg: #3a3a3a;
-        --ai-info-text: #cccccc;
-        --ai-info-title: #ffffff;
+        --ai-info-text: #cccccc;        --ai-info-title: #e3f2fd;
         --ai-info-strong: #ffffff;
         --ai-result-bg: #3a3a3a;
-        --ai-result-title: #ffffff;
+        --ai-result-title: #e3f2fd;
         --ai-result-text: #ffffff;
-        --ai-success-bg: #1b5e20;
+        --ai-success-bg: #c6fdca;
         --ai-error-bg: #b71c1c;
         --ai-loading-text: #cccccc;
         --ai-spinner-color: #555555;
-        --ai-spinner-active: #64b5f6;
+        --ai-spinner-active: #64b5f6;        /* 見出し色のダークモード設定 */
+        --ai-heading-color: #64b5f6;
+        --ai-subheading-color: #bbbbbb;
+        --ai-result-title: #e3f2fd;
+        --ai-info-title: #e3f2fd;
+        --ai-json-bg-dark: #2d2d2d;
+        --ai-json-text-dark: #f0f0f0;
+        --ai-json-border-dark: #555;
     }
     
     .ai-dialog-overlay {
@@ -529,7 +604,7 @@
     --ai-dialog-text: #ffffff !important;
     --ai-border-color: #555555 !important;
     --ai-header-bg: linear-gradient(135deg, #3a3a3a, #2d2d2d) !important;
-    --ai-header-text: #ffffff !important;
+    --ai-header-text: #e3f2fd !important;
 }
 
 .ai-dialog.ai-theme-high-contrast .ai-dialog-content,
@@ -543,11 +618,10 @@
 
 .ai-dialog.ai-theme-high-contrast.ai-theme-dark .ai-dialog-content,
 .ai-dialog.ai-theme-high-contrast.ai-theme-dark .ai-dialog-overlay ~ * {
-    --ai-dialog-bg: #000000 !important;
-    --ai-dialog-text: #ffffff !important;
+    --ai-dialog-bg: #000000 !important;    --ai-dialog-text: #ffffff !important;
     --ai-border-color: #ffffff !important;
     --ai-header-bg: #000000 !important;
-    --ai-header-text: #ffffff !important;
+    --ai-header-text: #90caf9 !important;
 }
 
 /* テーマクラス用の詳細なスタイリング */
@@ -584,11 +658,10 @@
     .ai-page-info {
         background: #3a3a3a;
         color: #fff;
-    }
-    
-    .ai-email-info h3,
+    }      .ai-email-info h3,
     .ai-page-info h3 {
-        color: #fff;
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
     }
     
     .ai-email-info p,
@@ -606,9 +679,28 @@
         border-color: #555;
         color: #fff;
     }
+      .ai-result h3 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+      /* 分析セクションの見出しのダークモード対応 */
+    .analysis-section h3 {
+        color: #64b5f6 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
     
-    .ai-result h3 {
-        color: #fff;
+    .analysis-section h4 {
+        color: #bbbbbb !important;
+    }
+      /* その他の見出し要素のダークモード対応 */
+    .ai-content-info h3 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .ai-result-header h3 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
     }
     
     .ai-result pre {
@@ -620,6 +712,44 @@
     }
 }
 
+/* ページ要約・AI結果内のすべての見出しのダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    .ai-dialog h1,
+    .ai-dialog h2,
+    .ai-dialog h3,
+    .ai-dialog h4,
+    .ai-dialog h5,
+    .ai-dialog h6 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .ai-result-content h1,
+    .ai-result-content h2,
+    .ai-result-content h3,
+    .ai-result-content h4,
+    .ai-result-content h5,
+    .ai-result-content h6 {
+        color: #e3f2fd !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    /* 特に明るい青色で見出しを強調 */
+    .ai-result-content h1 {
+        color: #90caf9 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+    
+    .ai-result-content h2 {
+        color: #81c784 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .ai-result-content h3 {
+        color: #64b5f6 !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+    }
+}
 /* 拡大表示モーダル */
 .ai-modal-overlay {
     position: fixed;
@@ -828,4 +958,467 @@
     opacity: 1 !important;
     background-color: rgba(255, 255, 255, 0.3) !important;
     cursor: grabbing !important;
+}
+
+/* 結果表示用のテーマ対応スタイル */
+.ai-result-container {
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid;
+    margin: 8px 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 成功メッセージ（VSCode設定解析） */
+.ai-result-success {
+    background: var(--ai-success-bg, #f0f8ff);
+    color: var(--ai-success-text, #007ACC);
+    border-left-color: var(--ai-success-border, #007ACC);
+}
+
+/* エラーメッセージ */
+.ai-result-error {
+    background: var(--ai-error-bg, #ffebee);
+    color: var(--ai-error-text, #f44336);
+    border-left-color: var(--ai-error-border, #f44336);
+}
+
+/* 警告メッセージ */
+.ai-result-warning {
+    background: var(--ai-warning-bg, #fff3e0);
+    color: var(--ai-warning-text, #ff9800);
+    border-left-color: var(--ai-warning-border, #ff9800);
+}
+
+/* 情報メッセージ */
+.ai-result-info {
+    background: var(--ai-info-bg, #e3f2fd);
+    color: var(--ai-info-text, #2196F3);
+    border-left-color: var(--ai-info-border, #2196F3);
+}
+
+/* 結果ヘッダー */
+.ai-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.ai-result-header h3 {
+    margin: 0;
+    color: var(--ai-result-title, #333333);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* コピーボタン */
+.ai-result-copy-btn {
+    background: var(--ai-primary-color, #007ACC);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s ease;
+}
+
+.ai-result-copy-btn:hover {
+    background: var(--ai-primary-hover, #005A9E);
+}
+
+/* ページ情報表示 */
+.ai-result-page-info {
+    margin-top: 12px;
+    padding: 8px;
+    background: var(--ai-page-info-bg, rgba(255,255,255,0.5));
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--ai-page-info-text, #666);
+}
+
+/* VSCode設定解析結果のHTML構造用スタイル */
+.vscode-analysis-content {
+    font-family: var(--ai-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif);
+    line-height: 1.6;
+    color: var(--ai-text-color, #333);
+}
+
+.analysis-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--ai-section-bg, rgba(0,0,0,0.02));
+    border-radius: 8px;
+    border-left: 4px solid var(--ai-primary-color, #2196f3);
+}
+
+.analysis-section h3 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ai-heading-color, #1976d2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.analysis-section h4 {
+    margin: 12px 0 8px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ai-subheading-color, #424242);
+}
+
+.settings-group {
+    margin-bottom: 16px;
+}
+
+.setting-item {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--ai-item-bg, rgba(255,255,255,0.5));
+    border-radius: 6px;
+    border: 1px solid var(--ai-item-border, rgba(0,0,0,0.1));
+}
+
+.setting-name {
+    color: var(--ai-setting-name-color, #d32f2f);
+    font-weight: 600;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.setting-value {
+    background: var(--ai-code-bg, #f5f5f5);
+    color: var(--ai-code-text, #e91e63);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.setting-description {
+    color: var(--ai-description-color, #666);
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.settings-json {
+    background: var(--ai-code-bg, #f8f9fa);
+    border: 1px solid var(--ai-border-color, #e1e4e8);
+    border-radius: 6px;
+    padding: 16px;
+    margin: 0;
+    overflow-x: auto;
+    position: relative;
+    padding-top: 40px; /* コピーボタンのスペースを確保 */
+}
+
+.settings-json code {
+    font-family: 'Monaco', 'Consolas', 'Source Code Pro', 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--ai-code-text, #24292e);
+    line-height: 1.5;
+    white-space: pre;
+    display: block;
+}
+
+.usage-steps, .warnings-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.usage-steps li, .warnings-list li {
+    margin-bottom: 8px;
+    color: var(--ai-list-text, #444);
+    line-height: 1.5;
+}
+
+/* JSONコピーボタンのスタイル */
+.settings-json-container {
+    position: relative;
+    margin-top: 12px;
+}
+
+.copy-json-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--ai-copy-btn-bg, #2196f3);
+    color: var(--ai-copy-btn-text, white);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+    font-family: var(--ai-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+    box-shadow: 0 2px 4px var(--ai-shadow-color, rgba(0,0,0,0.1));
+}
+
+.copy-json-btn:hover {
+    background: var(--ai-copy-btn-hover-bg, #1976d2);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px var(--ai-shadow-color, rgba(0,0,0,0.15));
+}
+
+.copy-json-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px var(--ai-shadow-color, rgba(0,0,0,0.1));
+}
+
+.copy-json-btn.copied {
+    background: var(--ai-success-color, #4caf50);
+    color: white;
+}
+
+/* ダークテーマでのコピーボタン調整 */
+@media (prefers-color-scheme: dark) {
+    .copy-json-btn {
+        --ai-copy-btn-bg: #1976d2;
+        --ai-copy-btn-text: #ffffff;
+        --ai-copy-btn-hover-bg: #2196f3;
+        --ai-success-color: #4caf50;
+        --ai-shadow-color: rgba(0,0,0,0.3);
+    }
+    
+    .settings-json {
+        --ai-code-bg: #1a1a1a;
+        --ai-border-color: #333;
+        --ai-code-text: #e0e0e0;
+    }
+}
+
+/* 高コントラストモード用のコピーボタン */
+@media (forced-colors: active) {
+    .copy-json-btn {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 2px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .copy-json-btn:hover {
+        background: Highlight;
+        color: HighlightText;
+        border-color: HighlightText;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .copy-json-btn.copied {
+        background: Mark;
+        color: MarkText;
+        border-color: MarkText;
+    }
+    
+    .settings-json {
+        background: Canvas;
+        border: 2px solid CanvasText;
+        color: CanvasText;
+    }
+    
+    .settings-json code {
+        color: CanvasText;
+    }
+}
+
+/* ダイアログのドラッグ・リサイズ機能 */
+.ai-dialog-header {
+    user-select: none !important;
+}
+
+.ai-dialog-header:hover {
+    cursor: move !important;
+}
+
+/* カスタムリサイズハンドル */
+.resize-handle {
+    position: absolute;
+    z-index: 10;
+    transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+    background-color: rgba(33, 150, 243, 0.3) !important;
+}
+
+.resize-handle-right {
+    top: 0;
+    right: -5px;
+    width: 10px;
+    height: 100%;
+    cursor: ew-resize;
+}
+
+.resize-handle-bottom {
+    left: 0;
+    bottom: -5px;
+    width: 100%;
+    height: 10px;
+    cursor: ns-resize;
+}
+
+.resize-handle-corner {
+    right: -5px;
+    bottom: -5px;
+    width: 15px;
+    height: 15px;
+    cursor: nw-resize;
+    border-radius: 0 0 12px 0;
+}
+
+/* ダークテーマでのリサイズハンドル */
+@media (prefers-color-scheme: dark) {
+    .resize-handle:hover {
+        background-color: rgba(100, 150, 255, 0.4) !important;
+    }
+    
+    .resize-handle-corner {
+        background-color: #555 !important;
+    }
+}
+
+/* ライトテーマでのリサイズハンドル */
+@media (prefers-color-scheme: light) {
+    .resize-handle-corner {
+        background-color: #ccc !important;
+    }
+}
+
+/* ダイアログの位置固定スタイル */
+.ai-dialog .ai-dialog-content {
+    position: fixed !important;
+    z-index: 2147483647 !important;
+}
+
+/* JSON表示用スタイル */
+.ai-result-json {
+    background: var(--ai-json-bg, #f5f5f5);
+    color: var(--ai-json-text, #333);
+    border: 1px solid var(--ai-json-border, #ddd);
+    border-radius: 4px;
+    padding: 12px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+/* ダークモードでのJSON表示 */
+@media (prefers-color-scheme: dark) {
+    .ai-result-json {
+        background: var(--ai-json-bg-dark, #2d2d2d);
+        color: var(--ai-json-text-dark, #f0f0f0);
+        border-color: var(--ai-json-border-dark, #555);
+    }
+}
+
+/* 高コントラストモードでのJSON表示 */
+@media (forced-colors: active) {
+    .ai-result-json {
+        background: Field;
+        color: FieldText;
+        border-color: FieldText;
+    }
+}
+
+/* 見出し要素の高コントラストモード対応 */
+@media (forced-colors: active) {
+    .ai-dialog h1,
+    .ai-dialog h2,
+    .ai-dialog h3,
+    .ai-dialog h4,
+    .ai-dialog h5,
+    .ai-dialog h6,
+    .ai-result-content h1,
+    .ai-result-content h2,
+    .ai-result-content h3,
+    .ai-result-content h4,
+    .ai-result-content h5,
+    .ai-result-content h6,
+    .analysis-section h3,
+    .analysis-section h4,
+    .ai-content-info h3,
+    .ai-result h3,
+    .ai-result-header h3 {
+        color: CanvasText !important;
+        text-shadow: none !important;
+    }
+
+    .ai-dialog-header h2 {
+        color: ButtonText !important;
+        text-shadow: none !important;
+    }
+}
+
+/* ダークテーマでの全てのh3要素に対する強力な色指定 */
+@media (prefers-color-scheme: dark) {
+    /* すべてのAI関連のh3要素を対象 */
+    .ai-dialog h3,    .ai-dialog-content h3,
+    .ai-dialog-body h3,
+    .ai-result h3,
+    .ai-result-content h3,
+    .ai-content-info h3,
+    .ai-result-header h3,
+    .ai-email-info h3,
+    .ai-page-info h3,
+    .ai-dialog .analysis-section h3,
+    .ai-dialog .ai-analysis h3,
+    .ai-dialog .ai-summary h3,
+    .ai-dialog h3.ai-heading {
+        color: #90caf9 !important;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+        font-weight: 600 !important;
+    }
+
+    /* 特定セクションの色分け */
+    .ai-dialog .analysis-section h3 {
+        color: #64b5f6 !important;
+    }
+    
+    .ai-result-content h3 {
+        color: #81c784 !important;
+    }
+}
+
+/* AI専用要素のh3色指定（限定的なセレクタに変更） */
+.ai-dialog h3,
+.ai-support-button h3,
+.ai-modal h3,
+.ai-result-container h3 {
+    color: inherit !important;
+}
+
+/* ダークテーマ検出時のAI専用要素指定 */
+@media (prefers-color-scheme: dark) {
+    .ai-dialog h3,
+    .ai-support-button h3,
+    .ai-modal h3,
+    .ai-result-container h3,
+    .ai-dialog .ai-result-header h3,
+    .ai-dialog .ai-email-info h3,
+    .ai-dialog .ai-page-info h3,
+    .ai-dialog .analysis-section h3,
+    .ai-dialog .ai-analysis h3,
+    .ai-dialog .ai-summary h3 {
+        color: #90caf9 !important;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+        font-weight: 600 !important;
+    }
+    
+    /* AI専用セクションの色分け（限定的に適用） */
+    .ai-dialog .analysis-section h3 {
+        color: #64b5f6 !important;
+    }
+    
+    .ai-dialog .ai-result-content h3 {
+        color: #81c784 !important;
+    }
 }

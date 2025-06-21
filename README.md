@@ -1,34 +1,35 @@
-# PTA情報配信システム
+# PTA 情報配信システム
 
-PTA関連の情報配信を自動化するシステムです。Google Workspace（G Suite）とMicrosoft 365の連携スクリプトを提供します。
+PTA 関連の情報配信を自動化するシステムです。Google Workspace（G Suite）と Microsoft 365 の連携スクリプトを提供します。
 
 ## 機能概要
 
-### Google Workspace連携
-- **PTA情報配信システム** (`src/gsuite/pta/`): PTAメンバー管理、情報配信、アンケート管理
-- **Gmail整理スクリプト** (`src/gsuite/gmail/`): メール自動整理・クリーンアップ
+### Google Workspace 連携
 
-### Microsoft Outlook連携  
-- **Outlook AI Helper (VBA)** (`src/outlook/`): OpenAI APIを使用したメール分析・作成支援（従来版）
-- **Outlook AI Helper (Office Add-in)** (`src/outlook-addin/`): 最新のOffice Add-ins技術による軽量版（推奨）
-- **Outlook VSTO アドイン** (`src/outlook-vsto/`): C#による高機能版（レガシー）
+- **PTA 情報配信システム** (`src/gsuite/pta/`): PTA メンバー管理、情報配信、アンケート管理
+- **Gmail 整理スクリプト** (`src/gsuite/gmail/`): メール自動整理・クリーンアップ
 
-### Edge拡張機能（NEW!）
-- **PTA Edge拡張機能** (`src/edge-extension/`): Outlookアドインの代替案としてのEdgeブラウザ拡張機能
-  - Web版Outlook・Gmail対応
-  - Azure OpenAI API統合
+### Microsoft 365 連携
+
+- **Excel AI Helper (VBA)** (`src/excel/`): OpenAI API を使用した Excel データ分析・処理支援
+
+### Edge 拡張機能（NEW!）
+
+- **PTA Edge 拡張機能** (`src/edge-extension/`): Web ブラウザ向けメール処理拡張機能
+  - Web 版 Outlook・Gmail 対応
+  - Azure OpenAI API 統合
   - ポリシー制限回避ソリューション
 
 ## CI/CD・品質管理
 
-このプロジェクトでは、コード品質とセキュリティを自動的にチェックするGitHub Actionsを導入しています：
+このプロジェクトでは、コード品質とセキュリティを自動的にチェックする GitHub Actions を導入しています：
 
 - ✅ **セキュリティスキャン**: API キー漏洩、脆弱性の検出
-- ✅ **コード品質チェック**: ESLintによる静的解析
+- ✅ **コード品質チェック**: ESLint による静的解析
 - ✅ **VBA セキュリティ分析**: 危険な関数の使用チェック
 - ✅ **依存関係監査**: 脆弱性のある依存関係の検出
 
-詳細は [CI/CD設定ドキュメント](docs/CI_CD_README.md) をご覧ください。
+詳細は [CI/CD 設定ドキュメント](docs/CI_CD_README.md) をご覧ください。
 
 ## クイックスタート
 
@@ -51,30 +52,48 @@ npm run security
 
 ### 各システムのセットアップ
 
-- **PTA情報配信システム**: [セットアップガイド](src/gsuite/pta/SETUP.md)
-- **Gmail整理スクリプト**: [使用方法](src/gsuite/gmail/README.md)  
+- **PTA 情報配信システム**: [セットアップガイド](src/gsuite/pta/SETUP.md)
+- **Gmail 整理スクリプト**: [使用方法](src/gsuite/gmail/README.md)
 - **Outlook AI Helper (VBA)**: [クイックスタートガイド](docs/outlook/quickstart.md)
-- **Edge拡張機能**: [インストール・設定ガイド](src/edge-extension/README.md)
+- **Edge 拡張機能**: [インストール・設定ガイド](src/edge-extension/README.md)
 - **Outlook Add-in (推奨)**: [セットアップガイド](src/outlook-addin/README.md)
 
 ## ✨ 最新情報：Office Add-ins 移行完了
 
-**VSTOからOffice Add-ins（Office拡張機能）への移行が完了しました！**
+**VSTO から Office Add-ins（Office 拡張機能）への移行が完了しました！**
 
 ### 🎯 推奨の移行パス
 
-1. **従来のVBA版** → **Office Add-in版**（推奨）
-2. 既存のVSTO版は将来的に廃止予定
+1. **従来の VBA 版** → **Office Add-in 版**（推奨）
+2. 既存の VSTO 版は将来的に廃止予定
 
-### 🌟 Office Add-in版の利点
+### 🌟 Office Add-in 版の利点
 
-- ✅ **クロスプラットフォーム**: Windows/Mac/Web全対応
+- ✅ **クロスプラットフォーム**: Windows/Mac/Web 全対応
 - ✅ **軽量配信**: マニフェストファイルのみで配信
 - ✅ **自動更新**: ブラウザキャッシュによる透明な更新
-- ✅ **簡単インストール**: ClickOnce不要
-- ✅ **将来保証**: Microsoft推奨の最新技術
+- ✅ **簡単インストール**: ClickOnce 不要
+- ✅ **将来保証**: Microsoft 推奨の最新技術
 
-詳細は [Office Add-in移行ガイド](src/outlook-addin/MIGRATION.md) をご覧ください。
+詳細は [Office Add-in 移行ガイド](src/outlook-addin/MIGRATION.md) をご覧ください。
+
+## 🚀 最新アップデート：GPT-4o Mini 対応
+
+2024 年 6 月更新で、全システムが最新の GPT-4o Mini モデルに対応しました：
+
+- **⚡ 高速化**: 従来の GPT-4 比で約 50%の応答速度向上
+- **💰 コスト効率**: 約 60%のコスト削減を実現
+- **🎯 品質向上**: 日本語理解と文脈処理の改善
+- **🔄 完全互換**: 既存設定からシームレスな移行
+
+**対応コンポーネント**:
+
+- Outlook Add-in: デフォルトモデルを`gpt-4o-mini`に更新
+- Edge 拡張機能: 最新モデル選択肢を追加
+- VBA（Outlook/Excel）: デフォルト設定を更新
+- VSTO: 設定とエンドポイントを最適化
+
+詳細は [GPT-4o Mini 移行ガイド](docs/GPT4O_MINI_MIGRATION.md) をご覧ください。
 
 ## セキュリティ注意事項
 
@@ -84,7 +103,7 @@ npm run security
 
 ## 貢献
 
-プルリクエストやIssueを歓迎します。変更前に必ずCI/CDチェックが通ることを確認してください。
+プルリクエストや Issue を歓迎します。変更前に必ず CI/CD チェックが通ることを確認してください。
 
 ## ライセンス
 

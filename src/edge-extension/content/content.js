@@ -3,11 +3,74 @@
  * Copyright (c) 2024 AI Development Team
  */
 
-// 現在のメールサービスを判定
+// HTMLサニタイザーモジュールの初期化（XSS脆弱性対策）
+let PTASanitizer = null;
+
+// HTMLサニタイザーの初期化
+function initializeSanitizer() {
+    // グローバルスコープから読み込み
+    if (typeof globalThis !== 'undefined' && globalThis.PTASanitizer) {
+        PTASanitizer = globalThis.PTASanitizer;
+        console.log('HTMLサニタイザーモジュールを正常に読み込みました（globalThis）');
+        return;
+    }
+
+    // windowオブジェクトから読み込み
+    if (typeof window !== 'undefined' && window.PTASanitizer) {
+        PTASanitizer = window.PTASanitizer;
+        console.log('HTMLサニタイザーモジュールを正常に読み込みました（window）');
+        return;
+    }
+
+    console.warn('HTMLサニタイザーモジュールが見つかりません。統一フォールバック版を使用します。');
+
+    // 統一フォールバック: PTASanitizerが利用できない場合の最小限の実装
+    PTASanitizer = {
+        extractSafeText: function (input) {
+            if (!input || typeof input !== 'string') return '';
+
+            // 統一サニタイザーがグローバルに利用可能かチェック
+            if (typeof globalThis !== 'undefined' &&
+                typeof globalThis.PTASanitizer !== 'undefined' &&
+                typeof globalThis.PTASanitizer.extractSafeText === 'function') {
+
+                console.log('Content: グローバル統一PTASanitizerを使用');
+                return globalThis.PTASanitizer.extractSafeText(input);
+            }
+
+            // セキュリティサニタイザーが利用できない場合は処理を中断
+            console.error('❌ 統一セキュリティサニタイザーが利用できません。安全のため処理を中断します。');
+            throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します');
+        },
+
+        stripHTMLTags: function (input) {
+            if (!input || typeof input !== 'string') return '';
+
+            // 統一サニタイザーがグローバルに利用可能かチェック
+            if (typeof globalThis !== 'undefined' &&
+                typeof globalThis.PTASanitizer !== 'undefined' &&
+                typeof globalThis.PTASanitizer.fastStripTags === 'function') {
+
+                return globalThis.PTASanitizer.fastStripTags(input);
+            }
+
+            // セキュリティサニタイザーが利用できない場合は処理を中断
+            console.error('❌ 統一セキュリティサニタイザーが利用できません。安全のため処理を中断します。');
+            throw new Error('セキュリティサニタイザーが利用できないため、HTMLタグ除去処理を中断します');
+        }
+    };
+    console.log('フォールバック版HTMLサニタイザーを初期化しました');
+}
+
+// 初期化を実行
+initializeSanitizer();
+
+// 現在のメールサービスを判定（セキュアなホスト名チェック）
 let currentService = 'unknown';
-if (window.location.hostname.includes('outlook.office.com') || window.location.hostname.includes('outlook.live.com')) {
+const hostname = window.location.hostname;
+if (hostname === 'outlook.office.com' || hostname === 'outlook.live.com') {
     currentService = 'outlook';
-} else if (window.location.hostname.includes('mail.google.com')) {
+} else if (hostname === 'mail.google.com') {
     currentService = 'gmail';
 } else {
     currentService = 'general'; // 一般的なWebページ
@@ -25,6 +88,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'analyzeSelection':
             handleSelectionAnalysis(message.data);
             break;
+        case 'forwardToTeams':
+            handleForwardToTeamsFromContext(message.data);
+            break;
+        case 'addToCalendar':
+            handleAddToCalendarFromContext(message.data);
+            break;
+        case 'analyzeVSCodeSettings':
+            handleAnalyzeVSCodeSettingsFromContext(message.data);
+            break;
     }
 });
 
@@ -41,6 +113,9 @@ if (document.readyState === 'loading') {
 function initialize() {
     console.log('AI支援ツール初期化開始:', currentService);
 
+    // サニタイザーの初期化状態を確認
+    checkSanitizerStatus();
+
     // テーマ検出と適用（最初に実行）
     detectAndApplyTheme();
 
@@ -56,6 +131,14 @@ function initialize() {
 
     // URLの変更を監視（SPA対応）
     observeUrlChanges();
+}
+
+/**
+ * セキュリティチェックの初期化状態を確認
+ */
+function checkSanitizerStatus() {
+    console.log('[Content Script] 軽量セキュリティチェック（検知重視モード）を使用します');
+    console.log('[Content Script] AI応答は基本的にそのまま表示され、異常パターンは検知・ログ記録されます');
 }
 
 /**
@@ -276,14 +359,23 @@ function createAiDialog(dialogData) {
     const existingDialog = document.getElementById('ai-dialog');
     if (existingDialog) {
         existingDialog.remove();
-    }
-
-    // ダイアログコンテナを作成
+    }    // ダイアログコンテナを作成
     const dialog = document.createElement('div');
     dialog.id = 'ai-dialog';
     dialog.dialogData = dialogData; // データを保存
 
-    // 強制的にモーダルスタイル適用
+    // テーマクラスを適用
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+
+    dialog.className = 'ai-dialog';
+    if (isHighContrast) {
+        dialog.classList.add('ai-theme-high-contrast');
+    } else if (isDark) {
+        dialog.classList.add('ai-theme-dark');
+    } else {
+        dialog.classList.add('ai-theme-light');
+    }// 強制的にモーダルスタイル適用（オーバーレイなし、右側固定位置）
     dialog.style.cssText = `
         position: fixed !important;
         top: 0 !important;
@@ -291,12 +383,14 @@ function createAiDialog(dialogData) {
         width: 100% !important;
         height: 100% !important;
         z-index: 2147483647 !important;
-        background: rgba(0, 0, 0, 0.7) !important;
+        background: transparent !important;
         display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        align-items: flex-start !important;
+        justify-content: flex-end !important;
+        padding: 20px !important;
         font-family: 'Segoe UI', sans-serif !important;
-    `;    // テーマを検出
+        pointer-events: none !important;
+    `;// テーマを検出
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
 
@@ -325,9 +419,7 @@ function createAiDialog(dialogData) {
         dialogText = '#333333';
         headerBg = 'linear-gradient(135deg, #2196F3, #1976D2)';
         borderColor = '#e0e0e0';
-    }
-
-    // テーマに応じた追加色設定
+    }    // テーマに応じた追加色設定
     let textMuted, infoBg, headerTextColor;
 
     if (prefersDark) {
@@ -338,89 +430,178 @@ function createAiDialog(dialogData) {
         textMuted = '#666666';
         infoBg = '#f0f8ff';
         headerTextColor = '#ffffff';
-    }
-
-    // ダイアログコンテンツを作成
+    }// ダイアログコンテンツを作成
     const content = document.createElement('div');
-    content.style.cssText = `
+
+    // 保存された位置とサイズを取得
+    const savedDialogSettings = getSavedDialogSettings(); content.style.cssText = `
         background: ${dialogBg} !important;
         color: ${dialogText} !important;
         border-radius: 12px !important;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-        max-width: 600px !important;
-        width: 90% !important;
-        max-height: 80vh !important;
-        overflow-y: auto !important;
-        position: relative !important;
+        width: ${savedDialogSettings.width}px !important;
+        height: ${savedDialogSettings.height}px !important;
+        position: fixed !important;
+        top: ${savedDialogSettings.top}px !important;
+        right: ${savedDialogSettings.right}px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        resize: none !important;
+        min-width: 400px !important;
+        min-height: 300px !important;
+        max-width: ${window.innerWidth - 40}px !important;
+        max-height: ${window.innerHeight - 40}px !important;
+        pointer-events: auto !important;
     `;
-    content.innerHTML = `        <div class="ai-dialog-header" style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid ${borderColor};
-            background: ${headerBg};
-            color: white;
-            border-radius: 12px 12px 0 0;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        ">
-            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                <span style="font-size: 18px;">🏫</span>
-                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
-                    <span style="
-                        font-size: 14px; 
-                        font-weight: 500; 
-                        color: ${headerTextColor}; 
-                        white-space: nowrap; 
-                        overflow: hidden; 
-                        text-overflow: ellipsis;
-                        max-width: 300px;
-                        cursor: pointer;
-                    " title="${dialogData.pageTitle || 'タイトル不明'}\n${dialogData.pageUrl || ''}">${dialogData.pageTitle || 'AI支援ツール'}</span>
-                    <button class="ai-copy-page-link-btn" style="
-                        background: rgba(255, 255, 255, 0.1);
-                        border: 1px solid rgba(255, 255, 255, 0.2);
-                        color: ${headerTextColor};
-                        padding: 4px 6px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 11px;
-                        transition: all 0.2s ease;
-                        flex-shrink: 0;
-                    " title="ページリンクをMarkdown形式でコピー">📋</button>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="ai-header-settings-btn" style="
-                    background: rgba(255, 255, 255, 0.1);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    color: ${headerTextColor};
-                    padding: 6px 8px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    transition: all 0.2s ease;
-                " title="設定">⚙️</button>
-                <button class="ai-close-btn" style="
-                    background: none;
-                    border: none;
-                    color: ${headerTextColor};
-                    font-size: 20px;
-                    cursor: pointer;
-                    width: 28px;
-                    height: 28px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 50%;
-                ">×</button>
-            </div>
-        </div>
-        <div style="padding: 20px; overflow-y: auto; flex: 1;">
-            ${dialogData.selectedText ? `<div style="background: ${infoBg}; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px; color: ${dialogText};"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
-            
+
+    // XSS脆弱性対策: DOM要素を直接作成してユーザー入力を安全に設定
+    const safePageTitle = PTASanitizer ?
+        PTASanitizer.extractSafeText(dialogData.pageTitle || 'AI支援ツール') :
+        (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })();
+    const safePageUrl = PTASanitizer ?
+        PTASanitizer.extractSafeText(dialogData.pageUrl || '') :
+        (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })();
+    const safeSelectedText = dialogData.selectedText ?
+        (PTASanitizer ?
+            PTASanitizer.extractSafeText(dialogData.selectedText.substring(0, 100)) :
+            (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })()) :
+        '';
+
+    // ヘッダー部分を作成
+    const header = document.createElement('div');
+    header.className = 'ai-dialog-header';
+    header.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid ${borderColor};
+        background: ${headerBg};
+        color: white;
+        border-radius: 12px 12px 0 0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        cursor: move;
+    `;
+
+    // ヘッダー左側
+    const headerLeft = document.createElement('div');
+    headerLeft.style.cssText = 'display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;';
+
+    const iconSpan = document.createElement('span');
+    iconSpan.style.fontSize = '18px';
+    iconSpan.textContent = '🏫';
+
+    const titleContainer = document.createElement('div');
+    titleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.style.cssText = `
+        font-size: 14px; 
+        font-weight: 500; 
+        color: ${headerTextColor}; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis;
+        max-width: 300px;
+        cursor: move;
+    `;
+    titleSpan.title = safePageTitle + (safePageUrl ? '\n' + safePageUrl : '');
+    titleSpan.textContent = safePageTitle; // textContentを使用してXSS対策
+
+    const copyPageLinkBtn = document.createElement('button');
+    copyPageLinkBtn.className = 'ai-copy-page-link-btn';
+    copyPageLinkBtn.style.cssText = `
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: ${headerTextColor};
+        padding: 4px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    `;
+    copyPageLinkBtn.title = 'ページリンクをMarkdown形式でコピー';
+    copyPageLinkBtn.textContent = '📋';
+
+    titleContainer.appendChild(titleSpan);
+    titleContainer.appendChild(copyPageLinkBtn);
+    headerLeft.appendChild(iconSpan);
+    headerLeft.appendChild(titleContainer);
+
+    // ヘッダー右側
+    const headerRight = document.createElement('div');
+    headerRight.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+
+    const settingsBtn = document.createElement('button');
+    settingsBtn.className = 'ai-header-settings-btn';
+    settingsBtn.style.cssText = `
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: ${headerTextColor};
+        padding: 6px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s ease;
+    `;
+    settingsBtn.title = '設定';
+    settingsBtn.textContent = '⚙️';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'ai-close-btn';
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: ${headerTextColor};
+        font-size: 20px;
+        cursor: pointer;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    `;
+    closeBtn.textContent = '×';
+
+    headerRight.appendChild(settingsBtn);
+    headerRight.appendChild(closeBtn);
+    header.appendChild(headerLeft);
+    header.appendChild(headerRight);
+
+    // ボディ部分を作成
+    const body = document.createElement('div');
+    body.className = 'ai-dialog-body';
+    body.style.cssText = `
+        padding: 20px; 
+        overflow-y: auto; 
+        flex: 1;
+        max-height: calc(100% - 60px);
+    `;
+
+    // 選択テキスト表示（XSS対策済み）
+    if (dialogData.selectedText) {
+        const selectedTextDiv = document.createElement('div');
+        selectedTextDiv.style.cssText = `background: ${infoBg}; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px; color: ${dialogText};`;
+
+        const selectedTextStrong = document.createElement('strong');
+        selectedTextStrong.textContent = '選択テキスト: ';
+
+        const selectedTextSpan = document.createElement('span');
+        selectedTextSpan.textContent = safeSelectedText + '...';
+
+        selectedTextDiv.appendChild(selectedTextStrong);
+        selectedTextDiv.appendChild(selectedTextSpan);
+        body.appendChild(selectedTextDiv);
+    }
+
+    // 残りのUIをinnerHTMLで作成（ユーザー入力を含まない部分）
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.innerHTML = `
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
                 ${currentService === 'outlook' || currentService === 'gmail' ? `
                     <div style="display: flex; align-items: center; gap: 4px;">
@@ -468,7 +649,8 @@ function createAiDialog(dialogData) {
                             font-size: 11px;
                             flex-shrink: 0;
                         " title="ページ情報をMarkdown形式でコピー">📝</button>
-                    </div>                ` : `
+                    </div>
+                ` : `
                     <button class="ai-analyze-page-btn" style="
                         background: linear-gradient(135deg, #2196F3, #1976D2);
                         color: white;
@@ -479,7 +661,8 @@ function createAiDialog(dialogData) {
                         font-size: 14px;
                         font-weight: 500;
                     ">📄 ページ要約</button>
-                `}                ${dialogData.selectedText ? `
+                `}
+                ${dialogData.selectedText ? `
                     <button class="ai-analyze-selection-btn" style="
                         background: linear-gradient(135deg, #FF9800, #F57C00);
                         color: white;
@@ -490,6 +673,50 @@ function createAiDialog(dialogData) {
                         font-size: 14px;
                         font-weight: 500;
                     ">🔍 選択テキスト分析</button>
+                ` : ''}
+                
+                <!-- M365統合機能ボタン -->
+                <button class="ai-forward-teams-btn" style="
+                    background: linear-gradient(135deg, #6264A7, #464775);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                ">💬 Teams chatに転送</button>
+                
+                <button class="ai-add-calendar-btn" style="
+                    background: linear-gradient(135deg, #0078D4, #106EBE);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                ">📅 予定表に追加</button>
+                
+                ${dialogData.pageUrl && (() => {
+            try {
+                const url = new URL(dialogData.pageUrl);
+                const allowedHosts = ['code.visualstudio.com', 'marketplace.visualstudio.com'];
+                return allowedHosts.includes(url.host);
+            } catch (e) {
+                return false; // Invalid URL
+            }
+        })() ? `
+                    <button class="ai-analyze-vscode-btn" style="
+                        background: linear-gradient(135deg, #007ACC, #005A9E);
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        padding: 12px 16px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 500;
+                    ">⚙️ VSCode設定解析</button>
                 ` : ''}
             </div>
             
@@ -531,8 +758,55 @@ function createAiDialog(dialogData) {
                     <div id="ai-result-content"></div>
                 </div>
             </div>
-        </div>
     `;
+
+    body.appendChild(buttonsContainer);
+
+    // リサイズハンドルを作成
+    const resizeHandleRight = document.createElement('div');
+    resizeHandleRight.className = 'resize-handle resize-handle-right';
+    resizeHandleRight.style.cssText = `
+        position: absolute;
+        top: 0;
+        right: -5px;
+        width: 10px;
+        height: 100%;
+        cursor: ew-resize;
+        z-index: 10;
+    `;
+
+    const resizeHandleBottom = document.createElement('div');
+    resizeHandleBottom.className = 'resize-handle resize-handle-bottom';
+    resizeHandleBottom.style.cssText = `
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+        width: 100%;
+        height: 10px;
+        cursor: ns-resize;
+        z-index: 10;
+    `;
+
+    const resizeHandleCorner = document.createElement('div');
+    resizeHandleCorner.className = 'resize-handle resize-handle-corner';
+    resizeHandleCorner.style.cssText = `
+        position: absolute;
+        right: -5px;
+        bottom: -5px;
+        width: 15px;
+        height: 15px;
+        cursor: nw-resize;
+        z-index: 11;
+        background: ${prefersDark ? '#555' : '#ccc'};
+        border-radius: 0 0 12px 0;
+    `;
+
+    // すべての要素をコンテンツに追加
+    content.appendChild(header);
+    content.appendChild(body);
+    content.appendChild(resizeHandleRight);
+    content.appendChild(resizeHandleBottom);
+    content.appendChild(resizeHandleCorner);
 
     dialog.appendChild(content);
 
@@ -555,22 +829,24 @@ function createAiDialog(dialogData) {
     console.log('ダイアログHTML:', content.innerHTML);
 
     // CSP準拠のイベントリスナー設定
-    setupDialogEventListeners(dialog);
-
-    // オーバーレイクリックで閉じる
+    setupDialogEventListeners(dialog);    // 背景クリック処理（無効化 - ダイアログは背景クリックで閉じない）
     dialog.addEventListener('click', (e) => {
-        if (e.target === dialog) {
-            closeAiDialog();
-        }
+        // 背景クリックでは閉じないようにする
+        e.stopPropagation();
     });
 
     // ESCキーで閉じる
-    document.addEventListener('keydown', handleEscapeKey);
-
-    // ダイアログにテーマクラスを適用
+    document.addEventListener('keydown', handleEscapeKey);    // ダイアログにテーマクラスを適用
     applyThemeToDialog(dialog);
 
-    console.log('AIダイアログを作成しました（モーダル表示）');
+    // ドラッグ機能を有効化
+    const dialogHeader = content.querySelector('.ai-dialog-header');
+    if (dialogHeader) {
+        makeDialogDraggable(content, dialogHeader);
+    }    // リサイズハンドルを設定
+    setupResizeHandles(content);
+
+    console.log('AIダイアログを作成しました（移動・リサイズ可能）');
 }
 
 /**
@@ -675,6 +951,57 @@ function setupDialogEventListeners(dialog) {
         copyStructuredBtn.addEventListener('click', () => copyStructuredResult(dialog));
         console.log('構造的結果コピーボタンのイベントリスナー設定完了');
     }
+
+    // Teams転送ボタン
+    const forwardTeamsBtn = dialog.querySelector('.ai-forward-teams-btn');
+    if (forwardTeamsBtn) {
+        forwardTeamsBtn.addEventListener('click', () => forwardToTeams(dialog));
+        console.log('Teams転送ボタンのイベントリスナー設定完了');
+    }
+
+    // 予定表追加ボタン
+    const addCalendarBtn = dialog.querySelector('.ai-add-calendar-btn');
+    if (addCalendarBtn) {
+        addCalendarBtn.addEventListener('click', () => addToCalendar(dialog));
+        console.log('予定表追加ボタンのイベントリスナー設定完了');
+    }
+
+    // VSCode設定解析ボタン
+    const analyzeVSCodeBtn = dialog.querySelector('.ai-analyze-vscode-btn');
+    if (analyzeVSCodeBtn) {
+        analyzeVSCodeBtn.addEventListener('click', () => analyzeVSCodeSettings(dialog));
+        console.log('VSCode設定解析ボタンのイベントリスナー設定完了');
+    }    // コピーボタン（汎用） - イベントデリゲーション使用
+    const copyBtns = dialog.querySelectorAll('.ai-result-copy-btn, .copy-btn');
+    copyBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleCopyButtonClick(e);
+        });
+        console.log('汎用コピーボタンのイベントリスナー設定完了');
+    });
+
+    // 動的に生成されるコピーボタン用のイベントデリゲーション
+    dialog.addEventListener('click', (e) => {
+        // コピーボタンのクリックを処理
+        if (e.target.classList.contains('ai-result-copy-btn') ||
+            e.target.classList.contains('copy-json-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (e.target.classList.contains('copy-json-btn')) {
+                // settings.jsonコピーボタン
+                copySettingsJSON(e.target);
+            } else if (e.target.onclick && e.target.onclick.toString().includes('copyVSCodeAnalysis')) {
+                // VSCode解析結果全体コピー
+                copyVSCodeAnalysis();
+            } else {
+                // 汎用コピーボタン
+                handleCopyButtonClick(e);
+            }
+        }
+    });
 
     console.log('setupDialogEventListeners 完了');
 }
@@ -851,7 +1178,16 @@ function hideLoading() {
 function showResult(result) {
     const resultElement = document.getElementById('ai-result');
     const resultContentElement = document.getElementById('ai-result-content');
-    const copyStructuredBtn = document.querySelector('.ai-copy-structured-result-btn');
+    const copyStructuredBtn = document.querySelector('.ai-copy-structured-result-btn');    // デバッグ用：resultの型と内容をログ出力
+    console.log('[Content Script] showResult called with:', {
+        type: typeof result,
+        value: result,
+        isString: typeof result === 'string',
+        isNull: result === null,
+        isUndefined: result === undefined,
+        isObject: typeof result === 'object' && result !== null,
+        objectKeys: typeof result === 'object' && result !== null ? Object.keys(result) : null
+    });
 
     if (resultElement && resultContentElement) {
         // エラーメッセージの場合はそのまま表示
@@ -874,19 +1210,307 @@ function showResult(result) {
 }
 
 /**
- * HTML応答の基本的なサニタイズ（セキュリティ対策）
+ * HTML応答の軽量サニタイズ（検知重視）
+ * AI応答をそのまま表示し、異常なパターンを検知・ログ記録する
  */
 function sanitizeHtmlResponse(html) {
-    // 危険なタグやJavaScriptコードを除去
-    const sanitized = html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // <script>タグを除去
-        .replace(/on\w+="[^"]*"/gi, '') // onclick等のイベントハンドラーを除去
-        .replace(/javascript:/gi, '') // javascript:を除去
-        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // <iframe>を除去
-        .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '') // <object>を除去
-        .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, ''); // <embed>を除去
+    // 型チェックと初期検証
+    if (html === null || html === undefined) {
+        console.log('sanitizeHtmlResponse: 入力がnullまたはundefinedです');
+        return '';
+    }    // 文字列以外の場合は適切に変換
+    let htmlString;
+    if (typeof html !== 'string') {
+        console.log('sanitizeHtmlResponse: 入力が文字列ではありません。型:', typeof html, '値:', html);
+        try {
+            // 新しいオブジェクト変換関数を使用
+            htmlString = objectToHtml(html);
+        } catch (error) {
+            console.warn('sanitizeHtmlResponse: 文字列変換に失敗しました:', error);
+            return `<div class="ai-result-error">表示エラー: データ変換に失敗しました (型: ${typeof html})</div>`;
+        }
+    } else {
+        htmlString = html;
+    }
 
-    return sanitized;
+    // セキュリティチェック実行（HTMLサニタイザーモジュールの高度検知機能を活用）
+    let securityResult;
+    try {
+        // HTMLサニタイザーモジュールの高度検知機能を使用（利用可能な場合）
+        if (typeof window.detectAdvancedSecurityPatterns === 'function') {
+            securityResult = window.detectAdvancedSecurityPatterns(htmlString);
+        } else {
+            // フォールバック: ローカルの検知機能を使用
+            securityResult = detectSuspiciousPatterns(htmlString);
+        }
+    } catch (error) {
+        console.error('セキュリティチェック実行エラー:', error);
+        // エラー時はローカルの検知機能を使用
+        securityResult = detectSuspiciousPatterns(htmlString);
+    }
+
+    // 高リスクまたはクリティカルレベルの場合は追加の警告処理
+    if (securityResult.riskLevel === 'high' || securityResult.riskLevel === 'critical') {
+        const riskIcon = securityResult.riskLevel === 'critical' ? '🔴' : '🔒';
+        console.error(`${riskIcon} ${securityResult.riskLevel.toUpperCase()}リスクコンテンツが検出されました。表示前に内容を確認してください。`);
+
+        // クリティカルリスクの場合は追加の安全措置
+        if (securityResult.riskLevel === 'critical') {
+            console.error('🚨 クリティカルレベル: JavaScriptコード実行の可能性があります');
+
+            // オプション: クリティカルリスクの場合はユーザーに明示的な警告
+            try {
+                showNotification(
+                    '🚨 セキュリティ警告: 危険なコンテンツが検出されました',
+                    'error'
+                );
+            } catch (notificationError) {
+                console.error('セキュリティ警告表示エラー:', notificationError);
+            }
+        }
+
+        // script関連の特別処理
+        if (securityResult.detectedPatterns.some(p => p.name.includes('script'))) {
+            console.warn('⚠️ scriptタグが検出されました。実行を防止するため監視を強化します。');
+        }
+    }
+
+    // AI応答をそのまま返す（基本的にはHTMLとして表示）
+    // セキュリティリスクは検知・ログ記録済み
+    return htmlString;
+}
+
+/**
+ * 危険なパターンの検知とログ記録（セキュリティ強化版）
+ */
+function detectSuspiciousPatterns(html) {
+    // セキュリティパターンの定義（より厳密で包括的な検知）
+    const suspiciousPatterns = [
+        // script タグ - 開始・終了タグを個別に検知し、スペースやその他の文字も考慮
+        {
+            name: 'script 開始タグ',
+            pattern: /<script[\s\S]*?>/gi,
+            severity: 'high'
+        },
+        {
+            name: 'script 終了タグ',
+            pattern: /<\/script[\s]*>/gi,
+            severity: 'high'
+        },
+        // JavaScript プロトコル
+        {
+            name: 'javascript プロトコル',
+            pattern: /javascript\s*:/gi,
+            severity: 'high'
+        },
+        // イベントハンドラー（より包括的）
+        {
+            name: 'イベントハンドラー',
+            pattern: /\bon\w+\s*=\s*["']?[^"'>]*["']?/gi,
+            severity: 'medium'
+        },
+        // iframe タグ
+        {
+            name: 'iframe 開始タグ',
+            pattern: /<iframe[\s\S]*?>/gi,
+            severity: 'high'
+        },
+        {
+            name: 'iframe 終了タグ',
+            pattern: /<\/iframe[\s]*>/gi,
+            severity: 'high'
+        },
+        // object タグ
+        {
+            name: 'object 開始タグ',
+            pattern: /<object[\s\S]*?>/gi,
+            severity: 'medium'
+        },
+        {
+            name: 'object 終了タグ',
+            pattern: /<\/object[\s]*>/gi,
+            severity: 'medium'
+        },
+        // embed タグ
+        {
+            name: 'embed タグ',
+            pattern: /<embed[\s\S]*?>/gi,
+            severity: 'medium'
+        },
+        // その他の危険なパターン
+        {
+            name: 'form タグ',
+            pattern: /<form[\s\S]*?>/gi,
+            severity: 'low'
+        },
+        {
+            name: 'link タグ（外部リソース）',
+            pattern: /<link[\s\S]*?>/gi,
+            severity: 'low'
+        },
+        {
+            name: 'meta refresh',
+            pattern: /<meta[\s\S]*?http-equiv\s*=\s*["']?refresh["']?[\s\S]*?>/gi,
+            severity: 'medium'
+        },
+        // データURIスキーム
+        {
+            name: 'data URI スキーム',
+            pattern: /data\s*:\s*[^"'\s>]*/gi,
+            severity: 'medium'
+        },
+        // Base64エンコードの可能性
+        {
+            name: 'Base64 パターン',
+            pattern: /[A-Za-z0-9+\/]{50,}={0,2}/g,
+            severity: 'low'
+        }
+    ];
+
+    const detectedPatterns = [];
+    let highSeverityCount = 0;
+    let mediumSeverityCount = 0;
+
+    // パターンマッチング実行
+    suspiciousPatterns.forEach(pattern => {
+        try {
+            const matches = html.match(pattern.pattern);
+            if (matches && matches.length > 0) {
+                detectedPatterns.push({
+                    name: pattern.name,
+                    count: matches.length,
+                    severity: pattern.severity,
+                    examples: matches.slice(0, 2).map(match =>
+                        match.length > 100 ? match.substring(0, 100) + '...' : match
+                    )
+                });
+
+                // 重要度別カウント
+                if (pattern.severity === 'high') {
+                    highSeverityCount++;
+                } else if (pattern.severity === 'medium') {
+                    mediumSeverityCount++;
+                }
+            }
+        } catch (error) {
+            console.error(`セキュリティパターン検知エラー (${pattern.name}):`, error.message);
+        }
+    });
+
+    // 結果の評価と警告表示
+    if (detectedPatterns.length > 0) {
+        const riskLevel = highSeverityCount > 0 ? 'high' :
+            mediumSeverityCount > 0 ? 'medium' : 'low';
+
+        showSecurityWarning(detectedPatterns, riskLevel);
+
+        // 詳細ログ出力
+        console.group('🛡️ セキュリティスキャン結果');
+        console.log(`リスクレベル: ${riskLevel.toUpperCase()}`);
+        console.log(`検出されたパターン数: ${detectedPatterns.length}`);
+        detectedPatterns.forEach(pattern => {
+            const icon = pattern.severity === 'high' ? '🚨' :
+                pattern.severity === 'medium' ? '⚠️' : '📝';
+            console.log(`${icon} ${pattern.name}: ${pattern.count}件 (${pattern.severity})`);
+            if (pattern.examples.length > 0) {
+                console.log('  例:', pattern.examples);
+            }
+        });
+        console.groupEnd();
+    } else {
+        console.log('✅ セキュリティチェック: 疑わしいパターンは検出されませんでした');
+    }
+
+    return {
+        safe: detectedPatterns.length === 0,
+        riskLevel: detectedPatterns.length > 0 ?
+            (highSeverityCount > 0 ? 'high' :
+                mediumSeverityCount > 0 ? 'medium' : 'low') : 'none',
+        detectedPatterns: detectedPatterns
+    };
+}
+
+/**
+ * セキュリティ警告の表示（強化版）
+ */
+function showSecurityWarning(detectedPatterns, riskLevel = 'medium') {
+    // リスクレベルに応じたメッセージと色の設定
+    const riskConfig = {
+        high: {
+            icon: '🚨',
+            color: '#ff4444',
+            message: '高リスク',
+            action: '即座に確認が必要です'
+        },
+        medium: {
+            icon: '⚠️',
+            color: '#ff9800',
+            message: '中リスク',
+            action: '注意深く確認してください'
+        },
+        low: {
+            icon: '📝',
+            color: '#ffc107',
+            message: '低リスク',
+            action: '監視対象として記録されました'
+        }
+    };
+
+    const config = riskConfig[riskLevel] || riskConfig.medium;
+
+    // 詳細な警告メッセージを構築
+    const highRiskPatterns = detectedPatterns.filter(p => p.severity === 'high');
+    const mediumRiskPatterns = detectedPatterns.filter(p => p.severity === 'medium');
+
+    let warningMessage = `${config.icon} セキュリティ警告 (${config.message})\n`;
+    warningMessage += `AI応答に潜在的に危険なパターンが検出されました。${config.action}\n\n`;
+
+    if (highRiskPatterns.length > 0) {
+        warningMessage += '🚨 高リスクパターン:\n';
+        highRiskPatterns.forEach(p => {
+            warningMessage += `  - ${p.name}: ${p.count}件\n`;
+        });
+        warningMessage += '\n';
+    }
+
+    if (mediumRiskPatterns.length > 0) {
+        warningMessage += '⚠️ 中リスクパターン:\n';
+        mediumRiskPatterns.forEach(p => {
+            warningMessage += `  - ${p.name}: ${p.count}件\n`;
+        });
+    }
+
+    // コンソールログ出力
+    console.warn(warningMessage);
+
+    // 高リスクの場合は追加の警告表示
+    if (riskLevel === 'high') {
+        console.error('🔒 セキュリティ重要警告: この内容の表示前に管理者の確認を推奨します');
+
+        // 可能であればユーザーに視覚的警告も表示
+        try {
+            showNotification(
+                `${config.icon} セキュリティ警告: ${config.message}のパターンが検出されました`,
+                'error'
+            );
+        } catch (error) {
+            console.error('セキュリティ警告の表示に失敗:', error.message);
+        }
+    }
+
+    // セキュリティ監査ログとして記録
+    const auditLog = {
+        timestamp: new Date().toISOString(),
+        riskLevel: riskLevel,
+        patternsDetected: detectedPatterns.length,
+        details: detectedPatterns.map(p => ({
+            name: p.name,
+            count: p.count,
+            severity: p.severity
+        }))
+    };
+
+    console.log('🔍 セキュリティ監査ログ:', auditLog);
 }
 
 /**
@@ -1233,15 +1857,15 @@ function setupResultActionButtons(containerId, content, colors) {
  * 結果をクリップボードにコピー
  */
 function copyResultToClipboard(container, content) {
-    try {        // HTMLタグを削除してプレーンテキストに変換
-        const textContent = content
-            .replace(/<[^>]*>/g, '') // HTMLタグを削除
-            .replace(/&nbsp;/g, ' ') // 非改行スペースを通常のスペースに
-            .replace(/&lt;/g, '<')   // HTML エンティティをデコード
-            .replace(/&gt;/g, '>')
-            .replace(/&amp;/g, '&')
-            .replace(/\s+/g, ' ')    // 複数の空白を単一のスペースに
-            .trim();
+    try {
+        // 統一セキュリティサニタイザーを使用してプレーンテキストに変換
+        let textContent;
+        if (PTASanitizer && PTASanitizer.extractPlainText) {
+            textContent = PTASanitizer.extractPlainText(content);
+        } else {
+            console.error('❌ 統一セキュリティサニタイザーが利用できません');
+            throw new Error('セキュリティサニタイザーが利用できないため、コピー処理を中断します');
+        }
 
         navigator.clipboard.writeText(textContent).then(() => {
             showNotification('結果をクリップボードにコピーしました', 'success');
@@ -1516,7 +2140,7 @@ function analyzeEmail() {
             showNotification('メール解析が完了しました', 'success');
         } else {
             const errorMessage = response ? response.error : '不明なエラーが発生しました';
-            showResult(`<div style="color: #f44336;">❌ エラー: ${errorMessage}</div>`);
+            showResult(`<div class="ai-result-container ai-result-error">❌ エラー: ${errorMessage}</div>`);
             showNotification('メール解析に失敗しました', 'error');
         }
     });
@@ -1562,7 +2186,7 @@ function analyzePage() {
             showNotification('ページ解析が完了しました', 'success');
         } else {
             const errorMessage = response ? response.error : '不明なエラーが発生しました';
-            showResult(`<div style="color: #f44336;">❌ エラー: ${errorMessage}</div>`);
+            showResult(`<div class="ai-result-container ai-result-error">❌ エラー: ${errorMessage}</div>`);
             showNotification('ページ解析に失敗しました', 'error');
         }
     });
@@ -1589,7 +2213,7 @@ function analyzeSelection() {
             showNotification('選択テキスト解析が完了しました', 'success');
         } else {
             const errorMessage = response ? response.error : '不明なエラーが発生しました';
-            showResult(`<div style="color: #f44336;">❌ エラー: ${errorMessage}</div>`);
+            showResult(`<div class="ai-result-container ai-result-error">❌ エラー: ${errorMessage}</div>`);
             showNotification('選択テキスト解析に失敗しました', 'error');
         }
     });
@@ -1616,7 +2240,7 @@ function composeReply() {
             showNotification('返信作成が完了しました', 'success');
         } else {
             const errorMessage = response ? response.error : '不明なエラーが発生しました';
-            showResult(`<div style="color: #f44336;">❌ エラー: ${errorMessage}</div>`);
+            showResult(`<div class="ai-result-container ai-result-error">❌ エラー: ${errorMessage}</div>`);
             showNotification('返信作成に失敗しました', 'error');
         }
     });
@@ -1626,7 +2250,27 @@ function composeReply() {
  * 設定画面を開く
  */
 function openSettings() {
-    chrome.runtime.openOptionsPage();
+    try {
+        // Content scriptからは直接openOptionsPageが使えないため、background scriptに依頼
+        chrome.runtime.sendMessage({
+            action: 'openOptionsPage'
+        }).catch(error => {
+            console.error('設定画面の開放要求送信に失敗:', error);
+            // フォールバック: 新しいタブで直接開く
+            const optionsUrl = chrome.runtime.getURL('options/options.html');
+            window.open(optionsUrl, '_blank');
+        });
+    } catch (error) {
+        console.error('設定画面を開く処理でエラー:', error);
+        // 最終フォールバック: 拡張機能のオプションページURLを推測して開く
+        try {
+            const optionsUrl = chrome.runtime.getURL('options/options.html');
+            window.open(optionsUrl, '_blank');
+        } catch (fallbackError) {
+            console.error('フォールバック処理も失敗:', fallbackError);
+            alert('設定画面を開けませんでした。拡張機能の管理画面から設定してください。');
+        }
+    }
 }
 
 /**
@@ -1755,7 +2399,7 @@ function extractPageContent() {
     try {
         // 基本的な要素の存在チェック
         if (!document || !document.body) {
-            console.warn('Document または body が存在しません');
+            console.log('Document または body が存在しません');
             return 'ページが正常に読み込まれていません';
         }
 
@@ -1839,7 +2483,7 @@ function extractPageContent() {
         // 最終チェック
         if (!pageContent || !pageContent.trim()) {
             pageContent = `（ページコンテンツを取得できませんでした）\nURL: ${window.location.href}\nタイトル: ${document.title || '不明'}`;
-            console.warn('ページコンテンツが空です');
+            console.log('ページコンテンツが空です');
         }
 
     } catch (error) {
@@ -1874,57 +2518,28 @@ function sanitizeAIResponse(response) {
         return response;
     }
 
-    let sanitized = response;
+    try {
+        // 統一セキュリティサニタイザーを使用
+        if (PTASanitizer && PTASanitizer.sanitizeHTML) {
+            const sanitized = PTASanitizer.sanitizeHTML(response, {
+                allowedTags: ['p', 'br', 'strong', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'div', 'span', 'code', 'pre'],
+                allowedAttributes: ['class', 'id']
+            });
 
-    // CSSプロパティのパターンを除去（例：margin: 6px 0; や line-height: 1.6; など）
-    sanitized = sanitized.replace(/[a-zA-Z-]+\s*:\s*[^;]+;/g, '');
+            console.log('🧼 AIレスポンスサニタイズ完了（統一サニタイザー使用):', {
+                originalLength: response.length,
+                sanitizedLength: sanitized.length
+            });
 
-    // CSS値のパターンを除去（例：counter-increment: list-counter;）
-    sanitized = sanitized.replace(/counter-increment:\s*[^;]+;/g, '');
-
-    // data-*属性を除去（例：data-number="1"）
-    sanitized = sanitized.replace(/data-[a-zA-Z-]+\s*=\s*"[^"]*"/g, '');
-
-    // CSS値の単体パターンを除去（例：margin: 6px 0;）
-    sanitized = sanitized.replace(/\b(margin|padding|line-height|font-size|font-weight|color|background|border|display|position|width|height|top|left|right|bottom|float|clear|text-align|vertical-align|z-index|opacity|transform|transition|animation|box-shadow|border-radius|overflow|cursor|text-decoration|text-transform|letter-spacing|word-spacing|white-space|font-family|list-style|counter-increment|counter-reset)\s*:\s*[^;]+;?/gi, '');
-
-    // CSSのプロパティ値だけが残ってしまった行を除去
-    sanitized = sanitized.replace(/^\s*[0-9.]+px\s*$/gm, '');
-    sanitized = sanitized.replace(/^\s*[0-9.]+\s*$/gm, '');
-    sanitized = sanitized.replace(/^\s*(left|right|center|bold|normal|none|auto|inherit|initial|unset)\s*$/gm, '');
-
-    // styleタグとその内容を除去
-    sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-
-    // scriptタグとその内容を除去
-    sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-
-    // HTMLタグを除去（ただし、改行は保持）
-    sanitized = sanitized.replace(/<[^>]+>/g, '');
-
-    // CSSのコメントを除去
-    sanitized = sanitized.replace(/\/\*[\s\S]*?\*\//g, '');
-
-    // 単独で残ったCSS記号や値を除去
-    sanitized = sanitized.replace(/^[\s]*[{}();,]+[\s]*$/gm, '');
-
-    // 複数の連続する空白行を1つにまとめる
-    sanitized = sanitized.replace(/\n\s*\n\s*\n/g, '\n\n');
-
-    // 行頭の余分な空白を除去
-    sanitized = sanitized.replace(/^\s+/gm, '');
-
-    // 文字列の前後の空白を除去
-    sanitized = sanitized.trim();
-    console.log('🧼 AIレスポンスサニタイズ完了:', {
-        originalLength: response.length,
-        sanitizedLength: sanitized.length,
-        originalPreview: response.substring(0, 300) + '...',
-        sanitizedPreview: sanitized.substring(0, 300) + '...',
-        removedCSSCount: (response.match(/[a-zA-Z-]+\s*:\s*[^;]+;/g) || []).length
-    });
-
-    return sanitized;
+            return sanitized;
+        } else {
+            console.error('❌ 統一セキュリティサニタイザーが利用できません');
+            throw new Error('セキュリティサニタイザーが利用できないため、AIレスポンスのサニタイゼーションを中断します');
+        }
+    } catch (error) {
+        console.error('❌ AIレスポンスサニタイゼーションエラー:', error);
+        throw error;
+    }
 }
 
 /**
@@ -2109,6 +2724,255 @@ function getSavedButtonPositionSync() {
 }
 
 /**
+ * ダイアログの設定を保存
+ * @param {Object} settings - 設定情報 {top, right, width, height}
+ */
+function saveDialogSettings(settings) {
+    try {
+        chrome.storage.local.set({
+            'aiDialogSettings': settings
+        }, () => {
+            console.log('ダイアログ設定を保存しました:', settings);
+        });
+    } catch (error) {
+        console.error('ダイアログ設定の保存に失敗:', error);
+        // フォールバック: localStorageを使用
+        try {
+            localStorage.setItem('aiDialogSettings', JSON.stringify(settings));
+        } catch (e) {
+            console.error('localStorageでの保存も失敗:', e);
+        }
+    }
+}
+
+/**
+ * 保存されたダイアログ設定を取得
+ * @returns {Object} 設定情報 {top, right, width, height}
+ */
+function getSavedDialogSettings() {
+    const defaultSettings = {
+        top: 20,
+        right: 20,
+        width: 600,
+        height: 500
+    };
+
+    try {
+        // まずlocalStorageから取得を試行
+        const saved = localStorage.getItem('aiDialogSettings');
+        if (saved) {
+            const settings = JSON.parse(saved);
+
+            // 数値チェックとデフォルト値設定
+            const validSettings = {
+                top: isNaN(settings.top) ? defaultSettings.top : settings.top,
+                right: isNaN(settings.right) ? defaultSettings.right : settings.right,
+                width: isNaN(settings.width) ? defaultSettings.width : settings.width,
+                height: isNaN(settings.height) ? defaultSettings.height : settings.height
+            };
+
+            // 画面サイズが変わった場合の調整
+            validSettings.top = Math.max(0, Math.min(window.innerHeight - 100, validSettings.top));
+            validSettings.right = Math.max(0, Math.min(window.innerWidth - 100, validSettings.right));
+            validSettings.width = Math.max(400, Math.min(window.innerWidth - 40, validSettings.width));
+            validSettings.height = Math.max(300, Math.min(window.innerHeight - 40, validSettings.height));
+
+            return validSettings;
+        }
+    } catch (error) {
+        console.error('ダイアログ設定の取得に失敗:', error);
+    }
+
+    return defaultSettings;
+}
+
+/**
+ * ダイアログをドラッグ可能にする
+ * @param {HTMLElement} dialog - ダイアログ要素
+ * @param {HTMLElement} header - ドラッグハンドル要素
+ */
+function makeDialogDraggable(dialog, header) {
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startTop = 0;
+    let startRight = 0;
+
+    header.addEventListener('mousedown', (e) => {
+        // 設定ボタンや閉じるボタンのクリックは除外
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+            return;
+        }
+
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        const rect = dialog.getBoundingClientRect();
+        startRight = window.innerWidth - rect.right;
+        startTop = rect.top;
+
+        // ドラッグ中のスタイル変更
+        dialog.style.transition = 'none';
+        header.style.cursor = 'grabbing';
+        dialog.style.opacity = '0.9';
+
+        // ドキュメント全体でマウスイベントを監視
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+
+        e.preventDefault();
+    });
+
+    function onMouseMove(e) {
+        if (!isDragging) return;
+
+        // マウスの移動量を計算
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        // 新しい位置を計算（画面の境界を考慮）
+        const newTop = Math.max(0, Math.min(window.innerHeight - dialog.offsetHeight, startTop + deltaY));
+        const newRight = Math.max(0, Math.min(window.innerWidth - dialog.offsetWidth, startRight - deltaX));
+
+        // 位置を更新
+        dialog.style.top = newTop + 'px';
+        dialog.style.right = newRight + 'px';
+    }
+
+    function onMouseUp() {
+        if (isDragging) {
+            isDragging = false;
+
+            // スタイルを元に戻す
+            dialog.style.transition = 'all 0.3s ease';
+            header.style.cursor = 'move';
+            dialog.style.opacity = '1';
+
+            // 現在の位置を保存
+            const rect = dialog.getBoundingClientRect();
+            const settings = {
+                top: rect.top,
+                right: window.innerWidth - rect.right,
+                width: rect.width,
+                height: rect.height
+            };
+            saveDialogSettings(settings);
+
+            // イベントリスナーを削除
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+    }
+}
+
+/**
+ * カスタムリサイズハンドルを設定
+ * @param {HTMLElement} dialog - ダイアログ要素
+ */
+function setupResizeHandles(dialog) {
+    const rightHandle = dialog.querySelector('.resize-handle-right');
+    const bottomHandle = dialog.querySelector('.resize-handle-bottom');
+    const cornerHandle = dialog.querySelector('.resize-handle-corner');
+
+    // 右端のリサイズハンドル
+    if (rightHandle) {
+        setupResizeHandle(dialog, rightHandle, 'right');
+    }
+
+    // 下端のリサイズハンドル
+    if (bottomHandle) {
+        setupResizeHandle(dialog, bottomHandle, 'bottom');
+    }
+
+    // 右下角のリサイズハンドル
+    if (cornerHandle) {
+        setupResizeHandle(dialog, cornerHandle, 'corner');
+    }
+}
+
+/**
+ * リサイズハンドルのイベントを設定
+ * @param {HTMLElement} dialog - ダイアログ要素
+ * @param {HTMLElement} handle - リサイズハンドル要素
+ * @param {string} type - リサイズの種類（'right', 'bottom', 'corner'）
+ */
+function setupResizeHandle(dialog, handle, type) {
+    let isResizing = false;
+    let startX = 0;
+    let startY = 0;
+    let startWidth = 0;
+    let startHeight = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startWidth = dialog.offsetWidth;
+        startHeight = dialog.offsetHeight;
+
+        // リサイズ中のスタイル変更
+        dialog.style.transition = 'none';
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = handle.style.cursor;
+
+        // ドキュメント全体でマウスイベントを監視
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    function onMouseMove(e) {
+        if (!isResizing) return;
+
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        let newWidth = startWidth;
+        let newHeight = startHeight;
+
+        // リサイズの種類に応じて計算
+        if (type === 'right' || type === 'corner') {
+            newWidth = Math.max(400, Math.min(window.innerWidth - 40, startWidth + deltaX));
+        }
+        if (type === 'bottom' || type === 'corner') {
+            newHeight = Math.max(300, Math.min(window.innerHeight - 40, startHeight + deltaY));
+        }
+
+        // サイズを適用
+        dialog.style.width = newWidth + 'px';
+        dialog.style.height = newHeight + 'px';
+    }
+
+    function onMouseUp() {
+        if (isResizing) {
+            isResizing = false;
+
+            // スタイルを元に戻す
+            dialog.style.transition = 'all 0.3s ease';
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+
+            // 現在のサイズと位置を保存
+            const rect = dialog.getBoundingClientRect();
+            const settings = {
+                top: rect.top,
+                right: window.innerWidth - rect.right,
+                width: rect.width,
+                height: rect.height
+            };
+            saveDialogSettings(settings);
+
+            // イベントリスナーを削除
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+    }
+}
+
+/**
  * ページリンクをコピー（Markdown形式）
  */
 async function copyPageLink(dialog) {
@@ -2157,4 +3021,422 @@ async function copyStructuredResult(dialog) {
         console.error('構造的コピーエラー:', error);
         showNotification('コピーに失敗しました', 'error');
     }
+}
+
+/**
+ * Teams chatへの転送処理
+ */
+async function forwardToTeams(dialog) {
+    try {
+        const dialogData = dialog.dialogData;
+
+        // ローディング表示
+        showLoading();
+
+        // バックグラウンドスクリプトに転送リクエストを送信
+        const response = await chrome.runtime.sendMessage({
+            action: 'forwardToTeams',
+            data: {
+                pageTitle: dialogData.pageTitle,
+                pageUrl: dialogData.pageUrl,
+                content: dialogData.pageContent || dialogData.selectedText || ''
+            }
+        });
+
+        hideLoading(); if (response.success) {
+            showResult(`<div class="ai-result-container ai-result-teams-success">
+                <h3>✅ Teams転送完了</h3>
+                <p>${response.message}</p>
+                ${response.method === 'web' ? '<p><small>💡 Teams Web版が開きます。チャット画面で内容を確認して送信してください。</small></p>' : ''}
+            </div>`);
+        } else {
+            showResult(`<div class="ai-result-container ai-result-error">
+                <h3>❌ Teams転送エラー</h3>
+                <p>${response.error}</p>
+                <p><small>💡 Microsoft 365へのログインとTeamsへのアクセス権限が必要です。</small></p>
+            </div>`);
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('Teams転送エラー:', error);
+        showResult(`<div class="ai-result-container ai-result-error">
+            <h3>❌ 転送処理エラー</h3>
+            <p>Teams転送中にエラーが発生しました: ${error.message}</p>
+        </div>`);
+    }
+}
+
+/**
+ * 予定表への追加処理
+ */
+async function addToCalendar(dialog) {
+    try {
+        const dialogData = dialog.dialogData;
+
+        // ローディング表示
+        showLoading();
+
+        // バックグラウンドスクリプトに予定表追加リクエストを送信
+        const response = await chrome.runtime.sendMessage({
+            action: 'addToCalendar',
+            data: {
+                pageTitle: dialogData.pageTitle,
+                pageUrl: dialogData.pageUrl,
+                content: dialogData.pageContent || dialogData.selectedText || ''
+            }
+        });
+
+        hideLoading();
+
+        if (response.success) {
+            const eventInfo = response.event;
+            showResult(`<div class="ai-result-container ai-result-calendar-success">
+                <h3>📅 予定表追加完了</h3>
+                <p>${response.message}</p>
+                ${eventInfo ? `
+                    <div class="ai-result-page-info">
+                        <p><strong>件名:</strong> ${eventInfo.subject}</p>
+                        <p><strong>開始時刻:</strong> ${new Date(eventInfo.startTime).toLocaleString('ja-JP')}</p>
+                    </div>
+                ` : ''}
+                ${response.method === 'web' ? '<p><small>💡 Outlook Web版が開きます。予定の詳細を確認して保存してください。</small></p>' : ''}
+            </div>`);
+        } else {
+            showResult(`<div class="ai-result-container ai-result-error">
+                <h3>❌ 予定表追加エラー</h3>
+                <p>${response.error}</p>
+                <p><small>💡 Microsoft 365へのログインとOutlookへのアクセス権限が必要です。</small></p>
+            </div>`);
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('予定表追加エラー:', error);
+        showResult(`<div class="ai-result-container ai-result-error">
+            <h3>❌ 予定表処理エラー</h3>
+            <p>予定表追加中にエラーが発生しました: ${error.message}</p>
+        </div>`);
+    }
+}
+
+/**
+ * VSCode設定解析処理
+ */
+async function analyzeVSCodeSettings(dialog) {
+    try {
+        const dialogData = dialog.dialogData;
+
+        // VSCodeドキュメントページかチェック（セキュアなURL検証）
+        const isVSCodeDoc = window.UrlValidator && window.UrlValidator.isVSCodeDocumentPage(dialogData.pageUrl); if (!isVSCodeDoc) {
+            showResult(`<div class="ai-result-container ai-result-warning">
+                <h3>⚠️ VSCodeドキュメントページではありません</h3>
+                <p>この機能はVSCode関連のドキュメントページでのみ利用できます。</p>
+                <p>対象サイト: code.visualstudio.com, marketplace.visualstudio.com など</p>
+            </div>`);
+            return;
+        }
+
+        // ローディング表示
+        showLoading();
+
+        // バックグラウンドスクリプトに解析リクエストを送信
+        const response = await chrome.runtime.sendMessage({
+            action: 'analyzeVSCodeSettings',
+            data: {
+                pageTitle: dialogData.pageTitle,
+                pageUrl: dialogData.pageUrl,
+                content: dialogData.pageContent || ''
+            }
+        });
+
+        hideLoading(); if (response.success) {
+            // 解析結果を表示（テーマ対応・コピーボタン付き）
+            const resultHtml = `<div class="ai-result-container ai-result-success">
+                <div class="ai-result-header">
+                    <h3>⚙️ VSCode設定解析結果</h3>
+                    <button onclick="copyVSCodeAnalysis()" class="ai-result-copy-btn">📋 全体をコピー</button>
+                </div>
+                <div id="vscode-analysis-content">${response.analysis}</div>
+                <div class="ai-result-page-info">
+                    <strong>対象ページ:</strong> <a href="${response.pageInfo.url}" target="_blank">${response.pageInfo.title}</a>
+                </div>
+            </div>`;
+
+            showResult(resultHtml);
+        } else {
+            showResult(`<div class="ai-result-container ai-result-error">
+                <h3>❌ VSCode設定解析エラー</h3>
+                <p>${response.error}</p>
+                ${response.suggestion ? `<p><small>💡 ${response.suggestion}</small></p>` : ''}
+            </div>`);
+        }
+    } catch (error) {
+        hideLoading();
+        console.error('VSCode設定解析エラー:', error);
+        showResult(`<div class="ai-result-container ai-result-error">
+            <h3>❌ 解析処理エラー</h3>
+            <p>VSCode設定解析中にエラーが発生しました: ${error.message}</p>
+        </div>`);
+    }
+}
+
+/**
+ * フォールバック用クリップボードコピー機能
+ * @param {string} text - コピーするテキスト
+ */
+function fallbackCopyToClipboard(text) {
+    try {
+        // テキストエリアを作成してコピー
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+        textArea.style.padding = '0';
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+        textArea.style.background = 'transparent';
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        showNotification('クリップボードにコピーしました', 'success');
+        console.log('フォールバック方式でコピーが完了しました');
+    } catch (err) {
+        console.error('フォールバックコピーも失敗しました:', err);
+        alert('クリップボードへのコピーに失敗しました。手動でコピーしてください。');
+    }
+}
+
+/**
+ * AI結果の汎用コピー機能
+ * @param {string} elementId - コピー対象要素のID（オプション）
+ * @param {HTMLElement} buttonElement - クリックされたボタン要素（オプション）
+ */
+function copyAIResult(elementId, buttonElement) {
+    try {
+        let contentToCopy = '';
+
+        if (elementId) {
+            // 特定の要素からコンテンツを取得
+            const element = document.getElementById(elementId);
+            if (element) {
+                contentToCopy = element.innerText || element.textContent;
+            }
+        } else if (buttonElement) {
+            // ボタンの親要素から結果コンテンツを探す
+            const resultContainer = buttonElement.closest('.ai-result-container');
+            if (resultContainer) {
+                // ヘッダーとページ情報を除いたメインコンテンツを取得
+                const mainContent = resultContainer.querySelector('.ai-result-content, #vscode-analysis-content, .analysis-content, .vscode-analysis-content');
+                if (mainContent) {
+                    contentToCopy = mainContent.innerText || mainContent.textContent;
+                } else {
+                    // フォールバック: 結果コンテナ全体のテキスト
+                    contentToCopy = resultContainer.innerText || resultContainer.textContent;
+                }
+            }
+        }
+
+        if (!contentToCopy) {
+            alert('コピーするコンテンツが見つかりませんでした。');
+            return;
+        }
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(contentToCopy).then(() => {
+            console.log('AI結果をクリップボードにコピーしました');
+            showNotification('AI解析結果をコピーしました', 'success');
+
+            // ボタンのフィードバック
+            if (buttonElement) {
+                const originalText = buttonElement.textContent;
+                buttonElement.textContent = '✅ コピー完了!';
+                buttonElement.classList.add('copied');
+
+                setTimeout(() => {
+                    buttonElement.textContent = originalText;
+                    buttonElement.classList.remove('copied');
+                }, 2000);
+            }
+        }).catch(err => {
+            console.error('AI結果のコピーに失敗しました:', err);
+            fallbackCopyToClipboard(contentToCopy);
+        });
+    } catch (error) {
+        console.error('AI結果コピー処理中にエラー:', error);
+        alert('コピー処理中にエラーが発生しました。');
+    }
+}
+
+/**
+ * VSCode解析結果のコピー機能
+ */
+function copyVSCodeAnalysis() {
+    try {
+        const content = document.getElementById('vscode-analysis-content');
+        if (!content) {
+            alert('コピーするコンテンツが見つかりませんでした。');
+            return;
+        }
+
+        const textContent = content.innerText || content.textContent;
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(textContent).then(() => {
+            console.log('VSCode解析結果をクリップボードにコピーしました');
+            showNotification('VSCode解析結果をコピーしました', 'success');
+
+            // ボタンのフィードバック
+            const button = document.querySelector('.ai-result-copy-btn');
+            if (button) {
+                const originalText = button.textContent;
+                button.textContent = '✅ コピー完了!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }
+        }).catch(err => {
+            console.error('VSCode解析結果のコピーに失敗しました:', err);
+            fallbackCopyToClipboard(textContent);
+        });
+    } catch (error) {
+        console.error('VSCode解析結果コピー処理中にエラー:', error);
+        alert('コピー処理中にエラーが発生しました。');
+    }
+}
+
+/**
+ * 一般的なコピーボタンイベントハンドラ
+ * @param {Event} event - クリックイベント
+ */
+function handleCopyButtonClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const button = event.target;
+    const targetId = button.getAttribute('data-copy-target');
+
+    if (targetId) {
+        // 特定のIDからコピー
+        copyAIResult(targetId, button);
+    } else {
+        // ボタンの親要素から自動検出
+        copyAIResult(null, button);
+    }
+}
+
+/**
+ * VSCode設定ファイル（settings.json）のコピー機能
+ * @param {HTMLElement} buttonElement - クリックされたコピーボタン
+ */
+function copySettingsJSON(buttonElement) {
+    try {
+        // 設定JSONの親コンテナを取得
+        const container = buttonElement.closest('.settings-json-container');
+        if (!container) {
+            console.error('設定JSONコンテナが見つかりません');
+            alert('コピーする設定ファイルが見つかりませんでした。');
+            return;
+        }
+
+        // JSONコードブロックを取得
+        const codeElement = container.querySelector('.settings-json code');
+        if (!codeElement) {
+            console.error('設定JSONコードが見つかりません');
+            alert('コピーする設定ファイルが見つかりませんでした。');
+            return;
+        }
+
+        // JSONコンテンツを取得（コメントを含む）
+        const jsonContent = codeElement.textContent || codeElement.innerText;
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(jsonContent).then(() => {
+            console.log('VSCode設定ファイルをクリップボードにコピーしました');
+            showNotification('設定ファイル（settings.json）をコピーしました', 'success');
+
+            // ボタンのフィードバック
+            const originalText = buttonElement.textContent;
+            buttonElement.textContent = '✅ コピー完了!';
+            buttonElement.classList.add('copied');
+
+            setTimeout(() => {
+                buttonElement.textContent = originalText;
+                buttonElement.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('VSCode設定ファイルのコピーに失敗しました:', err);
+
+            // フォールバック: 従来のコピー方法
+            fallbackCopyToClipboard(jsonContent);
+
+            // ボタンのフィードバック（フォールバック成功時）
+            const originalText = buttonElement.textContent;
+            buttonElement.textContent = '✅ コピー完了!';
+            buttonElement.classList.add('copied');
+
+            setTimeout(() => {
+                buttonElement.textContent = originalText;
+                buttonElement.classList.remove('copied');
+            }, 2000);
+        });
+    } catch (error) {
+        console.error('VSCode設定ファイルコピー処理中にエラー:', error);
+        alert('設定ファイルのコピー処理中にエラーが発生しました。');
+    }
+}
+
+/**
+ * オブジェクトをHTMLに変換
+ */
+function objectToHtml(obj) {
+    try {
+        if (obj === null || obj === undefined) {
+            return '<div class="ai-result-error">データがありません</div>';
+        }
+
+        if (typeof obj === 'string') {
+            return obj;
+        }
+
+        if (typeof obj === 'object') {
+            // よく使われるプロパティから優先的に取得
+            const priorityKeys = ['message', 'content', 'result', 'data', 'text', 'response'];
+
+            for (const key of priorityKeys) {
+                if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key]) {
+                    console.log(`オブジェクトから '${key}' プロパティを使用:`, obj[key]);
+                    return String(obj[key]);
+                }
+            }
+
+            // 優先プロパティがない場合は整形されたJSONを表示
+            const jsonString = JSON.stringify(obj, null, 2);
+            return `<pre class="ai-result-json">${escapeHtml(jsonString)}</pre>`;
+        }
+
+        return String(obj);
+    } catch (error) {
+        console.error('オブジェクトからHTMLへの変換に失敗:', error);
+        return `<div class="ai-result-error">表示エラー: ${error.message}</div>`;
+    }
+}
+
+/**
+ * HTMLエスケープ
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

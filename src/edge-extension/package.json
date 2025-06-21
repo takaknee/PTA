@@ -1,0 +1,53 @@
+{
+  "name": "pta-ai-business-assistant",
+  "version": "2.0.0",
+  "description": "PTA AI業務支援ツール - Edge/Chrome拡張機能",
+  "keywords": [
+    "chrome-extension",
+    "edge-extension",
+    "ai",
+    "pta",
+    "business-assistant",
+    "email-analysis",
+    "productivity"
+  ],
+  "author": "PTA Development Team",
+  "license": "ISC",
+  "scripts": {
+    "build": "node build.js",
+    "build:dev": "node build.js --dev",
+    "build:prod": "node build.js --prod",
+    "build:watch": "node build.js --watch",
+    "install-deps": "npm install dompurify && npm run copy-vendor",
+    "copy-vendor": "cp node_modules/dompurify/dist/purify.min.js vendor/",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "jest tests/unit",
+    "test:integration": "node tests/integration/run-tests.js",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
+    "validate": "node scripts/validate-manifest.js",
+    "clean": "node scripts/clean-build.js",
+    "zip": "node scripts/create-zip.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.0",
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "@jest/globals": "^29.0.0"
+  },
+  "optionalDependencies": {
+    "dompurify": "^3.0.5"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pta-team/pta-ai-assistant.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pta-team/pta-ai-assistant/issues"
+  },
+  "homepage": "https://github.com/pta-team/pta-ai-assistant#readme"
+}

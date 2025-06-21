@@ -1,5 +1,47 @@
 # Edge 拡張機能 アップデート概要
 
+## 🚀 M365統合＆VSCode設定解析機能追加 (v1.1.0)
+
+### 新機能概要
+
+#### 🔗 Microsoft 365統合機能
+- **Teams Chat転送**: ページ情報をログインユーザーのTeams chatに自動転送
+- **予定表登録**: 現在日時でページレビュー予定を自動作成
+- **フォールバック機能**: API認証失敗時はWeb版アプリケーションを自動起動
+
+#### ⚙️ VSCode設定解析機能
+- **自動判定**: VSCodeドキュメントページの自動検出
+- **設定抽出**: AI活用によるページ内設定項目の抽出・解析
+- **サンプル生成**: 実用的なsettings.jsonサンプル自動生成
+- **ワンクリックコピー**: 解析結果の簡単コピー機能
+
+### 技術実装
+
+#### 1. manifest.json
+- Microsoft Graph API権限追加: `https://graph.microsoft.com/*`
+- Chrome identity API権限追加: `identity`
+- Microsoft認証エンドポイント追加: `https://login.microsoftonline.com/*`
+
+#### 2. background.js
+- `getMicrosoftGraphToken()`: Chrome identity APIによるMicrosoft Graph認証
+- `handleForwardToTeams()`: Teams chat API連携とWeb版フォールバック
+- `handleAddToCalendar()`: Calendar API連携とOutlook Web版フォールバック
+- `handleAnalyzeVSCodeSettings()`: AI活用VSCode設定解析
+
+#### 3. content.js
+- 新UIボタン追加: 💬 Teams chatに転送、📅 予定表に追加、⚙️ VSCode設定解析
+- コンテキストメニュー統合: 右クリックから各機能への直接アクセス
+- フォールバック対応UI: Web版アプリ起動時の適切なガイダンス表示
+
+### 対応サイト拡張
+- **M365統合**: 全サイト対応（outlook.office.com、teams.microsoft.com連携）
+- **VSCode解析**: code.visualstudio.com、marketplace.visualstudio.com対応
+
+### セキュリティ＆可用性
+- **段階的認証**: Chrome identity API → Microsoft Graph API
+- **フォールバック**: API失敗時の自動Web版起動
+- **エラーハンドリング**: 詳細なエラーメッセージと解決提案
+
 ## 🔄 リブランド対応 (PTA → AI 業務支援ツール)
 
 ### 変更概要
@@ -254,6 +296,7 @@ closeButton.addEventListener("click", function () {
 
 ## 🔍 テスト推奨項目
 
+### 基本機能
 - [ ] 右クリックメニューからの各機能動作
 - [ ] ダイアログの開閉（× ボタン、ESC、オーバーレイクリック）
 - [ ] URL 抽出＆コピー機能
@@ -261,3 +304,19 @@ closeButton.addEventListener("click", function () {
 - [ ] 翻訳機能（選択テキスト・ページ全体）
 - [ ] 設定画面の動作
 - [ ] ポップアップの文書作成機能
+
+### 新機能（M365統合・VSCode解析）
+- [ ] **Teams Chat転送**
+  - [ ] Microsoft 365ログイン状態での API転送
+  - [ ] 認証失敗時のWeb版フォールバック
+  - [ ] ページ情報の適切な転送
+- [ ] **予定表登録**
+  - [ ] 現在日時での予定作成
+  - [ ] Outlook Web版フォールバック
+  - [ ] イベント詳細情報の正確性
+- [ ] **VSCode設定解析**
+  - [ ] VSCodeドキュメントページでの機能有効化
+  - [ ] 一般ページでの適切なエラーメッセージ
+  - [ ] 設定項目抽出の精度
+  - [ ] settings.jsonサンプルの生成
+  - [ ] コピー機能の動作

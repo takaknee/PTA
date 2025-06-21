@@ -764,3 +764,117 @@ input[type="text"].invalid {
         background: #555;
     }
 }
+
+/* 高コントラストモード対応（標準のforced-colorsを使用） */
+@media (forced-colors: active) {
+    .container {
+        background: Canvas;
+        color: CanvasText;
+        box-shadow: none;
+        border: 1px solid ButtonText;
+    }
+    
+    .header {
+        background: ButtonFace;
+        color: ButtonText;
+        border-bottom: 2px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .nav-tabs {
+        border-bottom: 2px solid ButtonText;
+    }
+    
+    .nav-tab {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 1px solid ButtonText;
+    }
+    
+    .nav-tab.active {
+        background: Highlight;
+        color: HighlightText;
+        border-color: HighlightText;
+    }
+    
+    .form-group {
+        border-bottom: 1px solid ButtonText;
+    }
+    
+    .form-input, .form-select, .form-textarea {
+        background: Field;
+        color: FieldText;
+        border: 2px solid ButtonText;
+    }
+    
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+        border-color: Highlight;
+        outline: 2px solid Highlight;
+    }
+    
+    .btn-primary {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 2px solid ButtonText;
+    }
+    
+    .btn-primary:hover {
+        background: Highlight;
+        color: HighlightText;
+        border-color: HighlightText;
+    }
+    
+    .btn-secondary {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 2px solid ButtonText;
+    }
+    
+    .btn-secondary:hover {
+        background: Highlight;
+        color: HighlightText;
+        border-color: HighlightText;
+    }
+    
+    .status-indicator.success {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 2px solid ButtonText;
+    }
+    
+    .status-indicator.error {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 2px solid ButtonText;
+    }
+    
+    .toggle-password {
+        background: ButtonFace;
+        color: ButtonText;
+        border: 1px solid ButtonText;
+    }
+    
+    .toggle-password:hover {
+        background: Highlight;
+        color: HighlightText;
+    }
+    
+    .info-card {
+        background: Canvas;
+        border: 2px solid ButtonText;
+        box-shadow: none;
+    }
+    
+    .test-result {
+        background: Canvas;
+        border: 1px solid ButtonText;
+    }
+    
+    .test-result.success {
+        border-color: ButtonText;
+    }
+    
+    .test-result.error {
+        border-color: ButtonText;
+    }
+}

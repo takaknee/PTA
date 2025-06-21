@@ -2,12 +2,12 @@ name: セキュリティ詳細分析
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
     # 毎週月曜日の午前2時（JST）に実行
-    - cron: '0 17 * * 0'
+    - cron: "0 17 * * 0"
 
 jobs:
   secret-scan:
@@ -15,152 +15,151 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: コードをチェックアウト
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      - name: コードをチェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: 詳細シークレット検出
-      run: |
-        echo "=== 高度なシークレット分析を実行中 ==="
-        
-        # 様々なAPI キーパターンの検索
-        echo "🔍 詳細なAPI キー・トークン検索..."
-        
-        # Google API キー
-        if grep -r -E "AIza[0-9A-Za-z\\-_]{35}" --include="*.gs" --include="*.bas" --include="*.js" .; then
-          echo "❌ Google API キーが検出されました"
-          exit 1
-        fi
-        
-        # Azure/Microsoft キー
-        if grep -r -E "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" --include="*.gs" --include="*.bas" --include="*.js" .; then
-          echo "⚠️  Azure GUID形式の文字列が検出されました"
-        fi
-        
-        # OpenAI API キー
-        if grep -r -E "sk-[a-zA-Z0-9]{48}" --include="*.gs" --include="*.bas" --include="*.js" .; then
-          echo "❌ OpenAI API キーが検出されました"
-          exit 1
-        fi
-        
-        # 一般的なパスワード文字列
-        if grep -r -E "(password|pwd|pass).*=.*['\"][^'\"]{8,}['\"]" --include="*.gs" --include="*.bas" --include="*.js" . | grep -v "YOUR_PASSWORD_HERE" | grep -v "パスワード"; then
-          echo "⚠️  潜在的なパスワードが検出されました"
-        fi
-        
-        echo "✅ 高度なシークレットスキャン完了"
+      - name: 詳細シークレット検出
+        run: |
+          echo "=== 高度なシークレット分析を実行中 ==="
+
+          # 様々なAPI キーパターンの検索
+          echo "🔍 詳細なAPI キー・トークン検索..."
+
+          # Google API キー
+          if grep -r -E "AIza[0-9A-Za-z\\-_]{35}" --include="*.gs" --include="*.bas" --include="*.js" .; then
+            echo "❌ Google API キーが検出されました"
+            exit 1
+          fi
+
+          # Azure/Microsoft キー
+          if grep -r -E "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}" --include="*.gs" --include="*.bas" --include="*.js" .; then
+            echo "⚠️  Azure GUID形式の文字列が検出されました"
+          fi
+
+          # OpenAI API キー
+          if grep -r -E "sk-[a-zA-Z0-9]{48}" --include="*.gs" --include="*.bas" --include="*.js" .; then
+            echo "❌ OpenAI API キーが検出されました"
+            exit 1
+          fi
+
+          # 一般的なパスワード文字列
+          if grep -r -E "(password|pwd|pass).*=.*['\"][^'\"]{8,}['\"]" --include="*.gs" --include="*.bas" --include="*.js" . | grep -v "YOUR_PASSWORD_HERE" | grep -v "パスワード"; then
+            echo "⚠️  潜在的なパスワードが検出されました"
+          fi
+
+          echo "✅ 高度なシークレットスキャン完了"
 
   permission-analysis:
     name: 権限・スコープ分析
     runs-on: ubuntu-latest
 
     steps:
-    - name: コードをチェックアウト
-      uses: actions/checkout@v4
+      - name: コードをチェックアウト
+        uses: actions/checkout@v4
 
-    - name: Google Apps Script 権限分析
-      run: |
-        echo "=== Google Apps Script 権限分析 ==="
-        
-        if [ -f "src/gsuite/pta/appsscript.json" ]; then
-          echo "📋 OAuth スコープの確認:"
-          cat src/gsuite/pta/appsscript.json | grep -A 20 "oauthScopes" || true
-          
-          echo "🔍 危険な権限の検出:"
-          if grep -E "(auth/script\..*|auth/drive\..*file)" src/gsuite/pta/appsscript.json; then
-            echo "⚠️  強力な権限が設定されています。必要性を確認してください。"
+      - name: Google Apps Script 権限分析
+        run: |
+          echo "=== Google Apps Script 権限分析 ==="
+
+          if [ -f "src/gsuite/pta/appsscript.json" ]; then
+            echo "📋 OAuth スコープの確認:"
+            cat src/gsuite/pta/appsscript.json | grep -A 20 "oauthScopes" || true
+            
+            echo "🔍 危険な権限の検出:"
+            if grep -E "(auth/script\..*|auth/drive\..*file)" src/gsuite/pta/appsscript.json; then
+              echo "⚠️  強力な権限が設定されています。必要性を確認してください。"
+            else
+              echo "✅ 権限は適切に制限されています"
+            fi
           else
-            echo "✅ 権限は適切に制限されています"
+            echo "ℹ️  appsscript.json が見つかりません"
           fi
-        else
-          echo "ℹ️  appsscript.json が見つかりません"
-        fi
+      - name: Excel VBA セキュリティ分析
+        run: |
+          echo "=== Excel VBA セキュリティ分析 ==="
 
-    - name: VBA セキュリティ分析
-      run: |
-        echo "=== VBA セキュリティ分析 ==="
-        
-        if [ -d "src/outlook" ] && [ "$(find src/outlook -name '*.bas' | wc -l)" -gt 0 ]; then
-          echo "🔍 危険なVBA関数の検出:"
-          
-          # システムコマンド実行
-          if grep -r -E "Shell\s*\(" src/outlook/*.bas; then
-            echo "⚠️  Shell関数の使用が検出されました"
+          if [ -d "src/excel" ] && [ "$(find src/excel -name '*.bas' | wc -l)" -gt 0 ]; then
+            echo "🔍 危険なVBA関数の検出:"
+            
+            # システムコマンド実行
+            if grep -r -E "Shell\s*\(" src/excel/*.bas; then
+              echo "⚠️  Shell関数の使用が検出されました"
+            fi
+            
+            # レジストリアクセス
+            if grep -r -E "CreateObject.*WScript\.Shell" src/excel/*.bas; then
+              echo "⚠️  WScript.Shellの使用が検出されました"
+            fi
+            
+            # ファイルシステムアクセス
+            if grep -r -E "CreateObject.*Scripting\.FileSystemObject" src/excel/*.bas; then
+              echo "ℹ️  FileSystemObjectの使用が検出されました"
+            fi
+            
+            echo "✅ Excel VBA セキュリティ分析完了"
+          else
+            echo "ℹ️  Excel VBA ファイルが見つかりません"
           fi
-          
-          # レジストリアクセス
-          if grep -r -E "CreateObject.*WScript\.Shell" src/outlook/*.bas; then
-            echo "⚠️  WScript.Shellの使用が検出されました"
-          fi
-          
-          # ファイルシステムアクセス
-          if grep -r -E "CreateObject.*Scripting\.FileSystemObject" src/outlook/*.bas; then
-            echo "ℹ️  FileSystemObjectの使用が検出されました"
-          fi
-          
-          echo "✅ VBA セキュリティ分析完了"
-        else
-          echo "ℹ️  VBA ファイルが見つかりません"
-        fi
 
   dependency-check:
     name: 依存関係脆弱性チェック
     runs-on: ubuntu-latest
 
     steps:
-    - name: コードをチェックアウト
-      uses: actions/checkout@v4
+      - name: コードをチェックアウト
+        uses: actions/checkout@v4
 
-    - name: Node.js セットアップ
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
 
-    - name: 依存関係インストール
-      run: |
-        if [ -f "package.json" ]; then
-          npm install
-        else
-          echo "ℹ️  package.json が見つかりません。スキップします。"
-          exit 0
-        fi
+      - name: 依存関係インストール
+        run: |
+          if [ -f "package.json" ]; then
+            npm install
+          else
+            echo "ℹ️  package.json が見つかりません。スキップします。"
+            exit 0
+          fi
 
-    - name: 脆弱性監査
-      run: |
-        echo "=== 依存関係の脆弱性チェック ==="
-        npm audit --audit-level moderate || true
-        echo "✅ 依存関係チェック完了"
+      - name: 脆弱性監査
+        run: |
+          echo "=== 依存関係の脆弱性チェック ==="
+          npm audit --audit-level moderate || true
+          echo "✅ 依存関係チェック完了"
 
   file-integrity:
     name: ファイル整合性チェック
     runs-on: ubuntu-latest
 
     steps:
-    - name: コードをチェックアウト
-      uses: actions/checkout@v4
+      - name: コードをチェックアウト
+        uses: actions/checkout@v4
 
-    - name: ファイル整合性検証
-      run: |
-        echo "=== ファイル整合性チェック ==="
-        
-        # 疑わしいファイル拡張子の検出
-        echo "🔍 疑わしいファイルの検出:"
-        if find . -type f \( -name "*.exe" -o -name "*.dll" -o -name "*.bat" -o -name "*.cmd" -o -name "*.scr" \) ! -path "./.git/*"; then
-          echo "⚠️  実行可能ファイルが検出されました"
-        else
-          echo "✅ 疑わしいファイルは見つかりませんでした"
-        fi
-        
-        # 大きなファイルの検出（5MB以上）
-        echo "🔍 大きなファイルの検出:"
-        if find . -type f -size +5M ! -path "./.git/*" ! -path "./node_modules/*"; then
-          echo "ℹ️  大きなファイルが検出されました。内容を確認してください。"
-        else
-          echo "✅ 大きなファイルは見つかりませんでした"
-        fi
-        
-        echo "✅ ファイル整合性チェック完了"
+      - name: ファイル整合性検証
+        run: |
+          echo "=== ファイル整合性チェック ==="
+
+          # 疑わしいファイル拡張子の検出
+          echo "🔍 疑わしいファイルの検出:"
+          if find . -type f \( -name "*.exe" -o -name "*.dll" -o -name "*.bat" -o -name "*.cmd" -o -name "*.scr" \) ! -path "./.git/*"; then
+            echo "⚠️  実行可能ファイルが検出されました"
+          else
+            echo "✅ 疑わしいファイルは見つかりませんでした"
+          fi
+
+          # 大きなファイルの検出（5MB以上）
+          echo "🔍 大きなファイルの検出:"
+          if find . -type f -size +5M ! -path "./.git/*" ! -path "./node_modules/*"; then
+            echo "ℹ️  大きなファイルが検出されました。内容を確認してください。"
+          else
+            echo "✅ 大きなファイルは見つかりませんでした"
+          fi
+
+          echo "✅ ファイル整合性チェック完了"
 
   reporting:
     name: セキュリティレポート生成
@@ -169,21 +168,21 @@ jobs:
     if: always()
 
     steps:
-    - name: セキュリティレポート
-      run: |
-        echo "=== セキュリティ分析レポート ==="
-        echo "日時: $(date '+%Y-%m-%d %H:%M:%S JST')"
-        echo "================================"
-        echo "🔒 シークレットスキャン: ${{ needs.secret-scan.result }}"
-        echo "🔑 権限分析: ${{ needs.permission-analysis.result }}"
-        echo "📦 依存関係チェック: ${{ needs.dependency-check.result }}"
-        echo "📄 ファイル整合性: ${{ needs.file-integrity.result }}"
-        echo "================================"
-        
-        # 全体的な結果判定
-        if [[ "${{ needs.secret-scan.result }}" == "success" && "${{ needs.permission-analysis.result }}" == "success" && "${{ needs.dependency-check.result }}" == "success" && "${{ needs.file-integrity.result }}" == "success" ]]; then
-          echo "✅ セキュリティチェックが正常に完了しました"
-        else
-          echo "⚠️  セキュリティ上の注意が必要な項目があります"
-          echo "詳細はジョブログを確認してください"
-        fi
+      - name: セキュリティレポート
+        run: |
+          echo "=== セキュリティ分析レポート ==="
+          echo "日時: $(date '+%Y-%m-%d %H:%M:%S JST')"
+          echo "================================"
+          echo "🔒 シークレットスキャン: ${{ needs.secret-scan.result }}"
+          echo "🔑 権限分析: ${{ needs.permission-analysis.result }}"
+          echo "📦 依存関係チェック: ${{ needs.dependency-check.result }}"
+          echo "📄 ファイル整合性: ${{ needs.file-integrity.result }}"
+          echo "================================"
+
+          # 全体的な結果判定
+          if [[ "${{ needs.secret-scan.result }}" == "success" && "${{ needs.permission-analysis.result }}" == "success" && "${{ needs.dependency-check.result }}" == "success" && "${{ needs.file-integrity.result }}" == "success" ]]; then
+            echo "✅ セキュリティチェックが正常に完了しました"
+          else
+            echo "⚠️  セキュリティ上の注意が必要な項目があります"
+            echo "詳細はジョブログを確認してください"
+          fi
