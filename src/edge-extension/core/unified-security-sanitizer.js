@@ -105,12 +105,12 @@ class UnifiedSecuritySanitizer {
             if (this.domPurifyAvailable) {
                 // DOMPurifyを使用してテキストのみ抽出
                 const sanitizer = this.domPurifyAvailable === true ? DOMPurify : globalThis.DOMPurify;
-                const cleaned = sanitizer.sanitize(html, { 
+                const cleaned = sanitizer.sanitize(html, {
                     ALLOWED_TAGS: [],
                     ALLOWED_ATTR: [],
                     KEEP_CONTENT: true
                 });
-                
+
                 return this.normalizeWhitespace(cleaned, options);
             } else {
                 // フォールバック処理
@@ -185,10 +185,10 @@ class UnifiedSecuritySanitizer {
         Object.keys(variables).forEach(key => {
             const placeholder = `{{${key}}}`;
             const rawValue = variables[key] || '';
-            
+
             // 値の型チェック
             const stringValue = typeof rawValue === 'string' ? rawValue : String(rawValue);
-            
+
             // コンテンツタイプに応じた適切なサニタイゼーション
             let sanitizedValue;
             if (options.preserveHTML && (key === 'pageContent' || key.includes('html'))) {
@@ -303,7 +303,7 @@ class UnifiedSecuritySanitizer {
      */
     runSecurityTests() {
         console.log('UnifiedSecuritySanitizer: セキュリティテストを開始');
-        
+
         const testCases = [
             {
                 name: 'XSSスクリプト除去テスト',

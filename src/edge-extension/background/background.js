@@ -142,11 +142,11 @@ const PromptManager = {
             "    </div>\n" +
             "</div>\n\n" +
             "重要: 必ずHTML構造で回答し、マークダウン記法は使用しないでください。VSCodeドキュメントの内容に基づいて、実用的で分かりやすい設定解説をHTML形式で提供してください。",
-        
+
         build: function (data) {
             // 統一セキュリティサニタイザーを使用した安全なプロンプト構築
             const sanitizer = getSecuritySanitizer();
-            
+
             // テンプレート変数の準備
             const variables = {
                 pageTitle: data.pageTitle || '',
@@ -165,7 +165,7 @@ const PromptManager = {
     // プロンプト取得のメイン関数
     getPrompt: function (type, data) {
         const sanitizer = getSecuritySanitizer();
-        
+
         switch (type) {
             case 'vscode-analysis':
                 return this.VSCODE_ANALYSIS.build(data);
@@ -522,7 +522,7 @@ async function handleAnalyzeEmail(data, sendResponse) {
     try {
         // 入力値の検証とサニタイゼーション
         const sanitizer = getSecuritySanitizer();
-        
+
         if (!data.subject && !data.body) {
             throw new Error('メールの件名または本文が必要です。');
         }
@@ -1659,7 +1659,7 @@ function createSecureHTMLTextExtractor() {
      */
     function extractSafeText(html) {
         const sanitizer = getSecuritySanitizer();
-        
+
         // 統一セキュリティサニタイザーでプレーンテキスト抽出
         return sanitizer.extractPlainText(html, {
             maxLength: 50000 // 十分な長さ制限
@@ -1672,7 +1672,7 @@ function createSecureHTMLTextExtractor() {
      */
     function sanitizeHTML(html) {
         const sanitizer = getSecuritySanitizer();
-        
+
         // 統一セキュリティサニタイザーでHTML保持サニタイゼーション
         return sanitizer.sanitizeHTML(html, {
             allowedTags: ['p', 'br', 'strong', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'div', 'span'],
