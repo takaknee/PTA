@@ -53,7 +53,7 @@ function getSecuritySanitizer() {
                     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
             } while (html !== previous);
             return html
-                .replace(/javascript:/gi, 'javascript-removed:')
+                .replace(/(?:javascript:|data:|vbscript:)/gi, '-removed:')
                 .replace(/\s+/g, ' ')
                 .trim()
                 .substring(0, 10000);
