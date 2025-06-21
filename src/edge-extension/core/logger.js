@@ -5,6 +5,45 @@
 
 import { ENV_CONSTANTS } from './constants.js';
 
+// 統一セキュリティサニタイザーのインポート
+let sanitizer = null;
+try {
+    // 動的インポートでサニタイザーを取得（循環依存回避）
+    import('./unified-security-sanitizer.js').then(module => {
+        sanitizer = module.getSecuritySanitizer();
+    });
+} catch (error) {
+    console.warn('統一セキュリティサニタイザーの読み込みに失敗しました:', error);
+}
+
+/**
+ * ログメッセージの安全な処理
+ * HTML/特殊文字を含む可能性のあるデータをサニタイズ
+ */
+function sanitizeLogData(data) {
+    if (!sanitizer || !data) return data;
+    
+    try {
+        if (typeof data === 'string') {
+            return sanitizer.escapeUserInput(data);
+        } else if (typeof data === 'object') {
+            const sanitized = {};
+            for (const [key, value] of Object.entries(data)) {
+                if (typeof value === 'string') {
+                    sanitized[key] = sanitizer.escapeUserInput(value);
+                } else {
+                    sanitized[key] = value;
+                }
+            }
+            return sanitized;
+        }
+        return data;
+    } catch (error) {
+        console.warn('ログデータのサニタイゼーションに失敗:', error);
+        return data;
+    }
+}
+
 /**
  * ログレベル定義
  */
@@ -50,12 +89,17 @@ class PTALogger {
      */
     _createLogEntry(level, message, data = null) {
         const timestamp = new Date().toISOString();
+        
+        // セキュリティ: ログデータのサニタイゼーション
+        const sanitizedMessage = sanitizeLogData(message);
+        const sanitizedData = sanitizeLogData(data);
+        
         const entry = {
             timestamp,
             level,
             context: this.context,
-            message,
-            data,
+            message: sanitizedMessage,
+            data: sanitizedData,
             stack: level === 'ERROR' ? new Error().stack : null,
         };
 

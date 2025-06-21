@@ -38,16 +38,9 @@ function initializeSanitizer() {
                 return globalThis.PTASanitizer.extractSafeText(input);
             }
 
-            // 最小限のフォールバック処理
-            console.warn('Content: 最小限のサニタイゼーションを実行');
-            return input
-                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // scriptタグ除去
-                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')   // styleタグ除去
-                .replace(/<[^>]*>/g, ' ')                          // すべてのHTMLタグを空白に
-                .replace(/javascript:/gi, '')                     // javascript:プロトコル除去
-                .replace(/\s+/g, ' ')                             // 連続空白を統合
-                .trim()
-                .substring(0, 1000);                              // 長さ制限
+            // セキュリティサニタイザーが利用できない場合は処理を中断
+            console.error('❌ 統一セキュリティサニタイザーが利用できません。安全のため処理を中断します。');
+            throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します');
         },
 
         stripHTMLTags: function (input) {
@@ -61,15 +54,9 @@ function initializeSanitizer() {
                 return globalThis.PTASanitizer.fastStripTags(input);
             }
 
-            // 最小限のフォールバック処理
-            let sanitized = input;
-            let previous;
-            do {
-                previous = sanitized;
-                sanitized = sanitized.replace(/<[^>]*>/g, '');
-            } while (sanitized !== previous);
-
-            return sanitized.trim().substring(0, 1000);
+            // セキュリティサニタイザーが利用できない場合は処理を中断
+            console.error('❌ 統一セキュリティサニタイザーが利用できません。安全のため処理を中断します。');
+            throw new Error('セキュリティサニタイザーが利用できないため、HTMLタグ除去処理を中断します');
         }
     };
     console.log('フォールバック版HTMLサニタイザーを初期化しました');
@@ -469,9 +456,17 @@ function createAiDialog(dialogData) {
     `;
 
     // XSS脆弱性対策: DOM要素を直接作成してユーザー入力を安全に設定
-    const safePageTitle = PTASanitizer ? PTASanitizer.extractSafeText(dialogData.pageTitle || 'AI支援ツール') : (dialogData.pageTitle || 'AI支援ツール').replace(/[<>"'&]/g, '');
-    const safePageUrl = PTASanitizer ? PTASanitizer.extractSafeText(dialogData.pageUrl || '') : (dialogData.pageUrl || '').replace(/[<>"'&]/g, '');
-    const safeSelectedText = dialogData.selectedText ? (PTASanitizer ? PTASanitizer.extractSafeText(dialogData.selectedText.substring(0, 100)) : dialogData.selectedText.substring(0, 100).replace(/[<>"'&]/g, '')) : '';
+    const safePageTitle = PTASanitizer ? 
+        PTASanitizer.extractSafeText(dialogData.pageTitle || 'AI支援ツール') : 
+        (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })();
+    const safePageUrl = PTASanitizer ? 
+        PTASanitizer.extractSafeText(dialogData.pageUrl || '') : 
+        (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })();
+    const safeSelectedText = dialogData.selectedText ? 
+        (PTASanitizer ? 
+            PTASanitizer.extractSafeText(dialogData.selectedText.substring(0, 100)) : 
+            (() => { throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します'); })()) : 
+        '';
 
     // ヘッダー部分を作成
     const header = document.createElement('div');
@@ -1862,15 +1857,15 @@ function setupResultActionButtons(containerId, content, colors) {
  * 結果をクリップボードにコピー
  */
 function copyResultToClipboard(container, content) {
-    try {        // HTMLタグを削除してプレーンテキストに変換
-        const textContent = content
-            .replace(/<[^>]*>/g, '') // HTMLタグを削除
-            .replace(/&nbsp;/g, ' ') // 非改行スペースを通常のスペースに
-            .replace(/&lt;/g, '<')   // HTML エンティティをデコード
-            .replace(/&gt;/g, '>')
-            .replace(/&amp;/g, '&')
-            .replace(/\s+/g, ' ')    // 複数の空白を単一のスペースに
-            .trim();
+    try {
+        // 統一セキュリティサニタイザーを使用してプレーンテキストに変換
+        let textContent;
+        if (PTASanitizer && PTASanitizer.extractPlainText) {
+            textContent = PTASanitizer.extractPlainText(content);
+        } else {
+            console.error('❌ 統一セキュリティサニタイザーが利用できません');
+            throw new Error('セキュリティサニタイザーが利用できないため、コピー処理を中断します');
+        }
 
         navigator.clipboard.writeText(textContent).then(() => {
             showNotification('結果をクリップボードにコピーしました', 'success');
@@ -2523,61 +2518,28 @@ function sanitizeAIResponse(response) {
         return response;
     }
 
-    let sanitized = response;
+    try {
+        // 統一セキュリティサニタイザーを使用
+        if (PTASanitizer && PTASanitizer.sanitizeHTML) {
+            const sanitized = PTASanitizer.sanitizeHTML(response, {
+                allowedTags: ['p', 'br', 'strong', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'div', 'span', 'code', 'pre'],
+                allowedAttributes: ['class', 'id']
+            });
+            
+            console.log('🧼 AIレスポンスサニタイズ完了（統一サニタイザー使用):', {
+                originalLength: response.length,
+                sanitizedLength: sanitized.length
+            });
 
-    // CSSプロパティのパターンを除去（例：margin: 6px 0; や line-height: 1.6; など）
-    sanitized = sanitized.replace(/[a-zA-Z-]+\s*:\s*[^;]+;/g, '');
-
-    // CSS値のパターンを除去（例：counter-increment: list-counter;）
-    sanitized = sanitized.replace(/counter-increment:\s*[^;]+;/g, '');
-
-
-
-    // data-*属性を除去（例：data-number="1"）
-    sanitized = sanitized.replace(/data-[a-zA-Z-]+\s*=\s*"[^"]*"/g, '');
-
-    // CSS値の単体パターンを除去（例：margin: 6px 0;）
-    sanitized = sanitized.replace(/\b(margin|padding|line-height|font-size|font-weight|color|background|border|display|position|width|height|top|left|right|bottom|float|clear|text-align|vertical-align|z-index|opacity|transform|transition|animation|box-shadow|border-radius|overflow|cursor|text-decoration|text-transform|letter-spacing|word-spacing|white-space|font-family|list-style|counter-increment|counter-reset)\s*:\s*[^;]+;?/gi, '');
-
-    // CSSのプロパティ値だけが残ってしまった行を除去
-    sanitized = sanitized.replace(/^\s*[0-9.]+px\s*$/gm, '');
-    sanitized = sanitized.replace(/^\s*[0-9.]+\s*$/gm, '');
-    sanitized = sanitized.replace(/^\s*(left|right|center|bold|normal|none|auto|inherit|initial|unset)\s*$/gm, '');
-
-    // styleタグとその内容を除去
-    sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-
-
-
-    // scriptタグとその内容を除去
-    sanitized = sanitized.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-
-    // HTMLタグを除去（ただし、改行は保持）
-    sanitized = sanitized.replace(/<[^>]+>/g, '');
-
-    // CSSのコメントを除去
-    sanitized = sanitized.replace(/\/\*[\s\S]*?\*\//g, '');
-
-    // 単独で残ったCSS記号や値を除去
-    sanitized = sanitized.replace(/^[\s]*[{}();,]+[\s]*$/gm, '');
-
-    // 複数の連続する空白行を1つにまとめる
-    sanitized = sanitized.replace(/\n\s*\n\s*\n/g, '\n\n');
-
-    // 行頭の余分な空白を除去
-    sanitized = sanitized.replace(/^\s+/gm, '');
-
-    // 文字列の前後の空白を除去
-    sanitized = sanitized.trim();
-    console.log('🧼 AIレスポンスサニタイズ完了:', {
-        originalLength: response.length,
-        sanitizedLength: sanitized.length,
-        originalPreview: response.substring(0, 300) + '...',
-        sanitizedPreview: sanitized.substring(0, 300) + '...',
-        removedCSSCount: (response.match(/[a-zA-Z-]+\s*:\s*[^;]+;/g) || []).length
-    });
-
-    return sanitized;
+            return sanitized;
+        } else {
+            console.error('❌ 統一セキュリティサニタイザーが利用できません');
+            throw new Error('セキュリティサニタイザーが利用できないため、AIレスポンスのサニタイゼーションを中断します');
+        }
+    } catch (error) {
+        console.error('❌ AIレスポンスサニタイゼーションエラー:', error);
+        throw error;
+    }
 }
 
 /**

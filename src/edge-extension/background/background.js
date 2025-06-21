@@ -32,7 +32,8 @@ try {
 
 /**
  * 統一セキュリティサニタイザーの取得
- * 旧フォールバック機能は統一サニタイザーに統合済み
+ * 【重要】統一サニタイザーが利用できない場合は処理を中断
+ * 不完全な正規表現サニタイゼーションによるセキュリティ脆弱性を防止
  */
 function getSecuritySanitizer() {
     // 統一サニタイザーの利用
@@ -40,53 +41,66 @@ function getSecuritySanitizer() {
         return globalThis.unifiedSanitizer;
     }
 
-    // フォールバック: 基本的なサニタイザーインスタンスを作成
-    console.warn('統一セキュリティサニタイザーが利用できません。フォールバックを使用します');
-    return {
-        sanitizeHTML: (html) => {
-            if (!html || typeof html !== 'string') return '';
-            let previous;
-            do {
-                previous = html;
-                html = html
-                    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-                    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-            } while (html !== previous);
-            return html
-                .replace(/(?:javascript:|data:|vbscript:)/gi, '-removed:')
-                .replace(/\s+/g, ' ')
-                .trim()
-                .substring(0, 10000);
-        },
-        extractPlainText: (html) => {
-            if (!html || typeof html !== 'string') return '';
-            return html
-                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-                .replace(/<[^>]*>/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim()
-                .substring(0, 10000);
-        },
-        escapeUserInput: (input) => {
-            if (!input || typeof input !== 'string') return '';
-            return input
-                .replace(/[&<>"'`=\/]/g, (match) => {
-                    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '/': '&#x2F;', '`': '&#x60;', '=': '&#x3D;' };
-                    return map[match];
-                })
-                .substring(0, 10000);
-        },
-        buildSecurePrompt: (template, variables) => {
-            let result = template;
-            Object.keys(variables || {}).forEach(key => {
-                const placeholder = `{{${key}}}`;
-                const value = variables[key] || '';
-                const escaped = typeof value === 'string' ? value.replace(/[&<>"'`=\/]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '/': '&#x2F;', '`': '&#x60;', '=': '&#x3D;' })[m]).substring(0, 10000) : String(value);
-                result = result.split(placeholder).join(escaped);
-            });
-            return result;
-        }
-    };
+    // DOMPurifyが直接利用可能な場合
+    if (typeof DOMPurify !== 'undefined') {
+        console.warn('統一セキュリティサニタイザーが利用できません。DOMPurifyを直接使用します');
+        return {
+            sanitizeHTML: (html, options = {}) => {
+                if (!html || typeof html !== 'string') return '';
+                try {
+                    return DOMPurify.sanitize(html, {
+                        ALLOWED_TAGS: options.allowedTags || ['p', 'br', 'strong', 'em', 'span', 'div'],
+                        ALLOWED_ATTR: options.allowedAttributes || ['class'],
+                        KEEP_CONTENT: true
+                    });
+                } catch (error) {
+                    console.error('DOMPurifyサニタイゼーションエラー:', error);
+                    throw new Error('HTMLサニタイゼーションに失敗しました');
+                }
+            },
+            extractPlainText: (html) => {
+                if (!html || typeof html !== 'string') return '';
+                try {
+                    return DOMPurify.sanitize(html, {
+                        ALLOWED_TAGS: [],
+                        ALLOWED_ATTR: [],
+                        KEEP_CONTENT: true
+                    }).trim();
+                } catch (error) {
+                    console.error('テキスト抽出エラー:', error);
+                    throw new Error('テキスト抽出に失敗しました');
+                }
+            },
+            escapeUserInput: (input) => {
+                if (!input || typeof input !== 'string') return '';
+                // 基本的なHTMLエスケープのみ（完全なサニタイゼーションはDOMPurifyに依存）
+                return input
+                    .split('&').join('&amp;')
+                    .split('<').join('&lt;')
+                    .split('>').join('&gt;')
+                    .split('"').join('&quot;')
+                    .split("'").join('&#x27;')
+                    .substring(0, 10000);
+            },
+            buildSecurePrompt: (template, variables) => {
+                if (!template || typeof template !== 'string') {
+                    throw new Error('無効なプロンプトテンプレートです');
+                }
+                let result = template;
+                Object.keys(variables || {}).forEach(key => {
+                    const placeholder = `{{${key}}}`;
+                    const value = variables[key] || '';
+                    const escaped = this.escapeUserInput(String(value));
+                    result = result.split(placeholder).join(escaped);
+                });
+                return result;
+            }
+        };
+    }
+
+    // セキュリティサニタイザーが全く利用できない場合は処理を中断
+    console.error('❌ 統一セキュリティサニタイザーとDOMPurifyが両方とも利用できません');
+    throw new Error('セキュリティサニタイザーが利用できないため、処理を中断します。セキュリティ上の理由により、不完全なサニタイゼーションは実行しません。');
 }
 
 // プロンプト設定管理（統一セキュリティサニタイザー統合版）
@@ -149,38 +163,48 @@ const PromptManager = {
             "重要: 必ずHTML構造で回答し、マークダウン記法は使用しないでください。VSCodeドキュメントの内容に基づいて、実用的で分かりやすい設定解説をHTML形式で提供してください。",
 
         build: function (data) {
-            // 統一セキュリティサニタイザーを使用した安全なプロンプト構築
-            const sanitizer = getSecuritySanitizer();
+            try {
+                // 統一セキュリティサニタイザーを使用した安全なプロンプト構築
+                const sanitizer = getSecuritySanitizer();
 
-            // テンプレート変数の準備
-            const variables = {
-                pageTitle: data.pageTitle || '',
-                pageUrl: data.pageUrl || '',
-                pageContent: data.pageContent || ''
-            };
+                // テンプレート変数の準備
+                const variables = {
+                    pageTitle: data.pageTitle || '',
+                    pageUrl: data.pageUrl || '',
+                    pageContent: data.pageContent || ''
+                };
 
-            // セキュアなプロンプト構築
-            return sanitizer.buildSecurePrompt(this.template, variables, {
-                preserveHTML: false, // プロンプトテンプレート内なのでHTMLは保持しない
-                maxVariableLength: 50000 // ページコンテンツは大きくなる可能性がある
-            });
+                // セキュアなプロンプト構築
+                return sanitizer.buildSecurePrompt(this.template, variables, {
+                    preserveHTML: false, // プロンプトテンプレート内なのでHTMLは保持しない
+                    maxVariableLength: 50000 // ページコンテンツは大きくなる可能性がある
+                });
+            } catch (error) {
+                console.error('❌ VSCode解析プロンプト構築エラー:', error);
+                throw new Error('セキュリティサニタイザーが利用できないため、プロンプト構築を中断します');
+            }
         }
     },
 
     // プロンプト取得のメイン関数
     getPrompt: function (type, data) {
-        const sanitizer = getSecuritySanitizer();
+        try {
+            const sanitizer = getSecuritySanitizer();
 
-        switch (type) {
-            case 'vscode-analysis':
-                return this.VSCODE_ANALYSIS.build(data);
-            default:
-                // デフォルトプロンプトも安全に構築
-                const defaultTemplate = "要求された内容を日本語で分析してください。\n\n内容: {{content}}";
-                const variables = {
-                    content: data.content || data.pageContent || ''
-                };
-                return sanitizer.buildSecurePrompt(defaultTemplate, variables);
+            switch (type) {
+                case 'vscode-analysis':
+                    return this.VSCODE_ANALYSIS.build(data);
+                default:
+                    // デフォルトプロンプトも安全に構築
+                    const defaultTemplate = "要求された内容を日本語で分析してください。\n\n内容: {{content}}";
+                    const variables = {
+                        content: data.content || data.pageContent || ''
+                    };
+                    return sanitizer.buildSecurePrompt(defaultTemplate, variables);
+            }
+        } catch (error) {
+            console.error('❌ プロンプト取得エラー:', error);
+            throw new Error('セキュリティサニタイザーが利用できないため、プロンプト取得を中断します');
         }
     }
 };
@@ -1663,27 +1687,36 @@ function createSecureHTMLTextExtractor() {
      * 統一セキュリティサニタイザーを使用した安全なテキスト抽出
      */
     function extractSafeText(html) {
-        const sanitizer = getSecuritySanitizer();
+        try {
+            const sanitizer = getSecuritySanitizer();
 
-        // 統一セキュリティサニタイザーでプレーンテキスト抽出
-        return sanitizer.extractPlainText(html, {
-            maxLength: 50000 // 十分な長さ制限
-        });
+            // 統一セキュリティサニタイザーでプレーンテキスト抽出
+            return sanitizer.extractPlainText(html, {
+                maxLength: 50000 // 十分な長さ制限
+            });
+        } catch (error) {
+            console.error('❌ セキュアテキスト抽出エラー:', error);
+            throw new Error('セキュリティサニタイザーが利用できないため、テキスト抽出を中断します');
+        }
     }
 
-    /**
     /**
      * HTMLサニタイゼーション（HTMLタグを保持）
      */
     function sanitizeHTML(html) {
-        const sanitizer = getSecuritySanitizer();
+        try {
+            const sanitizer = getSecuritySanitizer();
 
-        // 統一セキュリティサニタイザーでHTML保持サニタイゼーション
-        return sanitizer.sanitizeHTML(html, {
-            allowedTags: ['p', 'br', 'strong', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'div', 'span'],
-            allowedAttributes: ['class', 'id'],
-            maxLength: 100000
-        });
+            // 統一セキュリティサニタイザーでHTML保持サニタイゼーション
+            return sanitizer.sanitizeHTML(html, {
+                allowedTags: ['p', 'br', 'strong', 'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'div', 'span'],
+                allowedAttributes: ['class', 'id'],
+                maxLength: 100000
+            });
+        } catch (error) {
+            console.error('❌ セキュアHTML サニタイゼーションエラー:', error);
+            throw new Error('セキュリティサニタイザーが利用できないため、HTMLサニタイゼーションを中断します');
+        }
     }
 
     return {

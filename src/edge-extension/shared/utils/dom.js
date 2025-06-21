@@ -335,13 +335,15 @@ export class DOMUtils {
     if (!element) return;
 
     try {
-      // 基本的なサニタイゼーション
-      const sanitized = html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/javascript:/gi, '')
-        .replace(/on\w+\s*=/gi, '');
-
-      element.innerHTML = sanitized;
+      // 統一セキュリティサニタイザーを使用
+      if (typeof globalThis !== 'undefined' && globalThis.unifiedSanitizer) {
+        const sanitized = globalThis.unifiedSanitizer.sanitizeHTML(html);
+        element.innerHTML = sanitized;
+      } else {
+        // セキュリティサニタイザーが利用できない場合はプレーンテキストとして設定
+        console.warn('統一セキュリティサニタイザーが利用できません。プレーンテキストとして設定します。');
+        element.textContent = html;
+      }
     } catch (error) {
       logger.error('innerHTML設定エラー', { error: error.message });
       element.textContent = html; // フォールバック
