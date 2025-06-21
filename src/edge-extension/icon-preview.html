@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PTA ロボット軍曹アイコン プレビュー</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #2c5282;
+        margin-bottom: 10px;
+        font-size: 2.5em;
+      }
+      .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 40px;
+        font-size: 1.2em;
+      }
+      .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+      }
+      .icon-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 25px;
+        text-align: center;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+      }
+      .icon-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        border-color: #4a90e2;
+      }
+      .icon-card h3 {
+        color: #2c5282;
+        margin-bottom: 15px;
+        font-size: 1.3em;
+      }
+      .icon-display {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100px;
+        border: 1px solid #dee2e6;
+      }
+      .icon-info {
+        margin-top: 15px;
+        font-size: 0.9em;
+        color: #6c757d;
+      }
+      .size-label {
+        background: #4a90e2;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: bold;
+        display: inline-block;
+        margin-bottom: 10px;
+      }
+      .usage-section {
+        background: #f1f3f4;
+        border-radius: 12px;
+        padding: 25px;
+        margin-top: 30px;
+      }
+      .usage-section h2 {
+        color: #2c5282;
+        margin-bottom: 20px;
+      }
+      .usage-item {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid #4a90e2;
+      }
+      .usage-item h4 {
+        margin: 0 0 8px 0;
+        color: #2c5282;
+      }
+      .usage-item p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9em;
+      }
+      .manifest-preview {
+        background: #2d3748;
+        color: #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+        font-family: "Courier New", monospace;
+        font-size: 0.9em;
+        overflow-x: auto;
+      }
+      .json-key {
+        color: #81c784;
+      }
+      .json-string {
+        color: #ffb74d;
+      }
+      .json-number {
+        color: #64b5f6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🤖 PTA ロボット軍曹アイコン</h1>
+      <p class="subtitle">
+        Edge拡張機能「AI業務支援ツール」のカッコいいアイコンプレビュー
+      </p>
+
+      <div class="icon-grid">
+        <div class="icon-card">
+          <div class="size-label">128×128px</div>
+          <h3>高解像度版</h3>
+          <div class="icon-display">
+            <img
+              src="assets/icons/icon128.png"
+              alt="128x128 ロボット軍曹アイコン"
+              width="128"
+              height="128"
+            />
+          </div>
+          <div class="icon-info">
+            <strong>用途:</strong> 拡張機能設定画面、ストア表示<br />
+            <strong>特徴:</strong> 完全なディテール、グラデーション効果
+          </div>
+        </div>
+
+        <div class="icon-card">
+          <div class="size-label">48×48px</div>
+          <h3>標準版</h3>
+          <div class="icon-display">
+            <img
+              src="assets/icons/icon48.png"
+              alt="48x48 ロボット軍曹アイコン"
+              width="48"
+              height="48"
+            />
+          </div>
+          <div class="icon-info">
+            <strong>用途:</strong> 拡張機能管理画面<br />
+            <strong>特徴:</strong> 主要ディテール保持、最適化済み
+          </div>
+        </div>
+
+        <div class="icon-card">
+          <div class="size-label">32×32px</div>
+          <h3>中間版</h3>
+          <div class="icon-display">
+            <img
+              src="assets/icons/icon32.png"
+              alt="32x32 ロボット軍曹アイコン"
+              width="32"
+              height="32"
+            />
+          </div>
+          <div class="icon-info">
+            <strong>用途:</strong> ツールバー（高DPI）<br />
+            <strong>特徴:</strong> 必要最小限のディテール、高コントラスト
+          </div>
+        </div>
+
+        <div class="icon-card">
+          <div class="size-label">16×16px</div>
+          <h3>最小版</h3>
+          <div class="icon-display">
+            <img
+              src="assets/icons/icon16.png"
+              alt="16x16 ロボット軍曹アイコン"
+              width="16"
+              height="16"
+            />
+            <!-- 拡大表示用 -->
+            <img
+              src="assets/icons/icon16.png"
+              alt="16x16 ロボット軍曹アイコン（拡大）"
+              width="64"
+              height="64"
+              style="margin-left: 20px; image-rendering: pixelated"
+            />
+          </div>
+          <div class="icon-info">
+            <strong>用途:</strong> ツールバー、ファビコン<br />
+            <strong>特徴:</strong> 基本シルエット、視認性重視
+          </div>
+        </div>
+      </div>
+
+      <div class="usage-section">
+        <h2>📋 使用箇所と設定状況</h2>
+
+        <div class="usage-item">
+          <h4>✅ ツールバーアイコン (action.default_icon)</h4>
+          <p>
+            Edgeのツールバーに表示される拡張機能のメインアイコン。クリックでポップアップが開きます。
+          </p>
+        </div>
+
+        <div class="usage-item">
+          <h4>✅ 拡張機能アイコン (icons)</h4>
+          <p>拡張機能管理画面（edge://extensions/）で表示されるアイコン。</p>
+        </div>
+
+        <div class="usage-item">
+          <h4>✅ ストアアイコン (icons)</h4>
+          <p>Edgeアドオンストアでの表示用アイコン（将来的な公開時）。</p>
+        </div>
+
+        <div class="usage-item">
+          <h4>✅ 設定ページアイコン</h4>
+          <p>オプション画面やその他のUI要素で使用されるアイコン。</p>
+        </div>
+
+        <h3>manifest.json 設定内容</h3>
+        <div class="manifest-preview">
+          <span class="json-string">"action"</span>: {
+          <span class="json-string">"default_popup"</span>:
+          <span class="json-string">"popup/popup.html"</span>,
+          <span class="json-string">"default_title"</span>:
+          <span class="json-string">"AI業務支援ツール"</span>,
+          <span class="json-string">"default_icon"</span>: {
+          <span class="json-string">"16"</span>:
+          <span class="json-string">"assets/icons/icon16.png"</span>,
+          <span class="json-string">"32"</span>:
+          <span class="json-string">"assets/icons/icon32.png"</span>,
+          <span class="json-string">"48"</span>:
+          <span class="json-string">"assets/icons/icon48.png"</span>,
+          <span class="json-string">"128"</span>:
+          <span class="json-string">"assets/icons/icon128.png"</span>
+          } },
+          <span class="json-string">"icons"</span>: {
+          <span class="json-string">"16"</span>:
+          <span class="json-string">"assets/icons/icon16.png"</span>,
+          <span class="json-string">"32"</span>:
+          <span class="json-string">"assets/icons/icon32.png"</span>,
+          <span class="json-string">"48"</span>:
+          <span class="json-string">"assets/icons/icon48.png"</span>,
+          <span class="json-string">"128"</span>:
+          <span class="json-string">"assets/icons/icon128.png"</span>
+          }
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          margin-top: 30px;
+          padding: 20px;
+          background: #e8f4fd;
+          border-radius: 10px;
+        "
+      >
+        <h3 style="color: #2c5282; margin-bottom: 10px">🚀 次のステップ</h3>
+        <p style="color: #666; margin: 0">
+          1. Edgeで <code>edge://extensions/</code> を開く<br />
+          2. 「開発者モード」を有効にする<br />
+          3. 「パッケージ化されていない拡張機能を読み込む」をクリック<br />
+          4. このフォルダ（src/edge-extension）を選択<br />
+          5. ツールバーにロボット軍曹が表示されることを確認！
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

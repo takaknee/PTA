@@ -1,1 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect width="16" height="16" fill="#2196F3"/><text x="8" y="12" text-anchor="middle" fill="white" font-family="Arial" font-size="10">P</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <defs>
+    <linearGradient id="bodyGradient16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2C5282;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="headGradient16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5BA0F0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3A7BD5;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="eyeGradient16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B6B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E53E3E;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="badgeGradient16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <rect width="16" height="16" fill="url(#bodyGradient16)" rx="3" ry="3"/>
+  
+  <!-- ロボットの胴体 -->
+  <rect x="4" y="7" width="8" height="7" fill="url(#bodyGradient16)" rx="1" ry="1"/>
+  
+  <!-- ロボットの頭部 -->
+  <rect x="5" y="2" width="6" height="6" fill="url(#headGradient16)" rx="2" ry="2"/>
+  
+  <!-- アンテナ -->
+  <rect x="7" y="1" width="1" height="2" fill="#718096"/>
+  <rect x="8" y="1" width="1" height="2" fill="#718096"/>
+  
+  <!-- 目 -->
+  <rect x="6" y="3" width="1" height="1" fill="url(#eyeGradient16)"/>
+  <rect x="9" y="3" width="1" height="1" fill="url(#eyeGradient16)"/>
+  
+  <!-- 口部分 -->
+  <rect x="6" y="5" width="4" height="1" fill="#2D3748"/>
+  
+  <!-- 肩章 -->
+  <rect x="2" y="6" width="2" height="1" fill="url(#badgeGradient16)" rx="0.5" ry="0.5"/>
+  <rect x="12" y="6" width="2" height="1" fill="url(#badgeGradient16)" rx="0.5" ry="0.5"/>
+  
+  <!-- 胸部のPTAバッジ -->
+  <circle cx="8" cy="9" r="1.5" fill="url(#badgeGradient16)"/>
+  <circle cx="8" cy="9" r="1" fill="#2D3748"/>
+  <text x="8" y="10" text-anchor="middle" fill="#FFD700" font-family="Arial, sans-serif" font-size="2" font-weight="bold">P</text>
+  
+  <!-- 腕部 -->
+  <rect x="2" y="8" width="2" height="4" fill="url(#bodyGradient16)" rx="0.5" ry="0.5"/>
+  <rect x="12" y="8" width="2" height="4" fill="url(#bodyGradient16)" rx="0.5" ry="0.5"/>
+  
+  <!-- 胸部パネル -->
+  <rect x="5" y="8" width="6" height="3" fill="#2D3748" rx="0.5" ry="0.5"/>
+  <rect x="6" y="9" width="1" height="0.5" fill="#48BB78"/>
+  <rect x="7.5" y="9" width="1" height="0.5" fill="#E53E3E"/>
+  <rect x="9" y="9" width="1" height="0.5" fill="#4299E1"/>
+</svg>
