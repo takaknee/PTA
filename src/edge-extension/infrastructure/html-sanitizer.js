@@ -715,7 +715,7 @@ function detectAdvancedSecurityPatterns(html) {
           count: matches.length,
           severity: pattern.severity,
           description: pattern.description,
-          examples: matches.slice(0, 2).map(match => 
+          examples: matches.slice(0, 2).map(match =>
             match.length > 50 ? match.substring(0, 50) + '...' : match
           )
         });
@@ -733,9 +733,9 @@ function detectAdvancedSecurityPatterns(html) {
 
   // 結果の評価
   const riskLevel = highestSeverity === 'none' ? 'none' :
-                   highestSeverity === 'critical' ? 'critical' :
-                   highestSeverity === 'high' ? 'high' :
-                   highestSeverity === 'medium' ? 'medium' : 'low';
+    highestSeverity === 'critical' ? 'critical' :
+      highestSeverity === 'high' ? 'high' :
+        highestSeverity === 'medium' ? 'medium' : 'low';
 
   return {
     safe: detectedPatterns.length === 0,

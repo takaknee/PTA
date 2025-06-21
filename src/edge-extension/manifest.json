@@ -30,6 +30,7 @@
         "http://*/*"
       ],
       "js": [
+        "vendor/dompurify.min.js",
         "infrastructure/html-sanitizer.js",
         "infrastructure/url-validator.js",
         "content/content.js"

@@ -16,7 +16,12 @@
   "optionalDependencies": {
     "dompurify": "^3.0.5"
   },
-  "keywords": ["chrome-extension", "edge-extension", "ai", "pta"],
+  "keywords": [
+    "chrome-extension",
+    "edge-extension",
+    "ai",
+    "pta"
+  ],
   "author": "Development Team",
   "license": "ISC"
 }

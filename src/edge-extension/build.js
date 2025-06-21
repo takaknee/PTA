@@ -10,16 +10,16 @@ const path = require('path');
 const BUILD_CONFIG = {
     // ソースディレクトリ
     srcDir: __dirname,
-    
+
     // 出力ディレクトリ
     distDir: path.join(__dirname, 'dist'),
-    
+
     // ベンダーライブラリディレクトリ
     vendorDir: path.join(__dirname, 'vendor'),
-    
+
     // 開発モードかどうか
     isDev: process.argv.includes('--dev'),
-    
+
     // 本番モードかどうか
     isProd: process.argv.includes('--prod')
 };
@@ -53,14 +53,14 @@ function copyFile(src, dest) {
 function setupDOMPurify() {
     const dompurifyPath = path.join(__dirname, 'node_modules', 'dompurify', 'dist', 'purify.min.js');
     const vendorDOMPurifyPath = path.join(BUILD_CONFIG.vendorDir, 'dompurify.min.js');
-    
+
     if (fs.existsSync(dompurifyPath)) {
         ensureDirectoryExists(BUILD_CONFIG.vendorDir);
         copyFile(dompurifyPath, vendorDOMPurifyPath);
-        
+
         // DOMPurify使用のためのContent Scriptを更新
         updateContentScriptForDOMPurify();
-        
+
         return true;
     } else {
         console.warn('⚠️ DOMPurifyが見つかりません。npm install dompurify を実行してください。');
@@ -73,21 +73,21 @@ function setupDOMPurify() {
  */
 function updateContentScriptForDOMPurify() {
     const manifestPath = path.join(BUILD_CONFIG.srcDir, 'manifest.json');
-    
+
     try {
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-        
+
         // DOMPurifyをContent Scriptsの先頭に追加
         manifest.content_scripts.forEach(script => {
             if (!script.js.includes('vendor/dompurify.min.js')) {
                 script.js.unshift('vendor/dompurify.min.js');
             }
         });
-        
+
         // manifest.jsonを更新
         fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
         console.log('✅ manifest.jsonにDOMPurifyを追加しました');
-        
+
     } catch (error) {
         console.error('❌ manifest.json更新エラー:', error.message);
     }
@@ -213,28 +213,28 @@ console.log('🛡️ セキュリティ強化版HTMLサニタイゼーション�
 function build() {
     console.log('🚀 Edge拡張機能のビルドを開始します...');
     console.log(`📦 モード: ${BUILD_CONFIG.isDev ? '開発' : BUILD_CONFIG.isProd ? '本番' : '標準'}`);
-    
+
     // ディレクトリの準備
     ensureDirectoryExists(BUILD_CONFIG.vendorDir);
     ensureDirectoryExists(BUILD_CONFIG.distDir);
-    
+
     // DOMPurifyのセットアップ
     const hasDOMPurify = setupDOMPurify();
-    
+
     // セキュリティ強化スクリプトの生成
     generateSecureContentScript();
-    
+
     // ビルド結果の表示
     console.log('\n📋 ビルド結果:');
     console.log(`  DOMPurify: ${hasDOMPurify ? '✅ 利用可能' : '❌ 未インストール'}`);
     console.log(`  セキュリティ強化: ✅ 実装済み`);
     console.log(`  カスタム検知機能: ✅ 実装済み`);
-    
+
     if (!hasDOMPurify) {
         console.log('\n💡 DOMPurifyをインストールするには:');
         console.log('   npm run install-dompurify');
     }
-    
+
     console.log('\n🎉 ビルド完了');
 }
 

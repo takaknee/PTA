@@ -1223,16 +1223,16 @@ function sanitizeHtmlResponse(html) {
         // エラー時はローカルの検知機能を使用
         securityResult = detectSuspiciousPatterns(htmlString);
     }
-    
+
     // 高リスクまたはクリティカルレベルの場合は追加の警告処理
     if (securityResult.riskLevel === 'high' || securityResult.riskLevel === 'critical') {
         const riskIcon = securityResult.riskLevel === 'critical' ? '🔴' : '🔒';
         console.error(`${riskIcon} ${securityResult.riskLevel.toUpperCase()}リスクコンテンツが検出されました。表示前に内容を確認してください。`);
-        
+
         // クリティカルリスクの場合は追加の安全措置
         if (securityResult.riskLevel === 'critical') {
             console.error('🚨 クリティカルレベル: JavaScriptコード実行の可能性があります');
-            
+
             // オプション: クリティカルリスクの場合はユーザーに明示的な警告
             try {
                 showNotification(
@@ -1243,7 +1243,7 @@ function sanitizeHtmlResponse(html) {
                 console.error('セキュリティ警告表示エラー:', notificationError);
             }
         }
-        
+
         // script関連の特別処理
         if (securityResult.detectedPatterns.some(p => p.name.includes('script'))) {
             console.warn('⚠️ scriptタグが検出されました。実行を防止するため監視を強化します。');
@@ -1262,81 +1262,81 @@ function detectSuspiciousPatterns(html) {
     // セキュリティパターンの定義（より厳密で包括的な検知）
     const suspiciousPatterns = [
         // script タグ - 開始・終了タグを個別に検知し、スペースやその他の文字も考慮
-        { 
-            name: 'script 開始タグ', 
+        {
+            name: 'script 開始タグ',
             pattern: /<script[\s\S]*?>/gi,
             severity: 'high'
         },
-        { 
-            name: 'script 終了タグ', 
+        {
+            name: 'script 終了タグ',
             pattern: /<\/script[\s]*>/gi,
             severity: 'high'
         },
         // JavaScript プロトコル
-        { 
-            name: 'javascript プロトコル', 
+        {
+            name: 'javascript プロトコル',
             pattern: /javascript\s*:/gi,
             severity: 'high'
         },
         // イベントハンドラー（より包括的）
-        { 
-            name: 'イベントハンドラー', 
+        {
+            name: 'イベントハンドラー',
             pattern: /\bon\w+\s*=\s*["']?[^"'>]*["']?/gi,
             severity: 'medium'
         },
         // iframe タグ
-        { 
-            name: 'iframe 開始タグ', 
+        {
+            name: 'iframe 開始タグ',
             pattern: /<iframe[\s\S]*?>/gi,
             severity: 'high'
         },
-        { 
-            name: 'iframe 終了タグ', 
+        {
+            name: 'iframe 終了タグ',
             pattern: /<\/iframe[\s]*>/gi,
             severity: 'high'
         },
         // object タグ
-        { 
-            name: 'object 開始タグ', 
+        {
+            name: 'object 開始タグ',
             pattern: /<object[\s\S]*?>/gi,
             severity: 'medium'
         },
-        { 
-            name: 'object 終了タグ', 
+        {
+            name: 'object 終了タグ',
             pattern: /<\/object[\s]*>/gi,
             severity: 'medium'
         },
         // embed タグ
-        { 
-            name: 'embed タグ', 
+        {
+            name: 'embed タグ',
             pattern: /<embed[\s\S]*?>/gi,
             severity: 'medium'
         },
         // その他の危険なパターン
-        { 
-            name: 'form タグ', 
+        {
+            name: 'form タグ',
             pattern: /<form[\s\S]*?>/gi,
             severity: 'low'
         },
-        { 
-            name: 'link タグ（外部リソース）', 
+        {
+            name: 'link タグ（外部リソース）',
             pattern: /<link[\s\S]*?>/gi,
             severity: 'low'
         },
-        { 
-            name: 'meta refresh', 
+        {
+            name: 'meta refresh',
             pattern: /<meta[\s\S]*?http-equiv\s*=\s*["']?refresh["']?[\s\S]*?>/gi,
             severity: 'medium'
         },
         // データURIスキーム
-        { 
-            name: 'data URI スキーム', 
+        {
+            name: 'data URI スキーム',
             pattern: /data\s*:\s*[^"'\s>]*/gi,
             severity: 'medium'
         },
         // Base64エンコードの可能性
-        { 
-            name: 'Base64 パターン', 
+        {
+            name: 'Base64 パターン',
             pattern: /[A-Za-z0-9+\/]{50,}={0,2}/g,
             severity: 'low'
         }
@@ -1355,7 +1355,7 @@ function detectSuspiciousPatterns(html) {
                     name: pattern.name,
                     count: matches.length,
                     severity: pattern.severity,
-                    examples: matches.slice(0, 2).map(match => 
+                    examples: matches.slice(0, 2).map(match =>
                         match.length > 100 ? match.substring(0, 100) + '...' : match
                     )
                 });
@@ -1374,18 +1374,18 @@ function detectSuspiciousPatterns(html) {
 
     // 結果の評価と警告表示
     if (detectedPatterns.length > 0) {
-        const riskLevel = highSeverityCount > 0 ? 'high' : 
-                         mediumSeverityCount > 0 ? 'medium' : 'low';
-        
+        const riskLevel = highSeverityCount > 0 ? 'high' :
+            mediumSeverityCount > 0 ? 'medium' : 'low';
+
         showSecurityWarning(detectedPatterns, riskLevel);
-        
+
         // 詳細ログ出力
         console.group('🛡️ セキュリティスキャン結果');
         console.log(`リスクレベル: ${riskLevel.toUpperCase()}`);
         console.log(`検出されたパターン数: ${detectedPatterns.length}`);
         detectedPatterns.forEach(pattern => {
-            const icon = pattern.severity === 'high' ? '🚨' : 
-                        pattern.severity === 'medium' ? '⚠️' : '📝';
+            const icon = pattern.severity === 'high' ? '🚨' :
+                pattern.severity === 'medium' ? '⚠️' : '📝';
             console.log(`${icon} ${pattern.name}: ${pattern.count}件 (${pattern.severity})`);
             if (pattern.examples.length > 0) {
                 console.log('  例:', pattern.examples);
@@ -1398,9 +1398,9 @@ function detectSuspiciousPatterns(html) {
 
     return {
         safe: detectedPatterns.length === 0,
-        riskLevel: detectedPatterns.length > 0 ? 
-                  (highSeverityCount > 0 ? 'high' : 
-                   mediumSeverityCount > 0 ? 'medium' : 'low') : 'none',
+        riskLevel: detectedPatterns.length > 0 ?
+            (highSeverityCount > 0 ? 'high' :
+                mediumSeverityCount > 0 ? 'medium' : 'low') : 'none',
         detectedPatterns: detectedPatterns
     };
 }
@@ -1432,14 +1432,14 @@ function showSecurityWarning(detectedPatterns, riskLevel = 'medium') {
     };
 
     const config = riskConfig[riskLevel] || riskConfig.medium;
-    
+
     // 詳細な警告メッセージを構築
     const highRiskPatterns = detectedPatterns.filter(p => p.severity === 'high');
     const mediumRiskPatterns = detectedPatterns.filter(p => p.severity === 'medium');
-    
+
     let warningMessage = `${config.icon} セキュリティ警告 (${config.message})\n`;
     warningMessage += `AI応答に潜在的に危険なパターンが検出されました。${config.action}\n\n`;
-    
+
     if (highRiskPatterns.length > 0) {
         warningMessage += '🚨 高リスクパターン:\n';
         highRiskPatterns.forEach(p => {
@@ -1447,7 +1447,7 @@ function showSecurityWarning(detectedPatterns, riskLevel = 'medium') {
         });
         warningMessage += '\n';
     }
-    
+
     if (mediumRiskPatterns.length > 0) {
         warningMessage += '⚠️ 中リスクパターン:\n';
         mediumRiskPatterns.forEach(p => {
@@ -1461,7 +1461,7 @@ function showSecurityWarning(detectedPatterns, riskLevel = 'medium') {
     // 高リスクの場合は追加の警告表示
     if (riskLevel === 'high') {
         console.error('🔒 セキュリティ重要警告: この内容の表示前に管理者の確認を推奨します');
-        
+
         // 可能であればユーザーに視覚的警告も表示
         try {
             showNotification(
@@ -1484,7 +1484,7 @@ function showSecurityWarning(detectedPatterns, riskLevel = 'medium') {
             severity: p.severity
         }))
     };
-    
+
     console.log('🔍 セキュリティ監査ログ:', auditLog);
 }
 
