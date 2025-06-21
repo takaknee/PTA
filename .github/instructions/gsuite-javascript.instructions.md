@@ -63,6 +63,31 @@ const securePrompt = sanitizer.buildSecurePrompt(template, variables);
 3. **正規表現による直接HTML処理は禁止**
 4. **文字列置換は `escapeUserInput()` 後に実行**
 5. **DOMPurifyが利用できない環境でも安全に動作するフォールバック実装**
+6. **未使用変数・インポートの完全除去**
+7. **デッドコード・一時的デバッグコードの削除**
+
+### 未使用変数・インポート管理
+```javascript
+// ❌ 禁止：未使用インポート
+import { USED_CONST, UNUSED_CONST } from './constants.js';
+
+// ❌ 禁止：未使用変数
+const unusedVariable = 'value';
+
+// ❌ 禁止：未使用パラメータ（意図的でない場合）
+function handler(event, unusedParam) {
+    return event.target.value;
+}
+
+// ✅ 推奨：必要なもののみインポート
+import { USED_CONST } from './constants.js';
+
+// ✅ 推奨：意図的未使用は_プレフィックス
+function handler(event, _metadata) {
+    // _metadataは意図的に未使用（API仕様上必要）
+    return event.target.value;
+}
+```
 
 ### VSCodeエラー対応
 "incomplete multi-character sanitization" 警告を回避するため：

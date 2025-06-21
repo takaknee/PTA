@@ -19,6 +19,35 @@ applyTo: "**"
 - 1つの関数やメソッドは1つの責任に集中する
 - 再利用可能なコードはモジュール化する
 
+## コード品質管理
+- **未使用変数・インポートの除去**: 使用されていない変数、関数、インポートは削除する
+- **未使用パラメータの処理**: 必要に応じて `_` プレフィックスを付けるか、削除を検討する
+- **デッドコードの除去**: 到達不可能なコードや使用されない関数は削除する
+- **一時的なデバッグコード**: 本番環境に不要なconsole.log()等は削除する
+
+```javascript
+// ❌ 悪い例：未使用変数
+import { API_CLIENT, UNUSED_UTIL } from './utils.js'; // UNUSED_UTILが未使用
+const unusedVariable = 'not used';
+
+function processData(data, unusedParam) { // unusedParamが未使用
+    return API_CLIENT.process(data);
+}
+
+// ✅ 良い例：クリーンなコード
+import { API_CLIENT } from './utils.js';
+
+function processData(data) {
+    return API_CLIENT.process(data);
+}
+
+// ✅ 意図的に未使用の場合はプレフィックスを使用
+function eventHandler(event, _unusedContext) {
+    // _unusedContextは意図的に未使用
+    return event.preventDefault();
+}
+```
+
 ## セキュリティ対策
 - 機密情報はハードコーディングせず、環境変数または設定ファイルから読み込む
 - ユーザー入力は常に検証し、インジェクション攻撃を防止する

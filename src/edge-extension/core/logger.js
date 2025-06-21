@@ -3,7 +3,7 @@
  * Copyright (c) 2024 PTA Development Team
  */
 
-import { APP_CONSTANTS, ENV_CONSTANTS } from './constants.js';
+import { ENV_CONSTANTS } from './constants.js';
 
 /**
  * ログレベル定義
