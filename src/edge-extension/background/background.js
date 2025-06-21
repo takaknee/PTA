@@ -45,9 +45,14 @@ function getSecuritySanitizer() {
     return {
         sanitizeHTML: (html) => {
             if (!html || typeof html !== 'string') return '';
+            let previous;
+            do {
+                previous = html;
+                html = html
+                    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+            } while (html !== previous);
             return html
-                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
                 .replace(/javascript:/gi, 'javascript-removed:')
                 .replace(/\s+/g, ' ')
                 .trim()
