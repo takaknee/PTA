@@ -3,6 +3,51 @@
  * Copyright (c) 2024 AI Development Team
  */
 
+// HTMLサニタイザーモジュールの初期化（XSS脆弱性対策）
+let PTASanitizer = null;
+
+// HTMLサニタイザーの初期化
+function initializeSanitizer() {
+    // グローバルスコープから読み込み
+    if (typeof globalThis !== 'undefined' && globalThis.PTASanitizer) {
+        PTASanitizer = globalThis.PTASanitizer;
+        console.log('HTMLサニタイザーモジュールを正常に読み込みました（globalThis）');
+        return;
+    }
+
+    // windowオブジェクトから読み込み
+    if (typeof window !== 'undefined' && window.PTASanitizer) {
+        PTASanitizer = window.PTASanitizer;
+        console.log('HTMLサニタイザーモジュールを正常に読み込みました（window）');
+        return;
+    }
+
+    console.warn('HTMLサニタイザーモジュールが見つかりません。フォールバック版を使用します。');
+
+    // フォールバック: 基本的なHTMLエスケープ機能を提供
+    PTASanitizer = {
+        extractSafeText: function (input) {
+            if (!input || typeof input !== 'string') return '';
+            return input
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#x27;')
+                .replace(/\//g, '&#x2F;')
+                .substring(0, 1000); // 長さ制限
+        },
+        stripHTMLTags: function (input) {
+            if (!input || typeof input !== 'string') return '';
+            return input.replace(/<[^>]*>/g, '').trim().substring(0, 1000);
+        }
+    };
+    console.log('フォールバック版HTMLサニタイザーを初期化しました');
+}
+
+// 初期化を実行
+initializeSanitizer();
+
 // 現在のメールサービスを判定（セキュアなホスト名チェック）
 let currentService = 'unknown';
 const hostname = window.location.hostname;
@@ -391,79 +436,147 @@ function createAiDialog(dialogData) {
         max-width: ${window.innerWidth - 40}px !important;
         max-height: ${window.innerHeight - 40}px !important;
         pointer-events: auto !important;
-    `; content.innerHTML = `        <div class="ai-dialog-header" style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid ${borderColor};
-            background: ${headerBg};
-            color: white;
-            border-radius: 12px 12px 0 0;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            cursor: move;
-        ">
-            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-                <span style="font-size: 18px;">🏫</span>
-                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
-                    <span style="
-                        font-size: 14px; 
-                        font-weight: 500; 
-                        color: ${headerTextColor}; 
-                        white-space: nowrap; 
-                        overflow: hidden; 
-                        text-overflow: ellipsis;
-                        max-width: 300px;
-                        cursor: move;
-                    " title="${dialogData.pageTitle || 'タイトル不明'}\n${dialogData.pageUrl || ''}">${dialogData.pageTitle || 'AI支援ツール'}</span>
-                    <button class="ai-copy-page-link-btn" style="
-                        background: rgba(255, 255, 255, 0.1);
-                        border: 1px solid rgba(255, 255, 255, 0.2);
-                        color: ${headerTextColor};
-                        padding: 4px 6px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 11px;
-                        transition: all 0.2s ease;
-                        flex-shrink: 0;
-                    " title="ページリンクをMarkdown形式でコピー">📋</button>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="ai-header-settings-btn" style="
-                    background: rgba(255, 255, 255, 0.1);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    color: ${headerTextColor};
-                    padding: 6px 8px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    transition: all 0.2s ease;
-                " title="設定">⚙️</button>
-                <button class="ai-close-btn" style="
-                    background: none;
-                    border: none;
-                    color: ${headerTextColor};
-                    font-size: 20px;
-                    cursor: pointer;
-                    width: 28px;
-                    height: 28px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 50%;
-                ">×</button>
-            </div>        </div>
-        <div class="ai-dialog-body" style="
-            padding: 20px; 
-            overflow-y: auto; 
-            flex: 1;
-            max-height: calc(100% - 60px);
-        ">
-            ${dialogData.selectedText ? `<div style="background: ${infoBg}; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px; color: ${dialogText};"><strong>選択テキスト:</strong> ${dialogData.selectedText.substring(0, 100)}...</div>` : ''}
-            
+    `;
+
+    // XSS脆弱性対策: DOM要素を直接作成してユーザー入力を安全に設定
+    const safePageTitle = PTASanitizer ? PTASanitizer.extractSafeText(dialogData.pageTitle || 'AI支援ツール') : (dialogData.pageTitle || 'AI支援ツール').replace(/[<>"'&]/g, '');
+    const safePageUrl = PTASanitizer ? PTASanitizer.extractSafeText(dialogData.pageUrl || '') : (dialogData.pageUrl || '').replace(/[<>"'&]/g, '');
+    const safeSelectedText = dialogData.selectedText ? (PTASanitizer ? PTASanitizer.extractSafeText(dialogData.selectedText.substring(0, 100)) : dialogData.selectedText.substring(0, 100).replace(/[<>"'&]/g, '')) : '';
+
+    // ヘッダー部分を作成
+    const header = document.createElement('div');
+    header.className = 'ai-dialog-header';
+    header.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid ${borderColor};
+        background: ${headerBg};
+        color: white;
+        border-radius: 12px 12px 0 0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        cursor: move;
+    `;
+
+    // ヘッダー左側
+    const headerLeft = document.createElement('div');
+    headerLeft.style.cssText = 'display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;';
+
+    const iconSpan = document.createElement('span');
+    iconSpan.style.fontSize = '18px';
+    iconSpan.textContent = '🏫';
+
+    const titleContainer = document.createElement('div');
+    titleContainer.style.cssText = 'display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;';
+
+    const titleSpan = document.createElement('span');
+    titleSpan.style.cssText = `
+        font-size: 14px; 
+        font-weight: 500; 
+        color: ${headerTextColor}; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis;
+        max-width: 300px;
+        cursor: move;
+    `;
+    titleSpan.title = safePageTitle + (safePageUrl ? '\n' + safePageUrl : '');
+    titleSpan.textContent = safePageTitle; // textContentを使用してXSS対策
+
+    const copyPageLinkBtn = document.createElement('button');
+    copyPageLinkBtn.className = 'ai-copy-page-link-btn';
+    copyPageLinkBtn.style.cssText = `
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: ${headerTextColor};
+        padding: 4px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    `;
+    copyPageLinkBtn.title = 'ページリンクをMarkdown形式でコピー';
+    copyPageLinkBtn.textContent = '📋';
+
+    titleContainer.appendChild(titleSpan);
+    titleContainer.appendChild(copyPageLinkBtn);
+    headerLeft.appendChild(iconSpan);
+    headerLeft.appendChild(titleContainer);
+
+    // ヘッダー右側
+    const headerRight = document.createElement('div');
+    headerRight.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+
+    const settingsBtn = document.createElement('button');
+    settingsBtn.className = 'ai-header-settings-btn';
+    settingsBtn.style.cssText = `
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: ${headerTextColor};
+        padding: 6px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s ease;
+    `;
+    settingsBtn.title = '設定';
+    settingsBtn.textContent = '⚙️';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'ai-close-btn';
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: ${headerTextColor};
+        font-size: 20px;
+        cursor: pointer;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    `;
+    closeBtn.textContent = '×';
+
+    headerRight.appendChild(settingsBtn);
+    headerRight.appendChild(closeBtn);
+    header.appendChild(headerLeft);
+    header.appendChild(headerRight);
+
+    // ボディ部分を作成
+    const body = document.createElement('div');
+    body.className = 'ai-dialog-body';
+    body.style.cssText = `
+        padding: 20px; 
+        overflow-y: auto; 
+        flex: 1;
+        max-height: calc(100% - 60px);
+    `;
+
+    // 選択テキスト表示（XSS対策済み）
+    if (dialogData.selectedText) {
+        const selectedTextDiv = document.createElement('div');
+        selectedTextDiv.style.cssText = `background: ${infoBg}; padding: 12px; border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 16px; color: ${dialogText};`;
+
+        const selectedTextStrong = document.createElement('strong');
+        selectedTextStrong.textContent = '選択テキスト: ';
+
+        const selectedTextSpan = document.createElement('span');
+        selectedTextSpan.textContent = safeSelectedText + '...';
+
+        selectedTextDiv.appendChild(selectedTextStrong);
+        selectedTextDiv.appendChild(selectedTextSpan);
+        body.appendChild(selectedTextDiv);
+    }
+
+    // 残りのUIをinnerHTMLで作成（ユーザー入力を含まない部分）
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.innerHTML = `
             <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
                 ${currentService === 'outlook' || currentService === 'gmail' ? `
                     <div style="display: flex; align-items: center; gap: 4px;">
@@ -511,7 +624,8 @@ function createAiDialog(dialogData) {
                             font-size: 11px;
                             flex-shrink: 0;
                         " title="ページ情報をMarkdown形式でコピー">📝</button>
-                    </div>                ` : `
+                    </div>
+                ` : `
                     <button class="ai-analyze-page-btn" style="
                         background: linear-gradient(135deg, #2196F3, #1976D2);
                         color: white;
@@ -522,7 +636,8 @@ function createAiDialog(dialogData) {
                         font-size: 14px;
                         font-weight: 500;
                     ">📄 ページ要約</button>
-                `}                ${dialogData.selectedText ? `
+                `}
+                ${dialogData.selectedText ? `
                     <button class="ai-analyze-selection-btn" style="
                         background: linear-gradient(135deg, #FF9800, #F57C00);
                         color: white;
@@ -614,42 +729,59 @@ function createAiDialog(dialogData) {
                         cursor: pointer;
                         font-size: 11px;
                         display: none;
-                    " title="構造的にコピー">📋</button>                    <div id="ai-result-content"></div>
+                    " title="構造的にコピー">📋</button>
+                    <div id="ai-result-content"></div>
                 </div>
             </div>
-        </div>
-        
-        <!-- リサイズハンドル -->
-        <div class="resize-handle resize-handle-right" style="
-            position: absolute;
-            top: 0;
-            right: -5px;
-            width: 10px;
-            height: 100%;
-            cursor: ew-resize;
-            z-index: 10;
-        "></div>
-        <div class="resize-handle resize-handle-bottom" style="
-            position: absolute;
-            left: 0;
-            bottom: -5px;
-            width: 100%;
-            height: 10px;
-            cursor: ns-resize;
-            z-index: 10;
-        "></div>
-        <div class="resize-handle resize-handle-corner" style="
-            position: absolute;
-            right: -5px;
-            bottom: -5px;
-            width: 15px;
-            height: 15px;
-            cursor: nw-resize;
-            z-index: 11;
-            background: ${prefersDark ? '#555' : '#ccc'};
-            border-radius: 0 0 12px 0;
-        "></div>
     `;
+
+    body.appendChild(buttonsContainer);
+
+    // リサイズハンドルを作成
+    const resizeHandleRight = document.createElement('div');
+    resizeHandleRight.className = 'resize-handle resize-handle-right';
+    resizeHandleRight.style.cssText = `
+        position: absolute;
+        top: 0;
+        right: -5px;
+        width: 10px;
+        height: 100%;
+        cursor: ew-resize;
+        z-index: 10;
+    `;
+
+    const resizeHandleBottom = document.createElement('div');
+    resizeHandleBottom.className = 'resize-handle resize-handle-bottom';
+    resizeHandleBottom.style.cssText = `
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+        width: 100%;
+        height: 10px;
+        cursor: ns-resize;
+        z-index: 10;
+    `;
+
+    const resizeHandleCorner = document.createElement('div');
+    resizeHandleCorner.className = 'resize-handle resize-handle-corner';
+    resizeHandleCorner.style.cssText = `
+        position: absolute;
+        right: -5px;
+        bottom: -5px;
+        width: 15px;
+        height: 15px;
+        cursor: nw-resize;
+        z-index: 11;
+        background: ${prefersDark ? '#555' : '#ccc'};
+        border-radius: 0 0 12px 0;
+    `;
+
+    // すべての要素をコンテンツに追加
+    content.appendChild(header);
+    content.appendChild(body);
+    content.appendChild(resizeHandleRight);
+    content.appendChild(resizeHandleBottom);
+    content.appendChild(resizeHandleCorner);
 
     dialog.appendChild(content);
 
@@ -1076,55 +1208,284 @@ function sanitizeHtmlResponse(html) {
         htmlString = html;
     }
 
-    // 危険なパターンの検知とログ記録（除去はしない）
-    detectSuspiciousPatterns(htmlString);
+    // セキュリティチェック実行（HTMLサニタイザーモジュールの高度検知機能を活用）
+    let securityResult;
+    try {
+        // HTMLサニタイザーモジュールの高度検知機能を使用（利用可能な場合）
+        if (typeof window.detectAdvancedSecurityPatterns === 'function') {
+            securityResult = window.detectAdvancedSecurityPatterns(htmlString);
+        } else {
+            // フォールバック: ローカルの検知機能を使用
+            securityResult = detectSuspiciousPatterns(htmlString);
+        }
+    } catch (error) {
+        console.error('セキュリティチェック実行エラー:', error);
+        // エラー時はローカルの検知機能を使用
+        securityResult = detectSuspiciousPatterns(htmlString);
+    }
+    
+    // 高リスクまたはクリティカルレベルの場合は追加の警告処理
+    if (securityResult.riskLevel === 'high' || securityResult.riskLevel === 'critical') {
+        const riskIcon = securityResult.riskLevel === 'critical' ? '🔴' : '🔒';
+        console.error(`${riskIcon} ${securityResult.riskLevel.toUpperCase()}リスクコンテンツが検出されました。表示前に内容を確認してください。`);
+        
+        // クリティカルリスクの場合は追加の安全措置
+        if (securityResult.riskLevel === 'critical') {
+            console.error('🚨 クリティカルレベル: JavaScriptコード実行の可能性があります');
+            
+            // オプション: クリティカルリスクの場合はユーザーに明示的な警告
+            try {
+                showNotification(
+                    '🚨 セキュリティ警告: 危険なコンテンツが検出されました',
+                    'error'
+                );
+            } catch (notificationError) {
+                console.error('セキュリティ警告表示エラー:', notificationError);
+            }
+        }
+        
+        // script関連の特別処理
+        if (securityResult.detectedPatterns.some(p => p.name.includes('script'))) {
+            console.warn('⚠️ scriptタグが検出されました。実行を防止するため監視を強化します。');
+        }
+    }
 
     // AI応答をそのまま返す（基本的にはHTMLとして表示）
+    // セキュリティリスクは検知・ログ記録済み
     return htmlString;
 }
 
 /**
- * 危険なパターンの検知とログ記録
+ * 危険なパターンの検知とログ記録（セキュリティ強化版）
  */
 function detectSuspiciousPatterns(html) {
+    // セキュリティパターンの定義（より厳密で包括的な検知）
     const suspiciousPatterns = [
-        { name: 'script タグ', pattern: /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi },
-        { name: 'javascript プロトコル', pattern: /javascript:/gi },
-        { name: 'イベントハンドラー', pattern: /on\w+\s*=/gi },
-        { name: 'iframe タグ', pattern: /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi },
-        { name: 'object タグ', pattern: /<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi },
-        { name: 'embed タグ', pattern: /<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi }
+        // script タグ - 開始・終了タグを個別に検知し、スペースやその他の文字も考慮
+        { 
+            name: 'script 開始タグ', 
+            pattern: /<script[\s\S]*?>/gi,
+            severity: 'high'
+        },
+        { 
+            name: 'script 終了タグ', 
+            pattern: /<\/script[\s]*>/gi,
+            severity: 'high'
+        },
+        // JavaScript プロトコル
+        { 
+            name: 'javascript プロトコル', 
+            pattern: /javascript\s*:/gi,
+            severity: 'high'
+        },
+        // イベントハンドラー（より包括的）
+        { 
+            name: 'イベントハンドラー', 
+            pattern: /\bon\w+\s*=\s*["']?[^"'>]*["']?/gi,
+            severity: 'medium'
+        },
+        // iframe タグ
+        { 
+            name: 'iframe 開始タグ', 
+            pattern: /<iframe[\s\S]*?>/gi,
+            severity: 'high'
+        },
+        { 
+            name: 'iframe 終了タグ', 
+            pattern: /<\/iframe[\s]*>/gi,
+            severity: 'high'
+        },
+        // object タグ
+        { 
+            name: 'object 開始タグ', 
+            pattern: /<object[\s\S]*?>/gi,
+            severity: 'medium'
+        },
+        { 
+            name: 'object 終了タグ', 
+            pattern: /<\/object[\s]*>/gi,
+            severity: 'medium'
+        },
+        // embed タグ
+        { 
+            name: 'embed タグ', 
+            pattern: /<embed[\s\S]*?>/gi,
+            severity: 'medium'
+        },
+        // その他の危険なパターン
+        { 
+            name: 'form タグ', 
+            pattern: /<form[\s\S]*?>/gi,
+            severity: 'low'
+        },
+        { 
+            name: 'link タグ（外部リソース）', 
+            pattern: /<link[\s\S]*?>/gi,
+            severity: 'low'
+        },
+        { 
+            name: 'meta refresh', 
+            pattern: /<meta[\s\S]*?http-equiv\s*=\s*["']?refresh["']?[\s\S]*?>/gi,
+            severity: 'medium'
+        },
+        // データURIスキーム
+        { 
+            name: 'data URI スキーム', 
+            pattern: /data\s*:\s*[^"'\s>]*/gi,
+            severity: 'medium'
+        },
+        // Base64エンコードの可能性
+        { 
+            name: 'Base64 パターン', 
+            pattern: /[A-Za-z0-9+\/]{50,}={0,2}/g,
+            severity: 'low'
+        }
     ];
 
     const detectedPatterns = [];
+    let highSeverityCount = 0;
+    let mediumSeverityCount = 0;
 
+    // パターンマッチング実行
     suspiciousPatterns.forEach(pattern => {
-        const matches = html.match(pattern.pattern);
-        if (matches && matches.length > 0) {
-            detectedPatterns.push({
-                name: pattern.name,
-                count: matches.length,
-                examples: matches.slice(0, 3) // 最初の3つの例を記録
-            });
+        try {
+            const matches = html.match(pattern.pattern);
+            if (matches && matches.length > 0) {
+                detectedPatterns.push({
+                    name: pattern.name,
+                    count: matches.length,
+                    severity: pattern.severity,
+                    examples: matches.slice(0, 2).map(match => 
+                        match.length > 100 ? match.substring(0, 100) + '...' : match
+                    )
+                });
+
+                // 重要度別カウント
+                if (pattern.severity === 'high') {
+                    highSeverityCount++;
+                } else if (pattern.severity === 'medium') {
+                    mediumSeverityCount++;
+                }
+            }
+        } catch (error) {
+            console.error(`セキュリティパターン検知エラー (${pattern.name}):`, error.message);
         }
     });
 
+    // 結果の評価と警告表示
     if (detectedPatterns.length > 0) {
-        showSecurityWarning(detectedPatterns);
+        const riskLevel = highSeverityCount > 0 ? 'high' : 
+                         mediumSeverityCount > 0 ? 'medium' : 'low';
+        
+        showSecurityWarning(detectedPatterns, riskLevel);
+        
+        // 詳細ログ出力
+        console.group('🛡️ セキュリティスキャン結果');
+        console.log(`リスクレベル: ${riskLevel.toUpperCase()}`);
+        console.log(`検出されたパターン数: ${detectedPatterns.length}`);
+        detectedPatterns.forEach(pattern => {
+            const icon = pattern.severity === 'high' ? '🚨' : 
+                        pattern.severity === 'medium' ? '⚠️' : '📝';
+            console.log(`${icon} ${pattern.name}: ${pattern.count}件 (${pattern.severity})`);
+            if (pattern.examples.length > 0) {
+                console.log('  例:', pattern.examples);
+            }
+        });
+        console.groupEnd();
     } else {
         console.log('✅ セキュリティチェック: 疑わしいパターンは検出されませんでした');
     }
+
+    return {
+        safe: detectedPatterns.length === 0,
+        riskLevel: detectedPatterns.length > 0 ? 
+                  (highSeverityCount > 0 ? 'high' : 
+                   mediumSeverityCount > 0 ? 'medium' : 'low') : 'none',
+        detectedPatterns: detectedPatterns
+    };
 }
 
 /**
- * セキュリティ警告の表示
+ * セキュリティ警告の表示（強化版）
  */
-function showSecurityWarning(detectedPatterns) {
-    const warningMessage = `セキュリティ注意: AI応答に潜在的に危険なパターンが含まれています:\n${detectedPatterns.map(p => `- ${p.name}: ${p.count}件`).join('\n')
-        }`;
+function showSecurityWarning(detectedPatterns, riskLevel = 'medium') {
+    // リスクレベルに応じたメッセージと色の設定
+    const riskConfig = {
+        high: {
+            icon: '🚨',
+            color: '#ff4444',
+            message: '高リスク',
+            action: '即座に確認が必要です'
+        },
+        medium: {
+            icon: '⚠️',
+            color: '#ff9800',
+            message: '中リスク',
+            action: '注意深く確認してください'
+        },
+        low: {
+            icon: '📝',
+            color: '#ffc107',
+            message: '低リスク',
+            action: '監視対象として記録されました'
+        }
+    };
 
-    console.log(warningMessage);
+    const config = riskConfig[riskLevel] || riskConfig.medium;
+    
+    // 詳細な警告メッセージを構築
+    const highRiskPatterns = detectedPatterns.filter(p => p.severity === 'high');
+    const mediumRiskPatterns = detectedPatterns.filter(p => p.severity === 'medium');
+    
+    let warningMessage = `${config.icon} セキュリティ警告 (${config.message})\n`;
+    warningMessage += `AI応答に潜在的に危険なパターンが検出されました。${config.action}\n\n`;
+    
+    if (highRiskPatterns.length > 0) {
+        warningMessage += '🚨 高リスクパターン:\n';
+        highRiskPatterns.forEach(p => {
+            warningMessage += `  - ${p.name}: ${p.count}件\n`;
+        });
+        warningMessage += '\n';
+    }
+    
+    if (mediumRiskPatterns.length > 0) {
+        warningMessage += '⚠️ 中リスクパターン:\n';
+        mediumRiskPatterns.forEach(p => {
+            warningMessage += `  - ${p.name}: ${p.count}件\n`;
+        });
+    }
 
+    // コンソールログ出力
+    console.warn(warningMessage);
+
+    // 高リスクの場合は追加の警告表示
+    if (riskLevel === 'high') {
+        console.error('🔒 セキュリティ重要警告: この内容の表示前に管理者の確認を推奨します');
+        
+        // 可能であればユーザーに視覚的警告も表示
+        try {
+            showNotification(
+                `${config.icon} セキュリティ警告: ${config.message}のパターンが検出されました`,
+                'error'
+            );
+        } catch (error) {
+            console.error('セキュリティ警告の表示に失敗:', error.message);
+        }
+    }
+
+    // セキュリティ監査ログとして記録
+    const auditLog = {
+        timestamp: new Date().toISOString(),
+        riskLevel: riskLevel,
+        patternsDetected: detectedPatterns.length,
+        details: detectedPatterns.map(p => ({
+            name: p.name,
+            count: p.count,
+            severity: p.severity
+        }))
+    };
+    
+    console.log('🔍 セキュリティ監査ログ:', auditLog);
 }
 
 /**

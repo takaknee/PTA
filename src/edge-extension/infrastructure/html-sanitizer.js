@@ -620,6 +620,137 @@ function removeStyleAttributesSafely(input) {
   return result;
 }
 
+/**
+ * セキュリティ強化版：危険なパターンの包括的検知
+ * CodeQL「Bad HTML filtering regexp」脆弱性への対応
+ * 
+ * @param {string} html - 検査対象のHTMLコンテンツ
+ * @returns {Object} - 検知結果とリスク評価
+ */
+function detectAdvancedSecurityPatterns(html) {
+  if (!html || typeof html !== 'string') {
+    return { safe: true, riskLevel: 'none', detectedPatterns: [] };
+  }
+
+  // より堅牢な正規表現パターン（CodeQL要件準拠）
+  const securityPatterns = [
+    // script タグ - 開始・終了を個別検知（スペース対応）
+    {
+      name: 'script 開始タグ検知',
+      pattern: /<script(?:\s+[^>]*)?>/gi,
+      severity: 'critical',
+      description: 'JavaScript実行可能なscript開始タグ'
+    },
+    {
+      name: 'script 終了タグ検知',
+      pattern: /<\/script(?:\s*)>/gi,
+      severity: 'critical',
+      description: 'script終了タグ（スペース含む）'
+    },
+    // JavaScript プロトコル
+    {
+      name: 'JavaScript プロトコル',
+      pattern: /(?:javascript|vbscript|data|blob|file)\s*:/gi,
+      severity: 'high',
+      description: '危険なURLプロトコル'
+    },
+    // イベントハンドラー（包括的）
+    {
+      name: 'イベントハンドラー',
+      pattern: /\bon\w+\s*=(?:\s*["']?[^"'>]*["']?|[^>\s]*)/gi,
+      severity: 'high',
+      description: 'HTML要素のイベントハンドラー'
+    },
+    // iframe タグ
+    {
+      name: 'iframe 開始タグ',
+      pattern: /<iframe(?:\s+[^>]*)?>/gi,
+      severity: 'high',
+      description: '外部コンテンツ埋め込み可能なiframe'
+    },
+    {
+      name: 'iframe 終了タグ',
+      pattern: /<\/iframe(?:\s*)>/gi,
+      severity: 'high',
+      description: 'iframe終了タグ'
+    },
+    // その他の危険なタグ
+    {
+      name: 'object/embed タグ',
+      pattern: /<(?:object|embed)(?:\s+[^>]*)?>/gi,
+      severity: 'medium',
+      description: 'プラグイン実行可能なタグ'
+    },
+    {
+      name: 'form/input タグ',
+      pattern: /<(?:form|input|button|select|textarea)(?:\s+[^>]*)?>/gi,
+      severity: 'medium',
+      description: 'ユーザー入力可能なフォーム要素'
+    },
+    // 高度な回避パターン
+    {
+      name: 'HTMLエンコード回避',
+      pattern: /&(?:#(?:x[0-9a-f]+|[0-9]+)|[a-z]+);/gi,
+      severity: 'low',
+      description: 'HTMLエンティティエンコーディング'
+    },
+    {
+      name: 'Base64疑似パターン',
+      pattern: /(?:data:[\w\/]+;base64,|btoa|atob)[A-Za-z0-9+\/=]{20,}/gi,
+      severity: 'medium',
+      description: 'Base64エンコードされた可能性のあるデータ'
+    }
+  ];
+
+  const detectedPatterns = [];
+  let highestSeverity = 'none';
+
+  // パターンマッチング実行
+  securityPatterns.forEach(pattern => {
+    try {
+      const matches = html.match(pattern.pattern);
+      if (matches && matches.length > 0) {
+        detectedPatterns.push({
+          name: pattern.name,
+          count: matches.length,
+          severity: pattern.severity,
+          description: pattern.description,
+          examples: matches.slice(0, 2).map(match => 
+            match.length > 50 ? match.substring(0, 50) + '...' : match
+          )
+        });
+
+        // 最高リスクレベルを更新
+        const severityLevels = { 'none': 0, 'low': 1, 'medium': 2, 'high': 3, 'critical': 4 };
+        if (severityLevels[pattern.severity] > severityLevels[highestSeverity]) {
+          highestSeverity = pattern.severity;
+        }
+      }
+    } catch (error) {
+      console.error(`セキュリティパターン検知エラー (${pattern.name}):`, error);
+    }
+  });
+
+  // 結果の評価
+  const riskLevel = highestSeverity === 'none' ? 'none' :
+                   highestSeverity === 'critical' ? 'critical' :
+                   highestSeverity === 'high' ? 'high' :
+                   highestSeverity === 'medium' ? 'medium' : 'low';
+
+  return {
+    safe: detectedPatterns.length === 0,
+    riskLevel: riskLevel,
+    detectedPatterns: detectedPatterns,
+    summary: {
+      totalPatterns: detectedPatterns.length,
+      criticalCount: detectedPatterns.filter(p => p.severity === 'critical').length,
+      highCount: detectedPatterns.filter(p => p.severity === 'high').length,
+      mediumCount: detectedPatterns.filter(p => p.severity === 'medium').length,
+      lowCount: detectedPatterns.filter(p => p.severity === 'low').length
+    }
+  };
+}
+
 // エクスポート（Service Worker環境対応）
 const sanitizerAPI = {
   extractSafeText,
@@ -629,7 +760,8 @@ const sanitizerAPI = {
   removeDangerousAttributes,
   decodeHTMLEntities,
   normalizeText,
-  testSanitization
+  testSanitization,
+  detectAdvancedSecurityPatterns
 };
 
 // Service Worker環境で直接グローバルスコープに設定

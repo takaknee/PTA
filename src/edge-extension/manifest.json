@@ -30,6 +30,7 @@
         "http://*/*"
       ],
       "js": [
+        "infrastructure/html-sanitizer.js",
         "infrastructure/url-validator.js",
         "content/content.js"
       ],
@@ -60,7 +61,8 @@
     {
       "resources": [
         "assets/*",
-        "offscreen/*"
+        "offscreen/*",
+        "infrastructure/html-sanitizer.js"
       ],
       "matches": [
         "<all_urls>"
